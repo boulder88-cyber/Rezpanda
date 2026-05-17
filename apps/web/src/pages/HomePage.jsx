@@ -83,7 +83,7 @@ const HomePage = () => {
   return (
     <>
       <Helmet>
-        <title>Dashboard - RezPanda</title>
+        <title>Dashboard - CasaCEO</title>
       </Helmet>
 
       <div className="min-h-screen bg-slate-50 font-sans flex flex-col">
@@ -125,7 +125,7 @@ const HomePage = () => {
               </div>
               <h2 className="text-2xl font-bold text-slate-900 mb-3">No properties found</h2>
               <p className="text-slate-600 mb-8 max-w-md mx-auto text-lg">
-                You haven't added any properties to your portfolio yet. Add your first property to start managing it with RezPanda.
+                You haven't added any properties to your portfolio yet. Add your first property to start managing it with CasaCEO.
               </p>
               <Button 
                 onClick={handleAddProperty} 

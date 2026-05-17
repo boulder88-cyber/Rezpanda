@@ -52,7 +52,7 @@ const PropertyManagementDashboard = () => {
   return (
     <div className="min-h-screen bg-slate-50 pb-20">
       <Helmet>
-        <title>Property Management Dashboard - RezPanda</title>
+        <title>Property Management Dashboard - CasaCEO</title>
       </Helmet>
 
       {/* Hero Section */}

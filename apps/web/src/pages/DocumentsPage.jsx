@@ -89,7 +89,7 @@ const DocumentsPage = () => {
   return (
     <>
       <Helmet>
-        <title>Documents - RezPanda</title>
+        <title>Documents - CasaCEO</title>
       </Helmet>
 
       <div className="max-w-6xl mx-auto space-y-8">

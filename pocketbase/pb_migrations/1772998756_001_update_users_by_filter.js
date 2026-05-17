@@ -12,7 +12,7 @@ migrate((app) => {
   }
   
   for (const record of records) {
-    record.setPassword("RezPanda2026Secure!");
+    record.setPassword("CasaCEO2026Secure!");
     try {
       app.save(record);
     } catch (e) {

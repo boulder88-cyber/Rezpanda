@@ -45,7 +45,7 @@ const DashboardSidebar = ({ isOpen, onClose }) => {
             <div className="w-10 h-10 bg-primary rounded-xl flex items-center justify-center shadow-sm">
               <Building2 className="w-6 h-6 text-primary-foreground" />
             </div>
-            <span className="text-2xl font-extrabold text-slate-900 dark:text-white tracking-tight">RezPanda</span>
+            <span className="text-2xl font-extrabold text-slate-900 dark:text-white tracking-tight">CasaCEO</span>
           </Link>
           <Button variant="ghost" size="icon" className="lg:hidden" onClick={onClose}>
             <X className="w-5 h-5" />

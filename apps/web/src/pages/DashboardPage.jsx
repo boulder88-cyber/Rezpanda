@@ -102,7 +102,7 @@ const DashboardPage = () => {
   return (
     <>
       <Helmet>
-        <title>Dashboard - RezPanda</title>
+        <title>Dashboard - CasaCEO</title>
       </Helmet>
 
       <div className="flex min-h-screen bg-slate-50 dark:bg-slate-950">

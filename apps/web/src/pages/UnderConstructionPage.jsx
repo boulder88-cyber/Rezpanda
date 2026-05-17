@@ -35,7 +35,7 @@ const AccessGateView = ({ onForgotPassword }) => {
         <HardHat className="w-8 h-8 text-orange-500" />
       </div>
       <div className="space-y-2 text-center mb-8">
-        <h1 className="text-3xl font-bold tracking-tight text-white">RezPanda</h1>
+        <h1 className="text-3xl font-bold tracking-tight text-white">CasaCEO</h1>
         <p className="text-base text-zinc-400 leading-relaxed">
           Our platform is currently under construction. Please enter the access password to view the preview environment.
         </p>
@@ -157,7 +157,7 @@ const ForgotPasswordView = ({ onBack }) => {
       <div className="space-y-2 text-center mb-8">
         <h1 className="text-2xl font-bold tracking-tight text-white">Reset Your Password</h1>
         <p className="text-sm text-zinc-400 leading-relaxed">
-          Enter the email address associated with your RezPanda account and we'll send you a reset link.
+          Enter the email address associated with your CasaCEO account and we'll send you a reset link.
         </p>
       </div>
 
@@ -217,7 +217,7 @@ const UnderConstructionPage = () => {
   return (
     <div className="min-h-[100dvh] flex items-center justify-center bg-[#0a0a0a] px-4 py-12 sm:px-6 lg:px-8 relative overflow-hidden">
       <Helmet>
-        <title>RezPanda — Coming Soon</title>
+        <title>CasaCEO — Coming Soon</title>
       </Helmet>
 
       {/* Background decoration */}
@@ -234,7 +234,7 @@ const UnderConstructionPage = () => {
         </div>
 
         <p className="text-center text-zinc-700 text-xs mt-6">
-          © {new Date().getFullYear()} RezPanda. All rights reserved.
+          © {new Date().getFullYear()} CasaCEO. All rights reserved.
         </p>
       </div>
     </div>

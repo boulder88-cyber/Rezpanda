@@ -37,7 +37,7 @@ const Layout = ({ children }) => {
               <div className="w-16 h-16 bg-primary/10 rounded-full flex items-center justify-center mb-4">
                 <PlusCircle className="w-8 h-8 text-primary" />
               </div>
-              <h2 className="text-2xl font-bold text-slate-900">Welcome to RezPanda</h2>
+              <h2 className="text-2xl font-bold text-slate-900">Welcome to CasaCEO</h2>
               <p className="text-slate-600">
                 To get started, you need to add your first property. You can manage multiple properties from the dropdown menu above.
               </p>

@@ -2,7 +2,7 @@ import React from 'react';
 import { Helmet } from 'react-helmet';
 import { Link } from 'react-router-dom';
 import { Button } from '@/components/ui/button.jsx';
-import { RezPandaLogo } from '@/components/Logo.jsx';
+import { CasaCEOLogo } from '@/components/Logo.jsx';
 import {
   Building2, Wrench, LineChart, ArrowRight, CheckCircle2,
   Receipt, FileText, Landmark, Shield, UserPlus,
@@ -30,7 +30,7 @@ const FounderStory = () => (
           <div className="flex items-center gap-4">
             <div className="w-12 h-12 rounded-full bg-blue-600 flex items-center justify-center text-white font-bold text-lg">R</div>
             <div>
-              <p className="font-bold text-slate-900">The RezPanda Team</p>
+              <p className="font-bold text-slate-900">The CasaCEO Team</p>
               <p className="text-slate-500 text-sm">Multi-property owners, just like you</p>
             </div>
           </div>
@@ -58,12 +58,12 @@ const ProblemSolution = () => (
     <div className="max-w-6xl mx-auto">
       <div className="text-center mb-16">
         <h2 className="text-3xl md:text-4xl font-extrabold text-slate-900 mb-4">Sound familiar?</h2>
-        <p className="text-lg text-slate-600 max-w-2xl mx-auto">Every multi-property owner hits the same wall. RezPanda tears it down.</p>
+        <p className="text-lg text-slate-600 max-w-2xl mx-auto">Every multi-property owner hits the same wall. CasaCEO tears it down.</p>
       </div>
       <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
         <div className="bg-red-50 border border-red-100 rounded-2xl p-8">
           <h3 className="text-xl font-bold text-red-700 mb-6 flex items-center gap-2">
-            <span className="text-2xl">😩</span> Before RezPanda
+            <span className="text-2xl">😩</span> Before CasaCEO
           </h3>
           <ul className="space-y-4">
             {[
@@ -83,7 +83,7 @@ const ProblemSolution = () => (
         </div>
         <div className="bg-green-50 border border-green-100 rounded-2xl p-8">
           <h3 className="text-xl font-bold text-green-700 mb-6 flex items-center gap-2">
-            <span className="text-2xl">😌</span> After RezPanda
+            <span className="text-2xl">😌</span> After CasaCEO
           </h3>
           <ul className="space-y-4">
             {[
@@ -119,7 +119,7 @@ const ContractorMarketplace = () => (
             The right contractor, <span className="text-blue-400">already at your fingertips</span>
           </h2>
           <p className="text-lg text-slate-300 leading-relaxed mb-6">
-            RezPanda connects you with pre-vetted, licensed contractors in your area — plumbers, electricians, HVAC techs, landscapers, and more. Every contractor is verified, reviewed by real property owners, and linked directly to your service history.
+            CasaCEO connects you with pre-vetted, licensed contractors in your area — plumbers, electricians, HVAC techs, landscapers, and more. Every contractor is verified, reviewed by real property owners, and linked directly to your service history.
           </p>
           <p className="text-lg text-slate-300 leading-relaxed mb-10">
             No more cold calls. No more Googling. When something breaks, you know exactly who to call — and every job gets logged automatically to your property record.
@@ -148,7 +148,7 @@ const ContractorMarketplace = () => (
               {[1,2,3,4,5].map(s => <Star key={s} className="w-4 h-4 fill-amber-400 text-amber-400" />)}
               <span className="text-slate-400 text-sm ml-2">4.9 (127 reviews)</span>
             </div>
-            <p className="text-slate-400 text-sm mb-4 italic">"Fixed our AC at the lake house same day. Fast, clean, fair price. Job logged to RezPanda automatically."</p>
+            <p className="text-slate-400 text-sm mb-4 italic">"Fixed our AC at the lake house same day. Fast, clean, fair price. Job logged to CasaCEO automatically."</p>
             <div className="flex items-center justify-between">
               <span className="text-slate-500 text-xs">Last used: 3 months ago · Property #2</span>
               <Button size="sm" className="bg-blue-600 hover:bg-blue-700 text-white rounded-full text-xs px-4">Book Again</Button>
@@ -236,9 +236,9 @@ const Testimonials = () => (
       </div>
       <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
         {[
-          { quote: "I own three homes and was drowning in spreadsheets. RezPanda gave me a single place for everything. I actually look forward to checking my dashboard now.", name: "Marcus T.", role: "Owns 3 properties · Atlanta, GA" },
-          { quote: "The contractor directory alone is worth the price. Found a great HVAC tech through RezPanda, booked him, and the job got logged automatically. Zero effort.", name: "Sandra L.", role: "Owns 2 properties · Austin, TX" },
-          { quote: "Tax season used to take me a week. This year I exported everything from RezPanda and handed it straight to my accountant. Two hours total.", name: "David R.", role: "Owns 4 properties · Charlotte, NC" },
+          { quote: "I own three homes and was drowning in spreadsheets. CasaCEO gave me a single place for everything. I actually look forward to checking my dashboard now.", name: "Marcus T.", role: "Owns 3 properties · Atlanta, GA" },
+          { quote: "The contractor directory alone is worth the price. Found a great HVAC tech through CasaCEO, booked him, and the job got logged automatically. Zero effort.", name: "Sandra L.", role: "Owns 2 properties · Austin, TX" },
+          { quote: "Tax season used to take me a week. This year I exported everything from CasaCEO and handed it straight to my accountant. Two hours total.", name: "David R.", role: "Owns 4 properties · Charlotte, NC" },
         ].map((t, i) => (
           <div key={i} className="bg-white border border-slate-100 rounded-2xl p-8 shadow-lg hover:shadow-xl hover:-translate-y-1 transition-all">
             <div className="flex items-center gap-1 mb-4">
@@ -266,7 +266,7 @@ const LandingPage = () => {
     { icon: <Wrench className="w-7 h-7 text-blue-600" />, title: 'Maintenance Scheduling', description: 'Log service calls, schedule recurring maintenance, and build a full history for every home.' },
     { icon: <Users className="w-7 h-7 text-blue-600" />, title: 'Contractor Directory', description: 'Verified, reviewed contractors at your fingertips — attached to the property they serviced.' },
     { icon: <FileText className="w-7 h-7 text-blue-600" />, title: 'Document Storage', description: 'Insurance policies, warranties, deeds, permits — organized by property, always accessible.' },
-    { icon: <Bell className="w-7 h-7 text-blue-600" />, title: 'Smart Reminders', description: "Never miss a payment or inspection. RezPanda alerts you before things slip through the cracks." },
+    { icon: <Bell className="w-7 h-7 text-blue-600" />, title: 'Smart Reminders', description: "Never miss a payment or inspection. CasaCEO alerts you before things slip through the cracks." },
     { icon: <LineChart className="w-7 h-7 text-blue-600" />, title: 'Financial Reports', description: 'Monthly and annual summaries per property. Know exactly where every dollar goes.' },
     { icon: <TreePine className="w-7 h-7 text-blue-600" />, title: 'Landscape & Plants', description: 'Schedule and track landscaping, lawn care, and plant maintenance across all your properties.' },
     { icon: <Shield className="w-7 h-7 text-blue-600" />, title: 'Insurance Tracker', description: 'Monitor policy expiration dates and coverage across every home you own.' },
@@ -275,7 +275,7 @@ const LandingPage = () => {
   return (
     <>
       <Helmet>
-        <title>RezPanda — Your Homes. Organized.</title>
+        <title>CasaCEO — Be the CEO of your homes.</title>
         <meta name="description" content="The home management command center for multi-property owners. Track expenses, bills, maintenance, contractors, and documents — all in one place." />
       </Helmet>
 
@@ -284,7 +284,7 @@ const LandingPage = () => {
         {/* Navigation */}
         <header className="absolute top-0 left-0 right-0 z-50 px-4 sm:px-6 lg:px-8 py-6 flex items-center justify-between">
           <Link to="/" className="flex items-center outline-none focus-visible:ring-2 focus-visible:ring-blue-600 rounded-full">
-            <RezPandaLogo className="scale-75 origin-left" />
+            <CasaCEOLogo className="scale-75 origin-left" />
           </Link>
           <nav className="hidden md:flex items-center gap-8 text-sm font-semibold text-white/80">
             <a href="#features" className="hover:text-white transition-colors">Features</a>
@@ -310,7 +310,7 @@ const LandingPage = () => {
           <div className="relative z-10 max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 text-center w-full pt-32 pb-16 flex flex-col items-center">
             <div className="mb-10 relative">
               <div className="absolute inset-0 bg-blue-600 opacity-20 blur-[100px] rounded-full scale-150 animate-pulse"></div>
-              <RezPandaLogo className="scale-125 md:scale-150 lg:scale-[1.75] transform-gpu" imageClassName="drop-shadow-[0_0_30px_rgba(37,99,235,0.8)]" />
+              <CasaCEOLogo className="scale-125 md:scale-150 lg:scale-[1.75] transform-gpu" imageClassName="drop-shadow-[0_0_30px_rgba(37,99,235,0.8)]" />
             </div>
             <div className="inline-flex items-center gap-2 bg-white/10 text-white/80 text-sm font-medium px-5 py-2 rounded-full border border-white/10 backdrop-blur-sm mb-8">
               <Home className="w-4 h-4 text-blue-400" />
@@ -321,7 +321,7 @@ const LandingPage = () => {
               <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-400 to-blue-500"> Organized.</span>
             </h1>
             <p className="text-xl md:text-2xl text-slate-300 mb-12 max-w-3xl mx-auto font-medium leading-relaxed">
-              Stop running around juggling bills, utilities, service calls, and documents across multiple homes. RezPanda is your personal command center — synced, structured, and always at your fingertips.
+              Stop running around juggling bills, utilities, service calls, and documents across multiple homes. CasaCEO is your personal command center — synced, structured, and always at your fingertips.
             </p>
             <div className="flex flex-col sm:flex-row items-center justify-center gap-5">
               <Link to="/signup">
@@ -400,7 +400,7 @@ const LandingPage = () => {
           <div className="max-w-7xl mx-auto grid grid-cols-1 md:grid-cols-4 gap-12 mb-12">
             <div className="col-span-1 md:col-span-2">
               <div className="mb-6 inline-block">
-                <RezPandaLogo className="scale-75 origin-left" />
+                <CasaCEOLogo className="scale-75 origin-left" />
               </div>
               <p className="text-slate-400 max-w-sm mb-4 leading-relaxed">
                 Your personal command center for every home you own. Bills, utilities, maintenance, contractors, and documents — all in one place.
@@ -418,14 +418,14 @@ const LandingPage = () => {
             <div>
               <h4 className="text-white font-bold text-base mb-5">Contact</h4>
               <ul className="space-y-3 text-sm text-slate-400">
-                <li>support@rezpanda.com</li>
-                <li>1-800-REZ-PANDA</li>
+                <li>support@casaceo.com</li>
+                <li>1-800-CASACEO</li>
                 <li><a href="#contractors" className="text-blue-400 hover:text-blue-300 font-medium">Contractor Listings →</a></li>
               </ul>
             </div>
           </div>
           <div className="max-w-7xl mx-auto pt-8 border-t border-white/10 text-sm text-slate-500 flex flex-col md:flex-row justify-between items-center">
-            <p>© {new Date().getFullYear()} RezPanda. All rights reserved.</p>
+            <p>© {new Date().getFullYear()} CasaCEO. All rights reserved.</p>
             <div className="flex gap-6 mt-4 md:mt-0">
               <span className="hover:text-blue-400 cursor-pointer transition-colors">Privacy Policy</span>
               <span className="hover:text-blue-400 cursor-pointer transition-colors">Terms of Service</span>

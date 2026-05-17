@@ -7,7 +7,7 @@ const BillsPage = () => {
   return (
     <>
       <Helmet>
-        <title>Bills - RezPanda</title>
+        <title>Bills - CasaCEO</title>
       </Helmet>
       <div className="space-y-6">
         <div>

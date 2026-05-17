@@ -75,7 +75,7 @@ const PasswordResetPage = () => {
   return (
     <>
       <Helmet>
-        <title>Reset Password - RezPanda</title>
+        <title>Reset Password - CasaCEO</title>
       </Helmet>
       <div className="min-h-screen bg-slate-50 flex flex-col justify-center py-12 px-4 sm:px-6 lg:px-8">
         <div className="sm:mx-auto sm:w-full sm:max-w-md flex flex-col items-center mb-8">
@@ -83,7 +83,7 @@ const PasswordResetPage = () => {
             <div className="w-10 h-10 bg-primary rounded-xl flex items-center justify-center shadow-sm">
               <Home className="w-6 h-6 text-primary-foreground" />
             </div>
-            <span className="text-2xl font-bold text-slate-900">RezPanda</span>
+            <span className="text-2xl font-bold text-slate-900">CasaCEO</span>
           </Link>
         </div>
 

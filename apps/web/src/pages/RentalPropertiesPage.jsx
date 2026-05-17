@@ -7,7 +7,7 @@ const RentalPropertiesPage = () => {
   return (
     <>
       <Helmet>
-        <title>Rental Properties - RezPanda</title>
+        <title>Rental Properties - CasaCEO</title>
       </Helmet>
       <div className="space-y-6">
         <div>

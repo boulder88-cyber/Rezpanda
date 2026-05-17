@@ -90,7 +90,7 @@ const UtilitiesPage = () => {
   return (
     <>
       <Helmet>
-        <title>Utilities - RezPanda</title>
+        <title>Utilities - CasaCEO</title>
       </Helmet>
 
       <div className="space-y-6">

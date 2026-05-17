@@ -14,8 +14,8 @@ export const PasswordProtectionProvider = ({ children }) => {
 
     // Published production domains only
     const isPublishedSite =
-      hostname === 'rezpanda.com' ||
-      hostname === 'www.rezpanda.com';
+      hostname === 'casaceo.com' ||
+      hostname === 'www.casaceo.com';
 
     // Preview / dev environments — Replit, localhost, etc.
     const isPreview =
@@ -29,7 +29,7 @@ export const PasswordProtectionProvider = ({ children }) => {
 
     if (isPublishedSite) {
       setIsPasswordProtected(true);
-      const storedAuth = localStorage.getItem('rezpandaAuth');
+      const storedAuth = localStorage.getItem('casaceoAuth');
       setIsAuthenticated(storedAuth === 'true');
     } else {
       // All preview environments — no password gate
@@ -41,8 +41,8 @@ export const PasswordProtectionProvider = ({ children }) => {
   }, []);
 
   const submitPassword = (password) => {
-    if (password === 'rezpanda2024') {
-      localStorage.setItem('rezpandaAuth', 'true');
+    if (password === 'casaceo2024') {
+      localStorage.setItem('casaceoAuth', 'true');
       setIsAuthenticated(true);
       return { success: true };
     }
@@ -50,7 +50,7 @@ export const PasswordProtectionProvider = ({ children }) => {
   };
 
   const logout = () => {
-    localStorage.removeItem('rezpandaAuth');
+    localStorage.removeItem('casaceoAuth');
     setIsAuthenticated(false);
   };
 

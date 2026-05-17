@@ -102,7 +102,7 @@ const PlantsPage = () => {
   return (
     <>
       <Helmet>
-        <title>Plants & Yard - RezPanda</title>
+        <title>Plants & Yard - CasaCEO</title>
       </Helmet>
 
       <div className="space-y-6">

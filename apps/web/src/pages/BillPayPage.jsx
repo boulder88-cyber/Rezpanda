@@ -129,7 +129,7 @@ const BillPayPage = () => {
   return (
     <div className="min-h-screen bg-slate-50/50 dark:bg-slate-950 pb-20">
       <Helmet>
-        <title>Bill Pay Dashboard - RezPanda</title>
+        <title>Bill Pay Dashboard - CasaCEO</title>
       </Helmet>
 
       {/* Header Section */}

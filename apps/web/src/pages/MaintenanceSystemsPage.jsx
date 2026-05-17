@@ -90,7 +90,7 @@ const MaintenanceSystemsPage = () => {
   return (
     <>
       <Helmet>
-        <title>Maintenance - RezPanda</title>
+        <title>Maintenance - CasaCEO</title>
       </Helmet>
 
       <div className="space-y-6">

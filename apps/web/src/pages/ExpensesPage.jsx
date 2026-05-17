@@ -96,7 +96,7 @@ const ExpensesPage = () => {
   return (
     <>
       <Helmet>
-        <title>Expenses - RezPanda</title>
+        <title>Expenses - CasaCEO</title>
       </Helmet>
 
       <div className="space-y-6">
