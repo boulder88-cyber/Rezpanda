@@ -1,0 +1,10 @@
+{
+  "name": "rezpanda",
+  "version": "1.0.0",
+  "private": true,
+  "scripts": {
+    "build": "cd apps/web && npm install && npm run build",
+    "dev": "cd apps/web && npm run dev",
+    "start": "cd apps/web && npm run start"
+  }
+}
