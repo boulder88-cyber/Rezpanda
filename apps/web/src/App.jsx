@@ -27,160 +27,45 @@ import ImageGalleryPage from '@/pages/ImageGalleryPage.jsx';
 import PropertyManagementDashboard from '@/pages/PropertyManagementDashboard.jsx';
 import BillPayPage from '@/pages/BillPayPage.jsx';
 
-// Inner component to handle conditional rendering based on password protection
 const AppContent = () => {
-  // Check password protection state
   const { isPasswordProtected, isAuthenticated } = usePasswordAuth();
 
-  // GATEKEEPER: If password protection is active and user is not authenticated,
-  // render ONLY the UnderConstructionPage. This blocks all other routes.
-  if (isPasswordProtected && !isAuthenticated) {
-    return <UnderConstructionPage />;
-  }
-
-  // If authenticated (or if protection is disabled in preview mode),
-  // render the normal application routes.
   return (
     <AuthProvider>
       <HomeProvider>
         <Routes>
-          {/* Public Routes */}
-          <Route path="/" element={<LandingPage />} />
-          <Route path="/login" element={<LoginPage />} />
-          <Route path="/signup" element={<SignupPage />} />
+          {/* Always accessible — password reset must never be blocked */}
           <Route path="/password-reset" element={<PasswordResetPage />} />
           <Route path="/password-confirm" element={<PasswordConfirmPage />} />
-          <Route path="/gallery" element={<ImageGalleryPage />} />
 
-          {/* Main Dashboard Route - Rebuilt */}
-          <Route 
-            path="/dashboard" 
-            element={
-              <ProtectedRoute>
-                <DashboardPage />
-              </ProtectedRoute>
-            } 
-          />
+          {/* Gate — blocks all other routes on published domain */}
+          <Route path="*" element={
+            isPasswordProtected && !isAuthenticated ? (
+              <UnderConstructionPage />
+            ) : (
+              <Routes>
+                {/* Public Routes */}
+                <Route path="/" element={<LandingPage />} />
+                <Route path="/login" element={<LoginPage />} />
+                <Route path="/signup" element={<SignupPage />} />
+                <Route path="/gallery" element={<ImageGalleryPage />} />
 
-          {/* Legacy Properties List (formerly Dashboard) */}
-          <Route 
-            path="/properties" 
-            element={
-              <ProtectedRoute>
-                <Layout>
-                  <HomePage />
-                </Layout>
-              </ProtectedRoute>
-            } 
-          />
-
-          {/* Comprehensive Property Management Dashboard */}
-          <Route 
-            path="/property-management" 
-            element={
-              <ProtectedRoute>
-                <Layout>
-                  <PropertyManagementDashboard />
-                </Layout>
-              </ProtectedRoute>
-            } 
-          />
-
-          {/* Centralized Bill Pay Dashboard */}
-          <Route 
-            path="/bill-pay" 
-            element={
-              <ProtectedRoute>
-                <Layout>
-                  <BillPayPage />
-                </Layout>
-              </ProtectedRoute>
-            } 
-          />
-
-          {/* New Maintenance Management System */}
-          <Route 
-            path="/maintenance-management" 
-            element={
-              <ProtectedRoute>
-                <Layout>
-                  <MaintenanceManagementPage />
-                </Layout>
-              </ProtectedRoute>
-            } 
-          />
-
-          {/* Other Protected Routes wrapped in Layout */}
-          <Route
-            path="/expenses"
-            element={
-              <ProtectedRoute>
-                <Layout>
-                  <ExpensesPage />
-                </Layout>
-              </ProtectedRoute>
-            }
-          />
-          <Route
-            path="/maintenance"
-            element={
-              <ProtectedRoute>
-                <Layout>
-                  <MaintenanceSystemsPage />
-                </Layout>
-              </ProtectedRoute>
-            }
-          />
-          <Route
-            path="/plants"
-            element={
-              <ProtectedRoute>
-                <Layout>
-                  <PlantsPage />
-                </Layout>
-              </ProtectedRoute>
-            }
-          />
-          <Route
-            path="/utilities"
-            element={
-              <ProtectedRoute>
-                <Layout>
-                  <UtilitiesPage />
-                </Layout>
-              </ProtectedRoute>
-            }
-          />
-          <Route
-            path="/documents"
-            element={
-              <ProtectedRoute>
-                <Layout>
-                  <DocumentsPage />
-                </Layout>
-              </ProtectedRoute>
-            }
-          />
-          <Route
-            path="/rental-properties"
-            element={
-              <ProtectedRoute>
-                <Layout>
-                  <RentalPropertiesPage />
-                </Layout>
-              </ProtectedRoute>
-            }
-          />
-          <Route
-            path="/bills"
-            element={
-              <ProtectedRoute>
-                <Layout>
-                  <BillsPage />
-                </Layout>
-              </ProtectedRoute>
-            }
-          />
+                {/* Protected Routes */}
+                <Route path="/dashboard" element={<ProtectedRoute><DashboardPage /></ProtectedRoute>} />
+                <Route path="/properties" element={<ProtectedRoute><Layout><HomePage /></Layout></ProtectedRoute>} />
+                <Route path="/property-management" element={<ProtectedRoute><Layout><PropertyManagementDashboard /></Layout></ProtectedRoute>} />
+                <Route path="/bill-pay" element={<ProtectedRoute><Layout><BillPayPage /></Layout></ProtectedRoute>} />
+                <Route path="/maintenance-management" element={<ProtectedRoute><Layout><MaintenanceManagementPage /></Layout></ProtectedRoute>} />
+                <Route path="/expenses" element={<ProtectedRoute><Layout><ExpensesPage /></Layout></ProtectedRoute>} />
+                <Route path="/maintenance" element={<ProtectedRoute><Layout><MaintenanceSystemsPage /></Layout></ProtectedRoute>} />
+                <Route path="/plants" element={<ProtectedRoute><Layout><PlantsPage /></Layout></ProtectedRoute>} />
+                <Route path="/utilities" element={<ProtectedRoute><Layout><UtilitiesPage /></Layout></ProtectedRoute>} />
+                <Route path="/documents" element={<ProtectedRoute><Layout><DocumentsPage /></Layout></ProtectedRoute>} />
+                <Route path="/rental-properties" element={<ProtectedRoute><Layout><RentalPropertiesPage /></Layout></ProtectedRoute>} />
+                <Route path="/bills" element={<ProtectedRoute><Layout><BillsPage /></Layout></ProtectedRoute>} />
+              </Routes>
+            )
+          } />
         </Routes>
         <Toaster />
       </HomeProvider>
@@ -191,7 +76,6 @@ const AppContent = () => {
 function App() {
   return (
     <Router>
-      {/* PasswordProtectionProvider wraps the entire app at the highest level */}
       <PasswordProtectionProvider>
         <AppContent />
       </PasswordProtectionProvider>
