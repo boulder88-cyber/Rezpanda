@@ -8,7 +8,7 @@ echo "Checking for PocketBase binary..."
 
 if [ ! -f "$POCKETBASE_DIR/pocketbase" ]; then
   echo "Downloading PocketBase v$POCKETBASE_VERSION..."
-  wget -q "https://github.com/pocketbase/pocketbase/releases/download/v${POCKETBASE_VERSION}/pocketbase_${POCKETBASE_VERSION}_linux_amd64.zip" -O /tmp/pocketbase.zip
+  curl -L "https://github.com/pocketbase/pocketbase/releases/download/v${POCKETBASE_VERSION}/pocketbase_${POCKETBASE_VERSION}_linux_amd64.zip" -o /tmp/pocketbase.zip
   unzip -q /tmp/pocketbase.zip -d "$POCKETBASE_DIR"
   chmod +x "$POCKETBASE_DIR/pocketbase"
   rm /tmp/pocketbase.zip
