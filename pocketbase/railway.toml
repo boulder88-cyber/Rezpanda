@@ -2,7 +2,6 @@
 builder = "nixpacks"
 
 [deploy]
-startCommand = "bash pocketbase/start.sh"
+startCommand = "chmod +x ./pocketbase/pocketbase && ./pocketbase/pocketbase serve --http=0.0.0.0:$PORT"
 restartPolicyType = "on_failure"
 restartPolicyMaxRetries = 10
-
