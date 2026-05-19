@@ -2,5 +2,5 @@
 set -e
 
 echo "Starting PocketBase..."
-chmod +x ./pocketbase/pocketbase
-./pocketbase/pocketbase serve --http=0.0.0.0:${PORT:-8090}
+chmod +x ./pocketbase
+./pocketbase serve --http=0.0.0.0:${PORT:-8090}
