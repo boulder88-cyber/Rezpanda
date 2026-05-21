@@ -5,50 +5,259 @@ import { useHome } from '@/contexts/HomeContext.jsx';
 import { useAuth } from '@/contexts/AuthContext.jsx';
 import { useToast } from '@/hooks/use-toast.js';
 import { Button } from '@/components/ui/button.jsx';
+import { Input } from '@/components/ui/input.jsx';
 import { Skeleton } from '@/components/ui/skeleton.jsx';
-import DocumentTypeCard from '@/components/DocumentTypeCard.jsx';
+import { Badge } from '@/components/ui/badge.jsx';
 import DocumentUploadForm from '@/components/DocumentUploadForm.jsx';
 import DocumentTypeList from '@/components/DocumentTypeList.jsx';
-import { 
-  ShieldCheck, 
-  FileSignature, 
-  Receipt, 
-  ScrollText, 
-  Landmark, 
-  Ruler, 
-  FileText, 
-  Shield, 
-  FileMinus,
-  ArrowLeft,
-  FolderOpen
+import {
+  ShieldCheck, FileSignature, Receipt, ScrollText,
+  Landmark, Ruler, FileText, Shield, FileMinus,
+  ArrowLeft, FolderOpen, Search, AlertCircle,
+  Clock, CheckCircle2, Upload, Filter, Grid,
+  List, X, ChevronRight, Lock
 } from 'lucide-react';
 
+// ─── Document Categories ──────────────────────────────────────────────
 const DOCUMENT_TYPES = [
-  { type: 'Warranties', icon: <ShieldCheck className="w-6 h-6" />, description: 'Appliance and system warranties' },
-  { type: 'Closing Documents', icon: <FileSignature className="w-6 h-6" />, description: 'Final settlement and closing papers' },
-  { type: 'Purchase Receipts', icon: <Receipt className="w-6 h-6" />, description: 'Receipts for major purchases and repairs' },
-  { type: 'Deeds', icon: <ScrollText className="w-6 h-6" />, description: 'Property ownership deeds' },
-  { type: 'Mortgages', icon: <Landmark className="w-6 h-6" />, description: 'Loan and mortgage agreements' },
-  { type: 'Architectural Designs', icon: <Ruler className="w-6 h-6" />, description: 'Floor plans and blueprints' },
-  { type: 'Tenant Contracts', icon: <FileText className="w-6 h-6" />, description: 'Lease agreements and addendums' },
-  { type: 'Insurance Policies', icon: <Shield className="w-6 h-6" />, description: 'Homeowners and liability insurance' },
-  { type: 'Lien Waivers', icon: <FileMinus className="w-6 h-6" />, description: 'Contractor lien waivers' }
+  {
+    type: 'Warranties',
+    icon: ShieldCheck,
+    description: 'Appliance and system warranties',
+    color: 'bg-blue-50 border-blue-100 text-blue-600',
+    iconBg: 'bg-blue-100',
+    hasExpiry: true,
+    tip: 'Track expiry dates to know when warranties run out'
+  },
+  {
+    type: 'Insurance Policies',
+    icon: Shield,
+    description: 'Homeowners and liability insurance',
+    color: 'bg-green-50 border-green-100 text-green-600',
+    iconBg: 'bg-green-100',
+    hasExpiry: true,
+    tip: 'Get reminded before policies expire'
+  },
+  {
+    type: 'Closing Documents',
+    icon: FileSignature,
+    description: 'Final settlement and closing papers',
+    color: 'bg-purple-50 border-purple-100 text-purple-600',
+    iconBg: 'bg-purple-100',
+    hasExpiry: false,
+    tip: 'Keep your closing docs safe and accessible'
+  },
+  {
+    type: 'Deeds',
+    icon: ScrollText,
+    description: 'Property ownership deeds',
+    color: 'bg-amber-50 border-amber-100 text-amber-600',
+    iconBg: 'bg-amber-100',
+    hasExpiry: false,
+    tip: 'Your most important ownership documents'
+  },
+  {
+    type: 'Mortgages',
+    icon: Landmark,
+    description: 'Loan and mortgage agreements',
+    color: 'bg-indigo-50 border-indigo-100 text-indigo-600',
+    iconBg: 'bg-indigo-100',
+    hasExpiry: false,
+    tip: 'All loan documents in one place'
+  },
+  {
+    type: 'Purchase Receipts',
+    icon: Receipt,
+    description: 'Receipts for major purchases and repairs',
+    color: 'bg-orange-50 border-orange-100 text-orange-600',
+    iconBg: 'bg-orange-100',
+    hasExpiry: false,
+    tip: 'Keep receipts for tax deductions and warranties'
+  },
+  {
+    type: 'Tenant Contracts',
+    icon: FileText,
+    description: 'Lease agreements and addendums',
+    color: 'bg-teal-50 border-teal-100 text-teal-600',
+    iconBg: 'bg-teal-100',
+    hasExpiry: true,
+    tip: 'Track lease start and end dates'
+  },
+  {
+    type: 'Architectural Designs',
+    icon: Ruler,
+    description: 'Floor plans and blueprints',
+    color: 'bg-pink-50 border-pink-100 text-pink-600',
+    iconBg: 'bg-pink-100',
+    hasExpiry: false,
+    tip: 'Store plans for renovations and permits'
+  },
+  {
+    type: 'Lien Waivers',
+    icon: FileMinus,
+    description: 'Contractor lien waivers',
+    color: 'bg-slate-50 border-slate-200 text-slate-600',
+    iconBg: 'bg-slate-100',
+    hasExpiry: false,
+    tip: 'Protect yourself from contractor liens'
+  },
 ];
 
+// ─── Category Card ────────────────────────────────────────────────────
+const CategoryCard = ({ docType, count, expiringCount, onClick }) => {
+  const Icon = docType.icon;
+
+  return (
+    <button
+      onClick={() => onClick(docType.type)}
+      className="bg-white rounded-2xl border border-slate-200 p-6 text-left hover:shadow-md hover:-translate-y-0.5 transition-all group w-full"
+    >
+      <div className="flex items-start justify-between mb-4">
+        <div className={`w-12 h-12 ${docType.iconBg} rounded-xl flex items-center justify-center group-hover:scale-110 transition-transform`}>
+          <Icon className={`w-6 h-6 ${docType.color.split(' ')[2]}`} />
+        </div>
+        <div className="flex items-center gap-2">
+          {expiringCount > 0 && (
+            <span className="flex items-center gap-1 bg-red-50 text-red-500 text-xs font-bold px-2 py-1 rounded-full border border-red-100">
+              <AlertCircle className="w-3 h-3" />
+              {expiringCount} expiring
+            </span>
+          )}
+          {count > 0 && (
+            <span className="bg-slate-100 text-slate-600 text-xs font-bold px-2.5 py-1 rounded-full">
+              {count}
+            </span>
+          )}
+        </div>
+      </div>
+
+      <h3 className="font-bold text-slate-900 text-base mb-1">{docType.type}</h3>
+      <p className="text-slate-400 text-sm leading-relaxed mb-3">{docType.description}</p>
+
+      <div className="flex items-center justify-between">
+        <p className="text-xs text-slate-300 italic">{docType.tip}</p>
+        <ChevronRight className="w-4 h-4 text-slate-300 group-hover:text-slate-500 group-hover:translate-x-0.5 transition-all flex-shrink-0" />
+      </div>
+
+      {count === 0 && (
+        <div className="mt-3 pt-3 border-t border-dashed border-slate-100 flex items-center gap-1.5 text-xs text-slate-400">
+          <Upload className="w-3.5 h-3.5" />
+          Click to add your first document
+        </div>
+      )}
+    </button>
+  );
+};
+
+// ─── Expiry Alert Banner ──────────────────────────────────────────────
+const ExpiryAlerts = ({ documents }) => {
+  const today = new Date();
+  const in60Days = new Date(today.getTime() + 60 * 24 * 60 * 60 * 1000);
+
+  const expiring = documents.filter(d => {
+    if (!d.expiryDate) return false;
+    const exp = new Date(d.expiryDate);
+    return exp <= in60Days && exp >= today;
+  });
+
+  const expired = documents.filter(d => {
+    if (!d.expiryDate) return false;
+    return new Date(d.expiryDate) < today;
+  });
+
+  if (expiring.length === 0 && expired.length === 0) return null;
+
+  return (
+    <div className="mb-8 space-y-3">
+      {expired.length > 0 && (
+        <div className="bg-red-50 border border-red-100 rounded-2xl p-4 flex items-start gap-3">
+          <AlertCircle className="w-5 h-5 text-red-500 flex-shrink-0 mt-0.5" />
+          <div>
+            <p className="font-bold text-red-700 text-sm">
+              {expired.length} document{expired.length > 1 ? 's' : ''} expired
+            </p>
+            <p className="text-red-500 text-xs mt-0.5">
+              {expired.map(d => d.documentName || d.documentType).join(', ')}
+            </p>
+          </div>
+        </div>
+      )}
+      {expiring.length > 0 && (
+        <div className="bg-amber-50 border border-amber-100 rounded-2xl p-4 flex items-start gap-3">
+          <Clock className="w-5 h-5 text-amber-500 flex-shrink-0 mt-0.5" />
+          <div>
+            <p className="font-bold text-amber-700 text-sm">
+              {expiring.length} document{expiring.length > 1 ? 's' : ''} expiring soon
+            </p>
+            <p className="text-amber-500 text-xs mt-0.5">
+              {expiring.map(d => d.documentName || d.documentType).join(', ')}
+            </p>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+};
+
+// ─── Vault Stats ──────────────────────────────────────────────────────
+const VaultStats = ({ documents, categories }) => {
+  const totalDocs = documents.length;
+  const withExpiry = documents.filter(d => d.expiryDate).length;
+  const categoriesUsed = new Set(documents.map(d => d.documentType)).size;
+
+  return (
+    <div className="grid grid-cols-3 gap-4 mb-8">
+      {[
+        { label: 'Total Documents', value: totalDocs, icon: <FolderOpen className="w-5 h-5 text-blue-600" />, color: 'bg-blue-50 border-blue-100' },
+        { label: 'Categories Used', value: `${categoriesUsed}/${categories.length}`, icon: <Grid className="w-5 h-5 text-purple-600" />, color: 'bg-purple-50 border-purple-100' },
+        { label: 'With Expiry Dates', value: withExpiry, icon: <Clock className="w-5 h-5 text-amber-600" />, color: 'bg-amber-50 border-amber-100' },
+      ].map((stat, i) => (
+        <div key={i} className={`${stat.color} border rounded-2xl p-4 flex flex-col items-center text-center`}>
+          <div className="mb-2">{stat.icon}</div>
+          <p className="text-2xl font-extrabold text-slate-900">{stat.value}</p>
+          <p className="text-xs text-slate-500 font-medium mt-0.5">{stat.label}</p>
+        </div>
+      ))}
+    </div>
+  );
+};
+
+// ─── Main Page ────────────────────────────────────────────────────────
 const DocumentsPage = () => {
   const { selectedHome } = useHome();
   const { currentUser } = useAuth();
   const { toast } = useToast();
-  
+
   const [selectedDocumentType, setSelectedDocumentType] = useState(null);
   const [documents, setDocuments] = useState([]);
+  const [allDocuments, setAllDocuments] = useState([]);
   const [loading, setLoading] = useState(false);
+  const [searchQuery, setSearchQuery] = useState('');
+
+  useEffect(() => {
+    if (selectedHome && currentUser) {
+      fetchAllDocuments();
+    }
+  }, [selectedHome, currentUser]);
 
   useEffect(() => {
     if (selectedDocumentType && selectedHome && currentUser) {
       fetchDocuments();
     }
   }, [selectedDocumentType, selectedHome, currentUser]);
+
+  const fetchAllDocuments = async () => {
+    try {
+      const records = await pb.collection('property_documents').getFullList({
+        filter: `ownerId="${currentUser.id}" && propertyId="${selectedHome.id}"`,
+        sort: '-uploadDate',
+        $autoCancel: false
+      });
+      setAllDocuments(records);
+    } catch (error) {
+      console.error('Failed to fetch all documents:', error);
+    }
+  };
 
   const fetchDocuments = async () => {
     setLoading(true);
@@ -60,7 +269,6 @@ const DocumentsPage = () => {
       });
       setDocuments(records.items);
     } catch (error) {
-      console.error("Failed to fetch documents:", error);
       toast({ title: 'Error', description: 'Failed to load documents.', variant: 'destructive' });
     } finally {
       setLoading(false);
@@ -70,18 +278,36 @@ const DocumentsPage = () => {
   const handleDeleteDocument = async (id) => {
     try {
       await pb.collection('property_documents').delete(id, { $autoCancel: false });
-      toast({ title: 'Success', description: 'Document deleted successfully.' });
-      fetchDocuments(); // Refresh list
+      toast({ title: '✅ Document deleted' });
+      fetchDocuments();
+      fetchAllDocuments();
     } catch (error) {
-      console.error("Failed to delete document:", error);
       toast({ title: 'Error', description: 'Failed to delete document.', variant: 'destructive' });
     }
   };
 
+  const getCountForType = (type) => allDocuments.filter(d => d.documentType === type).length;
+  const getExpiringForType = (type) => {
+    const today = new Date();
+    const in60Days = new Date(today.getTime() + 60 * 24 * 60 * 60 * 1000);
+    return allDocuments.filter(d =>
+      d.documentType === type &&
+      d.expiryDate &&
+      new Date(d.expiryDate) <= in60Days
+    ).length;
+  };
+
+  const filteredCategories = DOCUMENT_TYPES.filter(dt =>
+    dt.type.toLowerCase().includes(searchQuery.toLowerCase())
+  );
+
   if (!selectedHome) {
     return (
-      <div className="p-8 text-center text-slate-500">
-        Please select a property to view documents.
+      <div className="p-8 text-center">
+        <div className="w-16 h-16 bg-slate-100 rounded-2xl flex items-center justify-center mx-auto mb-4">
+          <FolderOpen className="w-8 h-8 text-slate-400" />
+        </div>
+        <p className="text-slate-500 font-medium">Please select a property to view documents.</p>
       </div>
     );
   }
@@ -89,71 +315,105 @@ const DocumentsPage = () => {
   return (
     <>
       <Helmet>
-        <title>Documents - CasaCEO</title>
+        <title>Document Vault — CasaCEO</title>
       </Helmet>
 
-      <div className="max-w-6xl mx-auto space-y-8">
-        
+      <div className="max-w-6xl mx-auto space-y-0">
+
         {/* Header */}
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-white p-6 rounded-2xl border border-slate-200 shadow-sm">
-          <div className="flex items-center gap-4">
-            <div className="w-12 h-12 bg-primary/10 rounded-xl flex items-center justify-center shrink-0">
-              <FolderOpen className="w-6 h-6 text-primary" />
+        <div className="bg-white border-b border-slate-200 -mx-4 sm:-mx-6 lg:-mx-8 px-4 sm:px-6 lg:px-8 py-8 mb-8">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+            <div className="flex items-center gap-4">
+              {selectedDocumentType && (
+                <button
+                  onClick={() => setSelectedDocumentType(null)}
+                  className="w-10 h-10 bg-slate-100 rounded-xl flex items-center justify-center text-slate-500 hover:bg-slate-200 transition-colors flex-shrink-0"
+                >
+                  <ArrowLeft className="w-5 h-5" />
+                </button>
+              )}
+              <div className="w-12 h-12 bg-blue-50 rounded-xl flex items-center justify-center flex-shrink-0">
+                <Lock className="w-6 h-6 text-blue-600" />
+              </div>
+              <div>
+                <h1 className="text-2xl font-extrabold text-slate-900">
+                  {selectedDocumentType ? selectedDocumentType : 'Document Vault'}
+                </h1>
+                <p className="text-slate-400 text-sm mt-0.5">
+                  {selectedDocumentType
+                    ? `${selectedHome.name} · ${getCountForType(selectedDocumentType)} documents`
+                    : `${selectedHome.name} · ${allDocuments.length} documents stored`
+                  }
+                </p>
+              </div>
             </div>
-            <div>
-              <h1 className="text-2xl font-bold text-slate-900">Document Vault</h1>
-              <p className="text-slate-500 text-sm mt-1">
-                {selectedDocumentType 
-                  ? `Managing ${selectedDocumentType}` 
-                  : 'Select a category to view or upload documents'}
-              </p>
-            </div>
+
+            {!selectedDocumentType && (
+              <div className="relative w-full sm:w-72">
+                <Search className="absolute left-3 top-3 w-4 h-4 text-slate-400" />
+                <Input
+                  placeholder="Search categories..."
+                  value={searchQuery}
+                  onChange={e => setSearchQuery(e.target.value)}
+                  className="pl-9 h-11 rounded-xl border-slate-200"
+                />
+                {searchQuery && (
+                  <button
+                    onClick={() => setSearchQuery('')}
+                    className="absolute right-3 top-3 text-slate-400 hover:text-slate-600"
+                  >
+                    <X className="w-4 h-4" />
+                  </button>
+                )}
+              </div>
+            )}
           </div>
-          
-          {selectedDocumentType && (
-            <Button 
-              variant="outline" 
-              onClick={() => setSelectedDocumentType(null)}
-              className="shrink-0"
-            >
-              <ArrowLeft className="w-4 h-4 mr-2" /> Back to Categories
-            </Button>
-          )}
         </div>
 
-        {/* Main Content Area */}
         {!selectedDocumentType ? (
-          /* View 1: Category Selection */
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-            {DOCUMENT_TYPES.map((docType) => (
-              <DocumentTypeCard
-                key={docType.type}
-                type={docType.type}
-                icon={docType.icon}
-                description={docType.description}
-                isSelected={selectedDocumentType === docType.type}
-                onClick={setSelectedDocumentType}
-              />
-            ))}
-          </div>
+          <>
+            {/* Expiry Alerts */}
+            <ExpiryAlerts documents={allDocuments} />
+
+            {/* Stats */}
+            <VaultStats documents={allDocuments} categories={DOCUMENT_TYPES} />
+
+            {/* Category Grid */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
+              {filteredCategories.map((docType) => (
+                <CategoryCard
+                  key={docType.type}
+                  docType={docType}
+                  count={getCountForType(docType.type)}
+                  expiringCount={getExpiringForType(docType.type)}
+                  onClick={setSelectedDocumentType}
+                />
+              ))}
+            </div>
+
+            {filteredCategories.length === 0 && (
+              <div className="text-center py-16">
+                <p className="text-slate-400 font-medium">No categories match "{searchQuery}"</p>
+              </div>
+            )}
+          </>
         ) : (
-          /* View 2: Upload & List for Selected Category */
-          <div className="animate-in fade-in slide-in-from-bottom-4 duration-500">
-            <DocumentUploadForm 
+          <div className="space-y-6">
+            <DocumentUploadForm
               documentType={selectedDocumentType}
               propertyId={selectedHome.id}
-              onUploadSuccess={fetchDocuments}
+              onUploadSuccess={() => {
+                fetchDocuments();
+                fetchAllDocuments();
+              }}
             />
-            
+
             {loading ? (
-              <div className="space-y-4">
-                <Skeleton className="h-8 w-48" />
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                  {[1, 2, 3].map(i => <Skeleton key={i} className="h-32 w-full rounded-xl" />)}
-                </div>
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                {[1, 2, 3].map(i => <Skeleton key={i} className="h-32 w-full rounded-xl" />)}
               </div>
             ) : (
-              <DocumentTypeList 
+              <DocumentTypeList
                 documentType={selectedDocumentType}
                 documents={documents}
                 onDelete={handleDeleteDocument}
@@ -161,7 +421,6 @@ const DocumentsPage = () => {
             )}
           </div>
         )}
-
       </div>
     </>
   );
