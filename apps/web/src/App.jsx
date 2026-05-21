@@ -47,7 +47,7 @@ const AppContent = () => {
 
           {/* Gate — blocks all other routes on published domain */}
           <Route path="*" element={
-            isPasswordProtected && !isAuthenticated ? (
+            !isAuthenticated ? (
               <UnderConstructionPage />
             ) : (
               <Routes>
