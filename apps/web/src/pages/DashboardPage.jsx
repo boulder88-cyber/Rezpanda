@@ -1,170 +1,483 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Helmet } from 'react-helmet';
-import { Menu } from 'lucide-react';
+import { Link } from 'react-router-dom';
+import { useHome } from '@/contexts/HomeContext.jsx';
+import { useAuth } from '@/contexts/AuthContext.jsx';
+import pb from '@/lib/horizonsBackend.js';
 import { Button } from '@/components/ui/button.jsx';
-
-import DashboardSidebar from '@/components/DashboardSidebar.jsx';
-import PropertySelector from '@/components/PropertySelector.jsx';
-import DashboardOverview from '@/components/DashboardOverview.jsx';
-import OfferingCard from '@/components/OfferingCard.jsx';
-
-// Icons for offerings
-import { 
-  Building2, Wrench, FileText, CreditCard, 
-  TreePine, Home, ShieldCheck, Eye, 
-  Users, Search, FolderOpen
+import {
+  Building2, Wrench, FileText, CreditCard, TreePine,
+  Home, ShieldCheck, FolderOpen, Users, LineChart,
+  ChevronDown, Plus, MapPin, Check, Bell, AlertCircle,
+  Clock, DollarSign, TrendingUp, Key, Loader2, X,
+  ArrowRight, CheckCircle2, Sparkles
 } from 'lucide-react';
 
-const offeringsData = [
+// ─── Property Switcher ────────────────────────────────────────────────
+const PropertySwitcher = () => {
+  const { homes, selectedHome, switchHome, addHome, loading } = useHome();
+  const { currentUser } = useAuth();
+  const [isOpen, setIsOpen] = useState(false);
+  const [showAddForm, setShowAddForm] = useState(false);
+  const [newHomeName, setNewHomeName] = useState('');
+  const [newHomeAddress, setNewHomeAddress] = useState('');
+  const [adding, setAdding] = useState(false);
+
+  const handleAddHome = async () => {
+    if (!newHomeName.trim()) return;
+    setAdding(true);
+    try {
+      await addHome({ name: newHomeName, address: newHomeAddress });
+      setNewHomeName('');
+      setNewHomeAddress('');
+      setShowAddForm(false);
+      setIsOpen(false);
+    } catch (e) {
+      console.error(e);
+    } finally {
+      setAdding(false);
+    }
+  };
+
+  return (
+    <div className="relative">
+      <button
+        onClick={() => setIsOpen(!isOpen)}
+        className="flex items-center gap-3 bg-white border border-slate-200 rounded-2xl px-5 py-3 shadow-sm hover:shadow-md transition-all group"
+      >
+        <div className="w-9 h-9 bg-navy-50 rounded-xl flex items-center justify-center flex-shrink-0" style={{background:'#eef2f8'}}>
+          <Home className="w-5 h-5" style={{color:'#1e3a5f'}} />
+        </div>
+        <div className="text-left">
+          <p className="text-xs text-slate-400 font-medium uppercase tracking-wide">Active Property</p>
+          <p className="font-bold text-slate-900 text-base leading-tight">
+            {loading ? 'Loading...' : selectedHome?.name || 'Select Property'}
+          </p>
+          {selectedHome?.address && (
+            <p className="text-xs text-slate-400 truncate max-w-40">{selectedHome.address}</p>
+          )}
+        </div>
+        <ChevronDown className={`w-4 h-4 text-slate-400 transition-transform ${isOpen ? 'rotate-180' : ''}`} />
+      </button>
+
+      {isOpen && (
+        <div className="absolute top-full left-0 mt-2 w-80 bg-white rounded-2xl border border-slate-200 shadow-xl z-50 overflow-hidden">
+          <div className="p-3">
+            <p className="text-xs text-slate-400 uppercase tracking-wide font-medium px-2 py-1">Your Properties</p>
+            {homes.length === 0 && !loading && (
+              <p className="text-sm text-slate-400 text-center py-4">No properties yet</p>
+            )}
+            {homes.map(home => (
+              <button
+                key={home.id}
+                onClick={() => { switchHome(home); setIsOpen(false); }}
+                className={`w-full flex items-center gap-3 px-3 py-3 rounded-xl hover:bg-slate-50 transition-colors ${selectedHome?.id === home.id ? 'bg-slate-50' : ''}`}
+              >
+                <div className="w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0" style={{background:'#eef2f8'}}>
+                  <MapPin className="w-4 h-4" style={{color:'#1e3a5f'}} />
+                </div>
+                <div className="text-left flex-1 min-w-0">
+                  <p className="font-semibold text-slate-900 text-sm truncate">{home.name}</p>
+                  {home.address && <p className="text-xs text-slate-400 truncate">{home.address}</p>}
+                </div>
+                {selectedHome?.id === home.id && <Check className="w-4 h-4 text-green-500 flex-shrink-0" />}
+              </button>
+            ))}
+
+            <div className="border-t border-slate-100 mt-2 pt-2">
+              {!showAddForm ? (
+                <button
+                  onClick={() => setShowAddForm(true)}
+                  className="w-full flex items-center gap-2 px-3 py-2.5 rounded-xl hover:bg-slate-50 text-sm font-medium text-slate-500 hover:text-slate-700 transition-colors"
+                >
+                  <Plus className="w-4 h-4" /> Add New Property
+                </button>
+              ) : (
+                <div className="p-2 space-y-2">
+                  <input
+                    autoFocus
+                    placeholder="Property name (e.g. Lake House)"
+                    value={newHomeName}
+                    onChange={e => setNewHomeName(e.target.value)}
+                    className="w-full h-9 px-3 rounded-xl border border-slate-200 text-sm focus:outline-none focus:ring-2 focus:ring-slate-900"
+                  />
+                  <input
+                    placeholder="Address (optional)"
+                    value={newHomeAddress}
+                    onChange={e => setNewHomeAddress(e.target.value)}
+                    className="w-full h-9 px-3 rounded-xl border border-slate-200 text-sm focus:outline-none focus:ring-2 focus:ring-slate-900"
+                  />
+                  <div className="flex gap-2">
+                    <button
+                      onClick={() => setShowAddForm(false)}
+                      className="flex-1 h-9 rounded-xl border border-slate-200 text-sm text-slate-500 hover:bg-slate-50"
+                    >
+                      Cancel
+                    </button>
+                    <button
+                      onClick={handleAddHome}
+                      disabled={!newHomeName.trim() || adding}
+                      className="flex-1 h-9 rounded-xl text-sm font-semibold text-white disabled:opacity-50"
+                      style={{background:'#1e3a5f'}}
+                    >
+                      {adding ? 'Adding...' : 'Add'}
+                    </button>
+                  </div>
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {isOpen && <div className="fixed inset-0 z-40" onClick={() => setIsOpen(false)} />}
+    </div>
+  );
+};
+
+// ─── Module Tiles ─────────────────────────────────────────────────────
+const MODULES = [
   {
-    title: "Property Management",
-    description: "Centralized hub for all your property details, tenants, and leases.",
-    icon: Building2,
-    link: "/property-management",
-    colorClass: "text-blue-600 bg-blue-100 dark:bg-blue-900/30 dark:text-blue-400"
-  },
-  {
-    title: "Maintenance",
-    description: "Schedule, track, and manage repair requests and routine upkeep.",
+    title: 'Maintenance',
+    description: 'Schedule, track & log service calls',
     icon: Wrench,
-    link: "/maintenance",
-    colorClass: "text-amber-600 bg-amber-100 dark:bg-amber-900/30 dark:text-amber-400"
+    link: '/maintenance-management',
+    color: '#f97316',
+    bg: '#fff7ed',
+    badge: null,
   },
   {
-    title: "Tax Reporting",
-    description: "Automated expense tracking and tax document generation.",
-    icon: FileText,
-    link: "/expenses",
-    colorClass: "text-emerald-600 bg-emerald-100 dark:bg-emerald-900/30 dark:text-emerald-400"
-  },
-  {
-    title: "Bill Pay",
-    description: "Centralized dashboard to manage and pay all service providers.",
+    title: 'Bill Pay',
+    description: 'Track bills, due dates & payments',
     icon: CreditCard,
-    link: "/bill-pay",
-    colorClass: "text-indigo-600 bg-indigo-100 dark:bg-indigo-900/30 dark:text-indigo-400"
+    link: '/bill-pay',
+    color: '#2563eb',
+    bg: '#eff6ff',
+    badge: null,
   },
   {
-    title: "Landscape",
-    description: "Schedule and track landscaping, gardening, and exterior care.",
-    icon: TreePine,
-    link: "/plants",
-    colorClass: "text-green-600 bg-green-100 dark:bg-green-900/30 dark:text-green-400"
-  },
-  {
-    title: "Mortgage",
-    description: "Track mortgage payments, rates, and financing documents.",
-    icon: Home,
-    link: "/documents",
-    colorClass: "text-purple-600 bg-purple-100 dark:bg-purple-900/30 dark:text-purple-400"
-  },
-  {
-    title: "Insurance",
-    description: "Manage policies, claims, and coverage details securely.",
-    icon: ShieldCheck,
-    link: "/documents",
-    colorClass: "text-rose-600 bg-rose-100 dark:bg-rose-900/30 dark:text-rose-400"
-  },
-  {
-    title: "Hawk Monitoring",
-    description: "Integrate security cameras and property monitoring systems.",
-    icon: Eye,
-    link: "/image-gallery",
-    colorClass: "text-cyan-600 bg-cyan-100 dark:bg-cyan-900/30 dark:text-cyan-400"
-  },
-  {
-    title: "Vendor Management",
-    description: "Directory of trusted contractors, plumbers, and electricians.",
-    icon: Users,
-    link: "/bills",
-    colorClass: "text-orange-600 bg-orange-100 dark:bg-orange-900/30 dark:text-orange-400"
-  },
-  {
-    title: "Next Home Finder",
-    description: "Analyze markets and find your next investment property.",
-    icon: Search,
-    link: "/properties",
-    colorClass: "text-pink-600 bg-pink-100 dark:bg-pink-900/30 dark:text-pink-400"
-  },
-  {
-    title: "Document Vault",
-    description: "Secure cloud storage for leases, deeds, and warranties.",
+    title: 'Documents',
+    description: 'Vault for warranties, deeds & more',
     icon: FolderOpen,
-    link: "/documents",
-    colorClass: "text-slate-600 bg-slate-100 dark:bg-slate-800 dark:text-slate-400"
-  }
+    link: '/documents',
+    color: '#7c3aed',
+    bg: '#f5f3ff',
+    badge: null,
+  },
+  {
+    title: 'Expenses',
+    description: 'Track costs by category & property',
+    icon: DollarSign,
+    link: '/expenses',
+    color: '#059669',
+    bg: '#ecfdf5',
+    badge: null,
+  },
+  {
+    title: 'Utilities',
+    description: 'Manage providers & billing cycles',
+    icon: Building2,
+    link: '/utilities',
+    color: '#0891b2',
+    bg: '#ecfeff',
+    badge: null,
+  },
+  {
+    title: 'Home Value',
+    description: 'Track value & market comparison',
+    icon: TrendingUp,
+    link: '/home-valuation',
+    color: '#1e3a5f',
+    bg: '#eef2f8',
+    badge: 'New',
+  },
+  {
+    title: 'Rental Properties',
+    description: 'Tenants, leases & rent tracking',
+    icon: Key,
+    link: '/rental-properties',
+    color: '#db2777',
+    bg: '#fdf2f8',
+    badge: null,
+  },
+  {
+    title: 'Landscaping',
+    description: 'Plants, yard tasks & schedules',
+    icon: TreePine,
+    link: '/plants',
+    color: '#16a34a',
+    bg: '#f0fdf4',
+    badge: null,
+  },
+  {
+    title: 'Insurance',
+    description: 'Policies, coverage & renewals',
+    icon: ShieldCheck,
+    link: '/documents',
+    color: '#dc2626',
+    bg: '#fef2f2',
+    badge: null,
+  },
+  {
+    title: 'Tax Reports',
+    description: 'Export for your accountant',
+    icon: FileText,
+    link: '/expenses',
+    color: '#d97706',
+    bg: '#fffbeb',
+    badge: 'Soon',
+  },
+  {
+    title: 'Vendors',
+    description: 'Trusted contractor directory',
+    icon: Users,
+    link: '/maintenance-management',
+    color: '#0369a1',
+    bg: '#f0f9ff',
+    badge: 'Soon',
+  },
+  {
+    title: 'Reports',
+    description: 'Analytics across all properties',
+    icon: LineChart,
+    link: '/expenses',
+    color: '#7c3aed',
+    bg: '#faf5ff',
+    badge: 'Soon',
+  },
 ];
 
+// ─── Module Tile Component ────────────────────────────────────────────
+const ModuleTile = ({ module }) => {
+  const Icon = module.icon;
+  return (
+    <Link
+      to={module.link}
+      className="bg-white rounded-2xl border border-slate-100 p-5 hover:shadow-md hover:-translate-y-0.5 transition-all group relative overflow-hidden"
+    >
+      {module.badge && (
+        <span className={`absolute top-3 right-3 text-xs font-bold px-2 py-0.5 rounded-full ${
+          module.badge === 'New' ? 'bg-green-100 text-green-600' : 'bg-slate-100 text-slate-500'
+        }`}>
+          {module.badge}
+        </span>
+      )}
+      <div
+        className="w-12 h-12 rounded-xl flex items-center justify-center mb-4 group-hover:scale-110 transition-transform"
+        style={{ background: module.bg }}
+      >
+        <Icon className="w-6 h-6" style={{ color: module.color }} />
+      </div>
+      <h3 className="font-bold text-slate-900 text-base mb-1">{module.title}</h3>
+      <p className="text-slate-400 text-xs leading-relaxed">{module.description}</p>
+      <div className="mt-4 flex items-center gap-1 text-xs font-semibold opacity-0 group-hover:opacity-100 transition-opacity" style={{ color: module.color }}>
+        Open <ArrowRight className="w-3.5 h-3.5" />
+      </div>
+    </Link>
+  );
+};
+
+// ─── Quick Alerts ─────────────────────────────────────────────────────
+const QuickAlerts = ({ selectedHome }) => {
+  const [alerts, setAlerts] = useState([]);
+
+  useEffect(() => {
+    if (!selectedHome) return;
+    const mockAlerts = [
+      { type: 'bill', message: 'Electric bill due in 3 days', link: '/bill-pay', urgent: true },
+      { type: 'maintenance', message: 'HVAC service overdue', link: '/maintenance-management', urgent: true },
+      { type: 'document', message: 'Home insurance renews in 30 days', link: '/documents', urgent: false },
+    ];
+    setAlerts(mockAlerts);
+  }, [selectedHome]);
+
+  if (alerts.length === 0) return null;
+
+  return (
+    <div className="bg-white rounded-2xl border border-slate-100 p-5 shadow-sm">
+      <div className="flex items-center gap-2 mb-4">
+        <Bell className="w-4 h-4 text-slate-400" />
+        <h2 className="font-bold text-slate-900 text-base">Alerts</h2>
+        <span className="bg-red-100 text-red-600 text-xs font-bold px-2 py-0.5 rounded-full">
+          {alerts.filter(a => a.urgent).length}
+        </span>
+      </div>
+      <div className="space-y-2">
+        {alerts.map((alert, i) => (
+          <Link key={i} to={alert.link}>
+            <div className={`flex items-center gap-3 p-3 rounded-xl hover:opacity-80 transition-opacity ${
+              alert.urgent ? 'bg-red-50' : 'bg-amber-50'
+            }`}>
+              <AlertCircle className={`w-4 h-4 flex-shrink-0 ${alert.urgent ? 'text-red-500' : 'text-amber-500'}`} />
+              <p className="text-sm font-medium text-slate-700">{alert.message}</p>
+              <ArrowRight className="w-3.5 h-3.5 text-slate-300 ml-auto flex-shrink-0" />
+            </div>
+          </Link>
+        ))}
+      </div>
+    </div>
+  );
+};
+
+// ─── Welcome Banner ───────────────────────────────────────────────────
+const WelcomeBanner = ({ user, selectedHome }) => {
+  const hour = new Date().getHours();
+  const greeting = hour < 12 ? 'Good morning' : hour < 17 ? 'Good afternoon' : 'Good evening';
+  const firstName = user?.name?.split(' ')[0] || 'there';
+
+  return (
+    <div className="rounded-2xl p-6 text-white relative overflow-hidden" style={{background:'#1e3a5f'}}>
+      <div className="absolute top-0 right-0 w-48 h-48 rounded-full opacity-10" style={{background:'#c9a96e', transform:'translate(30%, -30%)'}}></div>
+      <div className="absolute bottom-0 left-0 w-32 h-32 rounded-full opacity-5" style={{background:'#c9a96e', transform:'translate(-30%, 30%)'}}></div>
+      <div className="relative z-10">
+        <div className="flex items-start justify-between">
+          <div>
+            <p className="text-blue-200 text-sm font-medium mb-1">{greeting}, {firstName} 👋</p>
+            <h1 className="text-2xl font-extrabold text-white mb-1">
+              {selectedHome ? selectedHome.name : 'Welcome to CasaCEO'}
+            </h1>
+            <p className="text-blue-200 text-sm">
+              {selectedHome?.address || 'Select a property to get started'}
+            </p>
+          </div>
+          <div className="text-right">
+            <p className="text-blue-200 text-xs">
+              {new Date().toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' })}
+            </p>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+// ─── Quick Stats ──────────────────────────────────────────────────────
+const QuickStats = () => (
+  <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+    {[
+      { label: 'Bills Due', value: '3', sublabel: 'this week', icon: <CreditCard className="w-4 h-4" />, color: '#2563eb', bg: '#eff6ff' },
+      { label: 'Maintenance', value: '2', sublabel: 'overdue', icon: <Wrench className="w-4 h-4" />, color: '#dc2626', bg: '#fef2f2' },
+      { label: 'Documents', value: '14', sublabel: 'stored', icon: <FolderOpen className="w-4 h-4" />, color: '#7c3aed', bg: '#f5f3ff' },
+      { label: 'This Month', value: '$2,840', sublabel: 'expenses', icon: <DollarSign className="w-4 h-4" />, color: '#059669', bg: '#ecfdf5' },
+    ].map((stat, i) => (
+      <div key={i} className="bg-white rounded-2xl border border-slate-100 p-4 shadow-sm">
+        <div className="flex items-center justify-between mb-3">
+          <div className="w-8 h-8 rounded-lg flex items-center justify-center" style={{ background: stat.bg }}>
+            <span style={{ color: stat.color }}>{stat.icon}</span>
+          </div>
+        </div>
+        <p className="text-2xl font-extrabold text-slate-900">{stat.value}</p>
+        <p className="text-xs text-slate-400 mt-0.5">{stat.label} · {stat.sublabel}</p>
+      </div>
+    ))}
+  </div>
+);
+
+// ─── Main Dashboard ───────────────────────────────────────────────────
 const DashboardPage = () => {
-  const [selectedPropertyId, setSelectedPropertyId] = useState(null);
-  const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+  const { selectedHome, homes, loading } = useHome();
+  const { currentUser } = useAuth();
 
   return (
     <>
       <Helmet>
-        <title>Dashboard - CasaCEO</title>
+        <title>Dashboard — CasaCEO</title>
       </Helmet>
 
-      <div className="flex min-h-screen bg-slate-50 dark:bg-slate-950">
-        
-        <DashboardSidebar 
-          isOpen={isSidebarOpen} 
-          onClose={() => setIsSidebarOpen(false)} 
-        />
+      <div className="min-h-screen bg-slate-50">
 
-        <main className="flex-1 flex flex-col min-w-0 overflow-hidden">
-          {/* Top Header Bar */}
-          <header className="sticky top-0 z-30 bg-white/80 dark:bg-slate-950/80 backdrop-blur-md border-b border-slate-200 dark:border-slate-800 px-4 sm:px-6 lg:px-8 h-20 flex items-center justify-between shrink-0">
-            <div className="flex items-center gap-4">
-              <Button 
-                variant="ghost" 
-                size="icon" 
-                className="lg:hidden text-slate-600"
-                onClick={() => setIsSidebarOpen(true)}
-              >
-                <Menu className="w-6 h-6" />
-              </Button>
-              <h2 className="text-xl font-bold text-slate-900 dark:text-white hidden sm:block">
-                Command Center
-              </h2>
-            </div>
-            
-            <div className="flex-shrink-0">
-              <PropertySelector 
-                selectedPropertyId={selectedPropertyId}
-                onSelectProperty={setSelectedPropertyId}
-              />
-            </div>
-          </header>
-
-          {/* Main Scrollable Content */}
-          <div className="flex-1 overflow-y-auto p-4 sm:p-6 lg:p-8">
-            <div className="max-w-7xl mx-auto">
-              
-              <DashboardOverview selectedPropertyId={selectedPropertyId} />
-
-              <div className="mb-8">
-                <h2 className="text-2xl font-bold text-slate-900 dark:text-white mb-2">Platform Offerings</h2>
-                <p className="text-slate-500 dark:text-slate-400">Select a module to manage specific aspects of your portfolio.</p>
+        {/* ── Top Nav Bar ── */}
+        <header className="sticky top-0 z-30 bg-white border-b border-slate-200 px-4 sm:px-6 lg:px-8 h-18 py-3 flex items-center justify-between shadow-sm">
+          <div className="flex items-center gap-3">
+            {/* Logo */}
+            <div className="flex items-center gap-2">
+              <div className="w-9 h-9 rounded-xl flex items-center justify-center" style={{background:'#1e3a5f'}}>
+                <Home className="w-5 h-5 text-white" />
               </div>
+              <span className="font-extrabold text-lg hidden sm:block" style={{color:'#1e3a5f'}}>
+                Casa<span style={{color:'#c9a96e'}}>CEO</span>
+              </span>
+            </div>
+          </div>
 
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 pb-12">
-                {offeringsData.map((offering, index) => (
-                  <OfferingCard 
-                    key={index}
-                    title={offering.title}
-                    description={offering.description}
-                    icon={offering.icon}
-                    link={offering.link}
-                    colorClass={offering.colorClass}
-                  />
+          {/* Property Switcher — CENTER of header */}
+          <PropertySwitcher />
+
+          {/* User */}
+          <div className="flex items-center gap-3">
+            <div className="w-9 h-9 rounded-xl flex items-center justify-center text-white font-bold text-sm" style={{background:'#1e3a5f'}}>
+              {currentUser?.name?.[0] || 'U'}
+            </div>
+          </div>
+        </header>
+
+        {/* ── Main Content ── */}
+        <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-8">
+
+          {/* Welcome Banner */}
+          <WelcomeBanner user={currentUser} selectedHome={selectedHome} />
+
+          {/* Quick Stats */}
+          <QuickStats />
+
+          {/* Two column layout: modules + alerts */}
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+
+            {/* Module Tiles — takes 2/3 */}
+            <div className="lg:col-span-2">
+              <div className="flex items-center justify-between mb-5">
+                <h2 className="text-lg font-extrabold text-slate-900">Your Modules</h2>
+                <p className="text-xs text-slate-400">{selectedHome?.name || 'Select a property'}</p>
+              </div>
+              <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
+                {MODULES.map((module, i) => (
+                  <ModuleTile key={i} module={module} />
                 ))}
               </div>
+            </div>
 
+            {/* Right column: alerts + quick actions */}
+            <div className="space-y-6">
+              {/* Alerts */}
+              <QuickAlerts selectedHome={selectedHome} />
+
+              {/* Quick Actions */}
+              <div className="bg-white rounded-2xl border border-slate-100 p-5 shadow-sm">
+                <h2 className="font-bold text-slate-900 text-base mb-4 flex items-center gap-2">
+                  <Sparkles className="w-4 h-4 text-amber-500" />
+                  Quick Actions
+                </h2>
+                <div className="space-y-2">
+                  {[
+                    { label: 'Log a bill payment', link: '/bill-pay', icon: <CreditCard className="w-4 h-4" /> },
+                    { label: 'Add maintenance task', link: '/maintenance-management', icon: <Wrench className="w-4 h-4" /> },
+                    { label: 'Upload a document', link: '/documents', icon: <FolderOpen className="w-4 h-4" /> },
+                    { label: 'Check home value', link: '/home-valuation', icon: <TrendingUp className="w-4 h-4" /> },
+                  ].map((action, i) => (
+                    <Link key={i} to={action.link}>
+                      <div className="flex items-center gap-3 p-3 rounded-xl hover:bg-slate-50 transition-colors group">
+                        <div className="w-8 h-8 rounded-lg bg-slate-100 flex items-center justify-center text-slate-500 group-hover:bg-slate-200 flex-shrink-0">
+                          {action.icon}
+                        </div>
+                        <span className="text-sm font-medium text-slate-700">{action.label}</span>
+                        <ArrowRight className="w-3.5 h-3.5 text-slate-300 ml-auto group-hover:text-slate-500 flex-shrink-0" />
+                      </div>
+                    </Link>
+                  ))}
+                </div>
+              </div>
+
+              {/* No property prompt */}
+              {!loading && homes.length === 0 && (
+                <div className="bg-amber-50 border border-amber-100 rounded-2xl p-5 text-center">
+                  <Home className="w-8 h-8 text-amber-500 mx-auto mb-3" />
+                  <p className="font-bold text-amber-800 text-sm mb-1">No properties yet</p>
+                  <p className="text-amber-600 text-xs mb-3">Click the property selector above to add your first home</p>
+                </div>
+              )}
             </div>
           </div>
         </main>
-
       </div>
     </>
   );
