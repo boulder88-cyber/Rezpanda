@@ -4,38 +4,52 @@ const PasswordProtectionContext = createContext();
 
 export const usePasswordAuth = () => useContext(PasswordProtectionContext);
 
+const GATE_PASSWORD = 'casaceo2024';
+const STORAGE_KEY = 'casaceoAuth';
+
 export const PasswordProtectionProvider = ({ children }) => {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
-  const [isPasswordProtected, setIsPasswordProtected] = useState(false);
+  const [isPasswordProtected, setIsPasswordProtected] = useState(true);
   const [isChecking, setIsChecking] = useState(true);
 
   useEffect(() => {
     const hostname = window.location.hostname;
 
-    const isPreview =
+    const isDevEnvironment =
       hostname === 'localhost' ||
       hostname === '127.0.0.1' ||
       hostname.endsWith('.replit.dev') ||
       hostname.endsWith('.replit.app') ||
       hostname.endsWith('.repl.co');
 
-    if (isPreview) {
-      // Dev environments — no gate
+    if (isDevEnvironment) {
       setIsPasswordProtected(false);
       setIsAuthenticated(true);
-    } else {
-      // ALL other environments including casaceo.com and vercel URLs — gate on
-      setIsPasswordProtected(true);
-      const storedAuth = localStorage.getItem('casaceoAuth');
-      setIsAuthenticated(storedAuth === 'true');
+      setIsChecking(false);
+      return;
     }
 
+    // Production — always protected
+    setIsPasswordProtected(true);
+    
+    try {
+      const storedAuth = localStorage.getItem(STORAGE_KEY);
+      setIsAuthenticated(storedAuth === 'true');
+    } catch (e) {
+      // localStorage blocked (private mode) — not authenticated
+      setIsAuthenticated(false);
+    }
+    
     setIsChecking(false);
   }, []);
 
   const submitPassword = (password) => {
-    if (password === 'casaceo2024') {
-      localStorage.setItem('casaceoAuth', 'true');
+    if (password === GATE_PASSWORD) {
+      try {
+        localStorage.setItem(STORAGE_KEY, 'true');
+      } catch (e) {
+        // localStorage blocked — session only
+      }
       setIsAuthenticated(true);
       return { success: true };
     }
@@ -43,11 +57,28 @@ export const PasswordProtectionProvider = ({ children }) => {
   };
 
   const logout = () => {
-    localStorage.removeItem('casaceoAuth');
+    try {
+      localStorage.removeItem(STORAGE_KEY);
+    } catch (e) {}
     setIsAuthenticated(false);
   };
 
-  if (isChecking) return null;
+  // Show nothing while checking to prevent flash
+  if (isChecking) {
+    return (
+      <div style={{ 
+        minHeight: '100vh', 
+        background: '#1e3a5f', 
+        display: 'flex', 
+        alignItems: 'center', 
+        justifyContent: 'center' 
+      }}>
+        <div style={{ color: '#c9a96e', fontFamily: 'sans-serif', fontSize: '18px' }}>
+          Loading CasaCEO...
+        </div>
+      </div>
+    );
+  }
 
   return (
     <PasswordProtectionContext.Provider
