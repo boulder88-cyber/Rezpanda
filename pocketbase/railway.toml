@@ -1,13 +1,3 @@
 [build]
 builder = "dockerfile"
 dockerfilePath = "pocketbase/Dockerfile"
-Commit changes
-Redeploy on Railway
-The Dockerfile already has the correct CMD to start PocketBase — we don't need railway.toml to override it with a start command anymore!
-
-Tell me what the Deploy Logs show! 🏠
-
-
-
-
-
