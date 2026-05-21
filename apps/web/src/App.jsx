@@ -35,19 +35,21 @@ import PropertyTaxPage from '@/pages/PropertyTaxPage.jsx';
 const AppContent = () => {
   const { isAuthenticated } = usePasswordAuth();
 
-  // If not authenticated with gate password — show ONLY construction page
-  // Password reset routes are exempt so users can still reset passwords
+  // NOT authenticated — show construction page only
+  // AuthProvider wraps it so forgot password works
   if (!isAuthenticated) {
     return (
-      <Routes>
-        <Route path="/password-reset" element={<PasswordResetPage />} />
-        <Route path="/password-confirm" element={<PasswordConfirmPage />} />
-        <Route path="*" element={<UnderConstructionPage />} />
-      </Routes>
+      <AuthProvider>
+        <Routes>
+          <Route path="/password-reset" element={<PasswordResetPage />} />
+          <Route path="/password-confirm" element={<PasswordConfirmPage />} />
+          <Route path="*" element={<UnderConstructionPage />} />
+        </Routes>
+      </AuthProvider>
     );
   }
 
-  // Authenticated — show full app
+  // AUTHENTICATED — full app
   return (
     <AuthProvider>
       <HomeProvider>
