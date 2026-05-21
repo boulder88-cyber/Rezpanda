@@ -12,29 +12,22 @@ export const PasswordProtectionProvider = ({ children }) => {
   useEffect(() => {
     const hostname = window.location.hostname;
 
-    // Published production domains only
-    const isPublishedSite =
-      hostname === 'casaceo.com' ||
-      hostname === 'www.casaceo.com';
-
-    // Preview / dev environments — Replit, localhost, etc.
     const isPreview =
       hostname === 'localhost' ||
       hostname === '127.0.0.1' ||
       hostname.endsWith('.replit.dev') ||
       hostname.endsWith('.replit.app') ||
-      hostname.endsWith('.repl.co') ||
-      hostname.endsWith('.app-preview.com') ||
-      hostname.endsWith('.app-preview.io');
+      hostname.endsWith('.repl.co');
 
-    if (isPublishedSite) {
+    if (isPreview) {
+      // Dev environments — no gate
+      setIsPasswordProtected(false);
+      setIsAuthenticated(true);
+    } else {
+      // ALL other environments including casaceo.com and vercel URLs — gate on
       setIsPasswordProtected(true);
       const storedAuth = localStorage.getItem('casaceoAuth');
       setIsAuthenticated(storedAuth === 'true');
-    } else {
-      // All preview environments — no password gate
-      setIsPasswordProtected(false);
-      setIsAuthenticated(true);
     }
 
     setIsChecking(false);
