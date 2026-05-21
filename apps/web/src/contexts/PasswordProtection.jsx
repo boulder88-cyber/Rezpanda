@@ -33,10 +33,10 @@ export const PasswordProtectionProvider = ({ children }) => {
     setIsPasswordProtected(true);
     
     try {
-      const storedAuth = localStorage.getItem(STORAGE_KEY);
+      const storedAuth = sessionStorage.getItem(STORAGE_KEY);
       setIsAuthenticated(storedAuth === 'true');
     } catch (e) {
-      // localStorage blocked (private mode) — not authenticated
+      // sessionStorage blocked (private mode) — not authenticated
       setIsAuthenticated(false);
     }
     
@@ -46,9 +46,9 @@ export const PasswordProtectionProvider = ({ children }) => {
   const submitPassword = (password) => {
     if (password === GATE_PASSWORD) {
       try {
-        localStorage.setItem(STORAGE_KEY, 'true');
+        sessionStorage.setItem(STORAGE_KEY, 'true');
       } catch (e) {
-        // localStorage blocked — session only
+        // sessionStorage blocked — session only
       }
       setIsAuthenticated(true);
       return { success: true };
@@ -58,7 +58,7 @@ export const PasswordProtectionProvider = ({ children }) => {
 
   const logout = () => {
     try {
-      localStorage.removeItem(STORAGE_KEY);
+      sessionStorage.removeItem(STORAGE_KEY);
     } catch (e) {}
     setIsAuthenticated(false);
   };
