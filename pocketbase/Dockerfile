@@ -9,7 +9,6 @@ RUN curl -L "https://github.com/pocketbase/pocketbase/releases/download/v0.38.0/
     && rm /tmp/pocketbase.zip \
     && chmod +x /pb/pocketbase
 
-COPY pb_data ./pb_data
 COPY pb_hooks ./pb_hooks
 COPY pb_migrations ./pb_migrations
 
