@@ -26,10 +26,16 @@ import BillsPage from '@/pages/BillsPage.jsx';
 import ImageGalleryPage from '@/pages/ImageGalleryPage.jsx';
 import PropertyManagementDashboard from '@/pages/PropertyManagementDashboard.jsx';
 import BillPayPage from '@/pages/BillPayPage.jsx';
+import HomeValuationPage from '@/pages/HomeValuationPage.jsx';
+import RentalTaxGuidePage from '@/pages/RentalTaxGuidePage.jsx';
+import InsuranceAnalyzerPage from '@/pages/InsuranceAnalyzerPage.jsx';
+import HomeLearnPage from '@/pages/HomeLearnPage.jsx';
 
 const AppContent = () => {
   const { isPasswordProtected, isAuthenticated } = usePasswordAuth();
 
+  // Always render password reset routes — even behind the gate
+  // so users can reset their password without being blocked
   return (
     <AuthProvider>
       <HomeProvider>
@@ -63,6 +69,10 @@ const AppContent = () => {
                 <Route path="/documents" element={<ProtectedRoute><Layout><DocumentsPage /></Layout></ProtectedRoute>} />
                 <Route path="/rental-properties" element={<ProtectedRoute><Layout><RentalPropertiesPage /></Layout></ProtectedRoute>} />
                 <Route path="/bills" element={<ProtectedRoute><Layout><BillsPage /></Layout></ProtectedRoute>} />
+                <Route path="/learn" element={<ProtectedRoute><Layout><HomeLearnPage /></Layout></ProtectedRoute>} />
+                <Route path="/insurance" element={<ProtectedRoute><Layout><InsuranceAnalyzerPage /></Layout></ProtectedRoute>} />
+                <Route path="/rental-tax-guide" element={<ProtectedRoute><Layout><RentalTaxGuidePage /></Layout></ProtectedRoute>} />
+                <Route path="/home-valuation" element={<ProtectedRoute><Layout><HomeValuationPage /></Layout></ProtectedRoute>} />
               </Routes>
             )
           } />
