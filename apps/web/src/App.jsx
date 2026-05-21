@@ -28,6 +28,7 @@ import PropertyManagementDashboard from '@/pages/PropertyManagementDashboard.jsx
 import BillPayPage from '@/pages/BillPayPage.jsx';
 import HomeValuationPage from '@/pages/HomeValuationPage.jsx';
 import RentalTaxGuidePage from '@/pages/RentalTaxGuidePage.jsx';
+import PropertyTaxPage from '@/pages/PropertyTaxPage.jsx';
 import InsuranceAnalyzerPage from '@/pages/InsuranceAnalyzerPage.jsx';
 import HomeLearnPage from '@/pages/HomeLearnPage.jsx';
 
@@ -71,6 +72,7 @@ const AppContent = () => {
                 <Route path="/bills" element={<ProtectedRoute><Layout><BillsPage /></Layout></ProtectedRoute>} />
                 <Route path="/learn" element={<ProtectedRoute><Layout><HomeLearnPage /></Layout></ProtectedRoute>} />
                 <Route path="/insurance" element={<ProtectedRoute><Layout><InsuranceAnalyzerPage /></Layout></ProtectedRoute>} />
+                <Route path="/property-tax" element={<ProtectedRoute><Layout><PropertyTaxPage /></Layout></ProtectedRoute>} />
                 <Route path="/rental-tax-guide" element={<ProtectedRoute><Layout><RentalTaxGuidePage /></Layout></ProtectedRoute>} />
                 <Route path="/home-valuation" element={<ProtectedRoute><Layout><HomeValuationPage /></Layout></ProtectedRoute>} />
               </Routes>
