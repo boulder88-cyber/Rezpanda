@@ -6,7 +6,7 @@ import { useAuth } from '@/contexts/AuthContext.jsx';
 import pb from '@/lib/horizonsBackend.js';
 import { Button } from '@/components/ui/button.jsx';
 import {
-  Building2, Wrench, FileText, CreditCard, TreePine,
+  Building2, Wrench, FileText, CreditCard, TreePine, ShieldCheck,
   Home, ShieldCheck, FolderOpen, Users, LineChart,
   ChevronDown, Plus, MapPin, Check, Bell, AlertCircle,
   Clock, DollarSign, TrendingUp, Key, Loader2, X,
@@ -139,7 +139,7 @@ const PropertySwitcher = () => {
 const MODULES = [
   {
     title: 'Maintenance',
-    description: 'Schedule, track & log service calls',
+    description: 'Never miss a maintenance task again',
     icon: Wrench,
     link: '/maintenance-management',
     color: '#f97316',
@@ -148,7 +148,7 @@ const MODULES = [
   },
   {
     title: 'Bill Pay',
-    description: 'Track bills, due dates & payments',
+    description: 'Stay ahead of every due date',
     icon: CreditCard,
     link: '/bill-pay',
     color: '#2563eb',
@@ -157,7 +157,7 @@ const MODULES = [
   },
   {
     title: 'Documents',
-    description: 'Vault for warranties, deeds & more',
+    description: 'Your secure home document vault',
     icon: FolderOpen,
     link: '/documents',
     color: '#7c3aed',
@@ -166,7 +166,7 @@ const MODULES = [
   },
   {
     title: 'Expenses',
-    description: 'Track costs by category & property',
+    description: 'Know exactly where your money goes',
     icon: DollarSign,
     link: '/expenses',
     color: '#059669',
@@ -175,7 +175,7 @@ const MODULES = [
   },
   {
     title: 'Utilities',
-    description: 'Manage providers & billing cycles',
+    description: 'All your utility accounts in one place',
     icon: Building2,
     link: '/utilities',
     color: '#0891b2',
@@ -184,7 +184,7 @@ const MODULES = [
   },
   {
     title: 'Home Value',
-    description: 'Track value & market comparison',
+    description: 'See what your homes are worth today',
     icon: TrendingUp,
     link: '/home-valuation',
     color: '#1e3a5f',
@@ -193,7 +193,7 @@ const MODULES = [
   },
   {
     title: 'Rental Properties',
-    description: 'Tenants, leases & rent tracking',
+    description: 'Manage rentals like a pro',
     icon: Key,
     link: '/rental-properties',
     color: '#db2777',
@@ -202,7 +202,7 @@ const MODULES = [
   },
   {
     title: 'Landscaping',
-    description: 'Plants, yard tasks & schedules',
+    description: 'Keep your yards beautiful effortlessly',
     icon: TreePine,
     link: '/plants',
     color: '#16a34a',
@@ -211,7 +211,7 @@ const MODULES = [
   },
   {
     title: 'Insurance',
-    description: 'Policies, coverage & renewals',
+    description: 'Never let coverage lapse again',
     icon: ShieldCheck,
     link: '/documents',
     color: '#dc2626',
@@ -220,7 +220,7 @@ const MODULES = [
   },
   {
     title: 'Tax Reports',
-    description: 'Export for your accountant',
+    description: 'Tax-ready reports in one click',
     icon: FileText,
     link: '/expenses',
     color: '#d97706',
@@ -229,7 +229,7 @@ const MODULES = [
   },
   {
     title: 'Vendors',
-    description: 'Trusted contractor directory',
+    description: 'Find vetted pros near your properties',
     icon: Users,
     link: '/maintenance-management',
     color: '#0369a1',
@@ -238,7 +238,7 @@ const MODULES = [
   },
   {
     title: 'Reports',
-    description: 'Analytics across all properties',
+    description: 'Data-driven decisions for every home',
     icon: LineChart,
     link: '/expenses',
     color: '#7c3aed',
@@ -355,16 +355,17 @@ const WelcomeBanner = ({ user, selectedHome }) => {
 const QuickStats = () => (
   <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
     {[
-      { label: 'Bills Due', value: '3', sublabel: 'this week', icon: <CreditCard className="w-4 h-4" />, color: '#2563eb', bg: '#eff6ff' },
-      { label: 'Maintenance', value: '2', sublabel: 'overdue', icon: <Wrench className="w-4 h-4" />, color: '#dc2626', bg: '#fef2f2' },
-      { label: 'Documents', value: '14', sublabel: 'stored', icon: <FolderOpen className="w-4 h-4" />, color: '#7c3aed', bg: '#f5f3ff' },
-      { label: 'This Month', value: '$2,840', sublabel: 'expenses', icon: <DollarSign className="w-4 h-4" />, color: '#059669', bg: '#ecfdf5' },
+      { label: 'Bills Due', value: '3', sublabel: 'this week', trend: '↑ 1 more than last week', trendUp: false, icon: <CreditCard className="w-4 h-4" />, color: '#d97706', bg: '#fffbeb', border: '#fde68a' },
+      { label: 'Maintenance', value: '2', sublabel: 'overdue', trend: '↑ action needed', trendUp: false, icon: <Wrench className="w-4 h-4" />, color: '#dc2626', bg: '#fef2f2', border: '#fecaca' },
+      { label: 'Documents', value: '14', sublabel: 'stored', trend: '↑ 2 added this month', trendUp: true, icon: <FolderOpen className="w-4 h-4" />, color: '#7c3aed', bg: '#f5f3ff', border: '#ddd6fe' },
+      { label: 'This Month', value: '$2,840', sublabel: 'expenses', trend: '↓ 12% vs last month', trendUp: true, icon: <DollarSign className="w-4 h-4" />, color: '#059669', bg: '#ecfdf5', border: '#a7f3d0' },
     ].map((stat, i) => (
-      <div key={i} className="bg-white rounded-2xl border border-slate-100 p-4 shadow-sm">
+      <div key={i} className="bg-white rounded-2xl border p-4 shadow-sm" style={{ borderColor: stat.border }}>
         <div className="flex items-center justify-between mb-3">
           <div className="w-8 h-8 rounded-lg flex items-center justify-center" style={{ background: stat.bg }}>
             <span style={{ color: stat.color }}>{stat.icon}</span>
           </div>
+          <span className="text-xs font-medium" style={{ color: stat.trendUp ? '#059669' : '#dc2626' }}>{stat.trend}</span>
         </div>
         <p className="text-2xl font-extrabold text-slate-900">{stat.value}</p>
         <p className="text-xs text-slate-400 mt-0.5">{stat.label} · {stat.sublabel}</p>
@@ -427,7 +428,7 @@ const DashboardPage = () => {
             <div className="lg:col-span-2">
               <div className="flex items-center justify-between mb-5">
                 <h2 className="text-lg font-extrabold text-slate-900">Your Modules</h2>
-                <p className="text-xs text-slate-400">{selectedHome?.name || 'Select a property'}</p>
+                <p className="text-xs text-slate-400">{selectedHome?.name || 'Add a property to get started'}</p>
               </div>
               <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
                 {MODULES.map((module, i) => (
@@ -472,7 +473,14 @@ const DashboardPage = () => {
                 <div className="bg-amber-50 border border-amber-100 rounded-2xl p-5 text-center">
                   <Home className="w-8 h-8 text-amber-500 mx-auto mb-3" />
                   <p className="font-bold text-amber-800 text-sm mb-1">No properties yet</p>
-                  <p className="text-amber-600 text-xs mb-3">Click the property selector above to add your first home</p>
+                  <p className="text-amber-600 text-xs mb-3">Add your first property to unlock your full dashboard.</p>
+                <button
+                  onClick={() => {}}
+                  className="text-xs font-bold px-4 py-2 rounded-xl text-white"
+                  style={{ background: '#1e3a5f' }}
+                >
+                  Add Your First Property →
+                </button>
                 </div>
               )}
             </div>
