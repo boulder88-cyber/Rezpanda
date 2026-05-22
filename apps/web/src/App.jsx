@@ -2,10 +2,12 @@ import React from 'react';
 import { Route, Routes, BrowserRouter as Router } from 'react-router-dom';
 import { AuthProvider } from '@/contexts/AuthContext.jsx';
 import { HomeProvider } from '@/contexts/HomeContext.jsx';
-import { PasswordProtectionProvider } from '@/contexts/PasswordProtection.jsx';
+import { PasswordProtectionProvider, usePasswordAuth } from '@/contexts/PasswordProtection.jsx';
+import ProtectedRoute from '@/components/ProtectedRoute.jsx';
 import Layout from '@/components/Layout.jsx';
 import { Toaster } from '@/components/ui/toaster.jsx';
 
+import UnderConstructionPage from '@/pages/UnderConstructionPage.jsx';
 import LandingPage from '@/pages/LandingPage.jsx';
 import HomePage from '@/pages/HomePage.jsx';
 import LoginPage from '@/pages/LoginPage.jsx';
@@ -31,41 +33,64 @@ import HomeLearnPage from '@/pages/HomeLearnPage.jsx';
 import PropertyTaxPage from '@/pages/PropertyTaxPage.jsx';
 import WarrantyTrackerPage from '@/pages/WarrantyTrackerPage.jsx';
 
+const AppContent = () => {
+  const { isAuthenticated } = usePasswordAuth();
+
+  // NOT authenticated — show construction page only
+  // AuthProvider wraps it so forgot password works
+  if (!isAuthenticated) {
+    return (
+      <AuthProvider>
+        <Routes>
+          <Route path="/password-reset" element={<PasswordResetPage />} />
+          <Route path="/password-confirm" element={<PasswordConfirmPage />} />
+          <Route path="*" element={<UnderConstructionPage />} />
+        </Routes>
+      </AuthProvider>
+    );
+  }
+
+  // AUTHENTICATED — full app
+  return (
+    <AuthProvider>
+      <HomeProvider>
+        <Routes>
+          <Route path="/password-reset" element={<PasswordResetPage />} />
+          <Route path="/password-confirm" element={<PasswordConfirmPage />} />
+          <Route path="/" element={<LandingPage />} />
+          <Route path="/login" element={<LoginPage />} />
+          <Route path="/signup" element={<SignupPage />} />
+          <Route path="/gallery" element={<ImageGalleryPage />} />
+          <Route path="/dashboard" element={<ProtectedRoute><DashboardPage /></ProtectedRoute>} />
+          <Route path="/properties" element={<ProtectedRoute><Layout><HomePage /></Layout></ProtectedRoute>} />
+          <Route path="/property-management" element={<ProtectedRoute><Layout><PropertyManagementDashboard /></Layout></ProtectedRoute>} />
+          <Route path="/bill-pay" element={<ProtectedRoute><Layout><BillPayPage /></Layout></ProtectedRoute>} />
+          <Route path="/maintenance-management" element={<ProtectedRoute><Layout><MaintenanceManagementPage /></Layout></ProtectedRoute>} />
+          <Route path="/expenses" element={<ProtectedRoute><Layout><ExpensesPage /></Layout></ProtectedRoute>} />
+          <Route path="/maintenance" element={<ProtectedRoute><Layout><MaintenanceSystemsPage /></Layout></ProtectedRoute>} />
+          <Route path="/plants" element={<ProtectedRoute><Layout><PlantsPage /></Layout></ProtectedRoute>} />
+          <Route path="/utilities" element={<ProtectedRoute><Layout><UtilitiesPage /></Layout></ProtectedRoute>} />
+          <Route path="/documents" element={<ProtectedRoute><Layout><DocumentsPage /></Layout></ProtectedRoute>} />
+          <Route path="/rental-properties" element={<ProtectedRoute><Layout><RentalPropertiesPage /></Layout></ProtectedRoute>} />
+          <Route path="/bills" element={<ProtectedRoute><Layout><BillsPage /></Layout></ProtectedRoute>} />
+          <Route path="/home-valuation" element={<ProtectedRoute><Layout><HomeValuationPage /></Layout></ProtectedRoute>} />
+          <Route path="/rental-tax-guide" element={<ProtectedRoute><Layout><RentalTaxGuidePage /></Layout></ProtectedRoute>} />
+          <Route path="/insurance" element={<ProtectedRoute><Layout><InsuranceAnalyzerPage /></Layout></ProtectedRoute>} />
+          <Route path="/learn" element={<ProtectedRoute><Layout><HomeLearnPage /></Layout></ProtectedRoute>} />
+          <Route path="/warranty-tracker" element={<ProtectedRoute><Layout><WarrantyTrackerPage /></Layout></ProtectedRoute>} />
+                <Route path="/property-tax" element={<ProtectedRoute><Layout><PropertyTaxPage /></Layout></ProtectedRoute>} />
+        </Routes>
+        <Toaster />
+      </HomeProvider>
+    </AuthProvider>
+  );
+};
+
 function App() {
   return (
     <Router>
       <PasswordProtectionProvider>
-        <AuthProvider>
-          <HomeProvider>
-            <Routes>
-              <Route path="/" element={<LandingPage />} />
-              <Route path="/login" element={<LoginPage />} />
-              <Route path="/signup" element={<SignupPage />} />
-              <Route path="/password-reset" element={<PasswordResetPage />} />
-              <Route path="/password-confirm" element={<PasswordConfirmPage />} />
-              <Route path="/gallery" element={<ImageGalleryPage />} />
-              <Route path="/dashboard" element={<DashboardPage />} />
-              <Route path="/properties" element={<Layout><HomePage /></Layout>} />
-              <Route path="/property-management" element={<Layout><PropertyManagementDashboard /></Layout>} />
-              <Route path="/bill-pay" element={<Layout><BillPayPage /></Layout>} />
-              <Route path="/maintenance-management" element={<Layout><MaintenanceManagementPage /></Layout>} />
-              <Route path="/expenses" element={<Layout><ExpensesPage /></Layout>} />
-              <Route path="/maintenance" element={<Layout><MaintenanceSystemsPage /></Layout>} />
-              <Route path="/plants" element={<Layout><PlantsPage /></Layout>} />
-              <Route path="/utilities" element={<Layout><UtilitiesPage /></Layout>} />
-              <Route path="/documents" element={<Layout><DocumentsPage /></Layout>} />
-              <Route path="/rental-properties" element={<Layout><RentalPropertiesPage /></Layout>} />
-              <Route path="/bills" element={<Layout><BillsPage /></Layout>} />
-              <Route path="/home-valuation" element={<Layout><HomeValuationPage /></Layout>} />
-              <Route path="/rental-tax-guide" element={<Layout><RentalTaxGuidePage /></Layout>} />
-              <Route path="/insurance" element={<Layout><InsuranceAnalyzerPage /></Layout>} />
-              <Route path="/learn" element={<Layout><HomeLearnPage /></Layout>} />
-              <Route path="/property-tax" element={<Layout><PropertyTaxPage /></Layout>} />
-              <Route path="/warranty-tracker" element={<Layout><WarrantyTrackerPage /></Layout>} />
-            </Routes>
-            <Toaster />
-          </HomeProvider>
-        </AuthProvider>
+        <AppContent />
       </PasswordProtectionProvider>
     </Router>
   );
