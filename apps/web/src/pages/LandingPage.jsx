@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { Helmet } from 'react-helmet';
 import { Link } from 'react-router-dom';
 import { Button } from '@/components/ui/button.jsx';
@@ -7,37 +7,345 @@ import {
   Building2, Wrench, LineChart, ArrowRight, CheckCircle2,
   Receipt, FileText, Landmark, Shield, UserPlus,
   CreditCard, TreePine, Star, ChevronDown,
-  Home, DollarSign, Bell, Users, BadgeCheck, Quote
+  Home, DollarSign, Bell, Users, BadgeCheck, Quote,
+  Lock, Eye, Database, ShieldCheck, Zap, BarChart2,
+  Key, Clock, Layers, X, Menu
 } from 'lucide-react';
 
+// ─── Sticky Header ────────────────────────────────────────────────────
+const Header = () => {
+  const [scrolled, setScrolled] = useState(false);
+  const [menuOpen, setMenuOpen] = useState(false);
+
+  useEffect(() => {
+    const onScroll = () => setScrolled(window.scrollY > 40);
+    window.addEventListener('scroll', onScroll);
+    return () => window.removeEventListener('scroll', onScroll);
+  }, []);
+
+  return (
+    <header className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 ${
+      scrolled
+        ? 'bg-slate-900/95 backdrop-blur-md shadow-lg shadow-black/20 py-3'
+        : 'bg-transparent py-6'
+    } px-4 sm:px-6 lg:px-8`}>
+      <div className="max-w-7xl mx-auto flex items-center justify-between">
+        <Link to="/" className="flex items-center outline-none focus-visible:ring-2 focus-visible:ring-blue-600 rounded-full">
+          <CasaCEOLogo className="scale-75 origin-left" />
+        </Link>
+
+        {/* Desktop nav */}
+        <nav className="hidden md:flex items-center gap-8 text-sm font-semibold text-white/80">
+          <a href="#features" className="hover:text-white transition-colors">Features</a>
+          <a href="#contractors" className="hover:text-white transition-colors">For Contractors</a>
+          <a href="#pricing" className="hover:text-white transition-colors">Pricing</a>
+        </nav>
+
+        <div className="hidden md:flex items-center gap-3">
+          <Link to="/login">
+            <Button variant="ghost" className="text-white hover:bg-white/10 hover:text-white font-semibold rounded-full px-6">Log In</Button>
+          </Link>
+          <Link to="/signup">
+            <Button className="bg-[#e8604c] hover:bg-[#d4503c] text-white font-bold px-6 rounded-full shadow-lg">
+              Start Free
+            </Button>
+          </Link>
+        </div>
+
+        {/* Mobile menu button */}
+        <button onClick={() => setMenuOpen(!menuOpen)} className="md:hidden text-white p-2">
+          {menuOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
+        </button>
+      </div>
+
+      {/* Mobile menu */}
+      {menuOpen && (
+        <div className="md:hidden bg-slate-900 border-t border-white/10 px-4 py-6 space-y-4">
+          <a href="#features" onClick={() => setMenuOpen(false)} className="block text-white/80 font-semibold py-2">Features</a>
+          <a href="#contractors" onClick={() => setMenuOpen(false)} className="block text-white/80 font-semibold py-2">For Contractors</a>
+          <a href="#pricing" onClick={() => setMenuOpen(false)} className="block text-white/80 font-semibold py-2">Pricing</a>
+          <div className="flex flex-col gap-3 pt-4 border-t border-white/10">
+            <Link to="/login"><Button variant="outline" className="w-full text-white border-white/20 rounded-full">Log In</Button></Link>
+            <Link to="/signup"><Button className="w-full bg-[#e8604c] hover:bg-[#d4503c] text-white rounded-full font-bold">Start Free</Button></Link>
+          </div>
+        </div>
+      )}
+    </header>
+  );
+};
+
+// ─── Dashboard Mockup ─────────────────────────────────────────────────
+const DashboardMockup = () => (
+  <div className="relative w-full max-w-2xl mx-auto">
+    {/* Glow effect */}
+    <div className="absolute inset-0 bg-[#1e3a5f] opacity-30 blur-3xl rounded-3xl scale-110"></div>
+
+    {/* Browser frame */}
+    <div className="relative bg-slate-800 rounded-2xl border border-white/10 shadow-2xl overflow-hidden">
+      {/* Browser bar */}
+      <div className="bg-slate-900 px-4 py-3 flex items-center gap-2 border-b border-white/10">
+        <div className="flex gap-1.5">
+          <div className="w-3 h-3 rounded-full bg-red-500 opacity-80"></div>
+          <div className="w-3 h-3 rounded-full bg-amber-500 opacity-80"></div>
+          <div className="w-3 h-3 rounded-full bg-green-500 opacity-80"></div>
+        </div>
+        <div className="flex-1 mx-4 bg-slate-700 rounded-md h-6 flex items-center px-3">
+          <span className="text-slate-400 text-xs">casaceo.com/dashboard</span>
+        </div>
+      </div>
+
+      {/* Dashboard content */}
+      <div className="p-4 bg-slate-800">
+        {/* Top bar */}
+        <div className="flex items-center justify-between mb-4">
+          <div className="flex items-center gap-2">
+            <div className="w-6 h-6 rounded bg-[#1e3a5f] flex items-center justify-center">
+              <Home className="w-3 h-3 text-white" />
+            </div>
+            <span className="text-white text-xs font-bold">Casa<span className="text-[#e8604c]">CEO</span></span>
+          </div>
+          <div className="bg-slate-700 rounded-lg px-3 py-1 flex items-center gap-2">
+            <div className="w-2 h-2 rounded-full bg-green-400"></div>
+            <span className="text-slate-300 text-xs">Primary Home</span>
+            <ChevronDown className="w-3 h-3 text-slate-400" />
+          </div>
+        </div>
+
+        {/* Welcome bar */}
+        <div className="bg-[#1e3a5f] rounded-xl p-3 mb-3 flex items-center justify-between">
+          <div>
+            <p className="text-white text-xs font-bold">Good morning! 👋</p>
+            <p className="text-blue-200 text-xs">3 items need attention today</p>
+          </div>
+          <div className="text-right">
+            <p className="text-blue-200 text-xs">{new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}</p>
+          </div>
+        </div>
+
+        {/* Stats row */}
+        <div className="grid grid-cols-4 gap-2 mb-3">
+          {[
+            { label: 'Bills Due', value: '3', color: 'bg-blue-500/20 text-blue-300' },
+            { label: 'Overdue', value: '1', color: 'bg-red-500/20 text-red-300' },
+            { label: 'Documents', value: '14', color: 'bg-purple-500/20 text-purple-300' },
+            { label: 'This Month', value: '$2.8k', color: 'bg-green-500/20 text-green-300' },
+          ].map((s, i) => (
+            <div key={i} className={`${s.color} rounded-lg p-2 text-center`}>
+              <p className="text-sm font-bold">{s.value}</p>
+              <p className="text-xs opacity-75">{s.label}</p>
+            </div>
+          ))}
+        </div>
+
+        {/* Module grid */}
+        <div className="grid grid-cols-4 gap-2">
+          {[
+            { icon: '🔧', label: 'Maintenance', color: 'bg-orange-500/20' },
+            { icon: '💳', label: 'Bill Pay', color: 'bg-blue-500/20' },
+            { icon: '📁', label: 'Documents', color: 'bg-purple-500/20' },
+            { icon: '💰', label: 'Expenses', color: 'bg-green-500/20' },
+            { icon: '⚡', label: 'Utilities', color: 'bg-yellow-500/20' },
+            { icon: '📈', label: 'Home Value', color: 'bg-teal-500/20' },
+            { icon: '🔑', label: 'Rentals', color: 'bg-pink-500/20' },
+            { icon: '🛡️', label: 'Warranty', color: 'bg-indigo-500/20' },
+          ].map((m, i) => (
+            <div key={i} className={`${m.color} rounded-lg p-2 flex flex-col items-center gap-1`}>
+              <span className="text-sm">{m.icon}</span>
+              <span className="text-slate-300 text-xs text-center leading-tight">{m.label}</span>
+            </div>
+          ))}
+        </div>
+      </div>
+    </div>
+
+    {/* Floating alert card */}
+    <div className="absolute -right-4 top-20 bg-white rounded-xl shadow-xl p-3 w-44 border border-slate-100 hidden lg:block">
+      <div className="flex items-center gap-2 mb-2">
+        <div className="w-6 h-6 rounded-full bg-red-100 flex items-center justify-center">
+          <Bell className="w-3 h-3 text-red-500" />
+        </div>
+        <span className="text-slate-700 text-xs font-bold">Bill Due</span>
+      </div>
+      <p className="text-slate-600 text-xs">Electric bill due in 2 days</p>
+      <p className="text-[#1e3a5f] text-xs font-bold mt-1">$142.00</p>
+    </div>
+
+    {/* Floating property card */}
+    <div className="absolute -left-4 bottom-20 bg-white rounded-xl shadow-xl p-3 w-40 border border-slate-100 hidden lg:block">
+      <p className="text-slate-500 text-xs mb-1">Portfolio Value</p>
+      <p className="text-slate-900 text-base font-extrabold">$1.24M</p>
+      <div className="flex items-center gap-1 mt-1">
+        <span className="text-green-500 text-xs font-bold">↑ 8.3%</span>
+        <span className="text-slate-400 text-xs">this year</span>
+      </div>
+    </div>
+  </div>
+);
+
+// ─── Feature Groups ───────────────────────────────────────────────────
+const FEATURE_GROUPS = [
+  {
+    category: 'Organize',
+    color: '#1e3a5f',
+    bg: '#eef2f8',
+    icon: <Layers className="w-5 h-5" />,
+    features: [
+      { icon: <Home className="w-6 h-6" />, title: 'Property Dashboard', description: 'Every home at a glance — mortgage, utilities, maintenance, and expenses all in one view.' },
+      { icon: <FileText className="w-6 h-6" />, title: 'Document Vault', description: 'Insurance policies, warranties, deeds, permits — organized by property, always accessible.' },
+      { icon: <ShieldCheck className="w-6 h-6" />, title: 'Warranty Tracker', description: 'Never let an appliance or system warranty expire without knowing. Track coverage across every home.' },
+    ]
+  },
+  {
+    category: 'Automate',
+    color: '#e8604c',
+    bg: '#fdf0ee',
+    icon: <Zap className="w-5 h-5" />,
+    features: [
+      { icon: <Bell className="w-6 h-6" />, title: 'Smart Reminders', description: "Never miss a payment or inspection. CasaCEO alerts you before things slip through the cracks." },
+      { icon: <CreditCard className="w-6 h-6" />, title: 'Bill Pay Tracking', description: 'Track every bill, see what\'s due, and log payments with one click across all properties.' },
+      { icon: <Wrench className="w-6 h-6" />, title: 'Maintenance Scheduling', description: 'Log service calls, schedule recurring maintenance, and build a full history for every home.' },
+    ]
+  },
+  {
+    category: 'Track',
+    color: '#059669',
+    bg: '#ecfdf5',
+    icon: <BarChart2 className="w-5 h-5" />,
+    features: [
+      { icon: <DollarSign className="w-6 h-6" />, title: 'Expense Tracking', description: 'Track every expense across all properties. Export for taxes in one click.' },
+      { icon: <LineChart className="w-6 h-6" />, title: 'Home Valuation', description: 'Track property values, compare to the market, and decide when to sell or stay.' },
+      { icon: <Receipt className="w-6 h-6" />, title: 'Tax Reports', description: 'Rental income, deductions, depreciation — ready for your accountant at year end.' },
+    ]
+  },
+  {
+    category: 'Connect',
+    color: '#7c3aed',
+    bg: '#f5f3ff',
+    icon: <Users className="w-5 h-5" />,
+    features: [
+      { icon: <Users className="w-6 h-6" />, title: 'Contractor Directory', description: 'Verified, reviewed contractors at your fingertips — attached to the property they serviced.' },
+      { icon: <TreePine className="w-6 h-6" />, title: 'Landscape & Plants', description: 'Schedule and track landscaping, lawn care, and plant maintenance across all your properties.' },
+      { icon: <Key className="w-6 h-6" />, title: 'Rental Management', description: 'Tenant management, rent tracking, lease storage, and maintenance requests for rental properties.' },
+    ]
+  },
+];
+
+// ─── Trust & Security Section ─────────────────────────────────────────
+const TrustSection = () => (
+  <section className="py-24 px-4 sm:px-6 lg:px-8 bg-white border-t border-slate-100">
+    <div className="max-w-6xl mx-auto">
+      <div className="text-center mb-16">
+        <div className="inline-flex items-center gap-2 bg-green-50 text-green-700 text-sm font-semibold px-4 py-2 rounded-full mb-6 border border-green-100">
+          <ShieldCheck className="w-4 h-4" /> Your data is safe with us
+        </div>
+        <h2 className="text-3xl md:text-4xl font-extrabold text-slate-900 mb-4">
+          Bank-level security for your most important data
+        </h2>
+        <p className="text-lg text-slate-600 max-w-2xl mx-auto">
+          You're trusting us with financial records, legal documents, and home data. We take that seriously.
+        </p>
+      </div>
+
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-12">
+        {[
+          {
+            icon: <Lock className="w-6 h-6 text-green-600" />,
+            title: 'End-to-End Encryption',
+            desc: 'All your data is encrypted at rest and in transit using AES-256 — the same standard used by banks.',
+            color: 'bg-green-50 border-green-100',
+          },
+          {
+            icon: <Database className="w-6 h-6 text-blue-600" />,
+            title: 'Secure Document Storage',
+            desc: 'Documents are stored in encrypted cloud storage. Only you can access your files.',
+            color: 'bg-blue-50 border-blue-100',
+          },
+          {
+            icon: <Eye className="w-6 h-6 text-purple-600" />,
+            title: 'Privacy First',
+            desc: 'We never sell your data. Your financial information and property records stay yours.',
+            color: 'bg-purple-50 border-purple-100',
+          },
+          {
+            icon: <ShieldCheck className="w-6 h-6 text-[#e8604c]" />,
+            title: 'No Financial Account Access',
+            desc: 'CasaCEO tracks your bills and expenses — we never connect to or access your bank accounts.',
+            color: 'bg-orange-50 border-orange-100',
+          },
+          {
+            icon: <Key className="w-6 h-6 text-amber-600" />,
+            title: 'Secure Authentication',
+            desc: 'Industry-standard authentication protects your account. Password reset via verified email only.',
+            color: 'bg-amber-50 border-amber-100',
+          },
+          {
+            icon: <Clock className="w-6 h-6 text-teal-600" />,
+            title: '99.9% Uptime',
+            desc: 'Your data is always available when you need it, backed by redundant cloud infrastructure.',
+            color: 'bg-teal-50 border-teal-100',
+          },
+        ].map((item, i) => (
+          <div key={i} className={`rounded-2xl border p-6 ${item.color}`}>
+            <div className="w-12 h-12 rounded-xl bg-white flex items-center justify-center mb-4 shadow-sm">
+              {item.icon}
+            </div>
+            <h3 className="font-bold text-slate-900 mb-2">{item.title}</h3>
+            <p className="text-slate-600 text-sm leading-relaxed">{item.desc}</p>
+          </div>
+        ))}
+      </div>
+
+      {/* Trust badges */}
+      <div className="bg-slate-50 rounded-2xl border border-slate-100 p-8 flex flex-col md:flex-row items-center justify-around gap-6 text-center">
+        {[
+          { icon: <Lock className="w-8 h-8 text-slate-400" />, label: 'AES-256\nEncryption' },
+          { icon: <ShieldCheck className="w-8 h-8 text-slate-400" />, label: 'SOC2\nCompliance Roadmap' },
+          { icon: <Eye className="w-8 h-8 text-slate-400" />, label: 'Zero Data\nSelling Policy' },
+          { icon: <Database className="w-8 h-8 text-slate-400" />, label: 'GDPR\nReady' },
+        ].map((badge, i) => (
+          <div key={i} className="flex flex-col items-center gap-2">
+            {badge.icon}
+            <p className="text-slate-500 text-xs font-medium whitespace-pre-line leading-relaxed">{badge.label}</p>
+          </div>
+        ))}
+      </div>
+    </div>
+  </section>
+);
+
+// ─── Founder Story ────────────────────────────────────────────────────
 const FounderStory = () => (
   <section className="py-24 px-4 sm:px-6 lg:px-8 bg-white border-t border-slate-100">
     <div className="max-w-5xl mx-auto">
       <div className="flex flex-col lg:flex-row items-center gap-16">
         <div className="lg:w-1/2">
-          <div className="inline-flex items-center gap-2 bg-blue-50 text-blue-700 text-sm font-semibold px-4 py-2 rounded-full mb-8">
+          <div className="inline-flex items-center gap-2 bg-[#1e3a5f]/10 text-[#1e3a5f] text-sm font-semibold px-4 py-2 rounded-full mb-8">
             <Quote className="w-4 h-4" /> Why We Built This
           </div>
           <h2 className="text-3xl md:text-4xl font-extrabold text-slate-900 mb-6 leading-tight">
             "I bought a second home and everything fell apart."
           </h2>
-          <p className="text-lg text-slate-600 leading-relaxed mb-6">
-            Suddenly I had two sets of utility bills, two mortgage payments, two cable providers, two maintenance schedules — and zero way to keep it all straight. I was running around trying to piece together what was due, what was overdue, and what I'd already paid.
+          <p className="text-lg text-slate-600 leading-relaxed mb-4">
+            Two sets of utility bills. Two mortgage payments. Two maintenance schedules. Zero way to keep it straight.
+          </p>
+          <p className="text-lg text-slate-600 leading-relaxed mb-4">
+            I wasn't a landlord or a property manager — just someone who owns more than one home and needed to stay on top of it. No tool existed for people like me.
           </p>
           <p className="text-lg text-slate-600 leading-relaxed mb-8">
-            I searched for a tool that could bring it all together. Nothing existed that was built for people like me — not a landlord, not a property manager, just someone who owns more than one home and wants to stay on top of it. So we built it.
+            So we built it.
           </p>
-          <div className="flex items-center gap-4">
-            <div className="w-12 h-12 rounded-full bg-[#1e3a5f] flex items-center justify-center text-white font-bold text-lg">R</div>
+          <div className="flex items-center gap-4 p-4 bg-slate-50 rounded-2xl border border-slate-100">
+            <div className="w-14 h-14 rounded-full bg-[#1e3a5f] flex items-center justify-center text-white font-bold text-xl flex-shrink-0">D</div>
             <div>
-              <p className="font-bold text-slate-900">The CasaCEO Team</p>
-              <p className="text-slate-500 text-sm">Multi-property owners, just like you</p>
+              <p className="font-bold text-slate-900">Dan E.</p>
+              <p className="text-slate-500 text-sm">Founder, CasaCEO</p>
+              <p className="text-slate-400 text-xs mt-0.5">Multi-property owner · Atlanta, GA</p>
             </div>
           </div>
         </div>
         <div className="lg:w-1/2 grid grid-cols-2 gap-6 w-full">
           {[
-            { value: "2+", label: "Properties managed per user on average", color: "bg-blue-50 border-blue-100" },
+            { value: "2+", label: "Properties managed per user on average", color: "bg-[#1e3a5f]/5 border-[#1e3a5f]/10" },
             { value: "$3,200", label: "Average annual savings tracked per home", color: "bg-green-50 border-green-100" },
             { value: "47 min", label: "Saved per week on property admin tasks", color: "bg-purple-50 border-purple-100" },
             { value: "1 place", label: "For every bill, doc, service call & expense", color: "bg-amber-50 border-amber-100" },
@@ -53,6 +361,7 @@ const FounderStory = () => (
   </section>
 );
 
+// ─── Before / After ───────────────────────────────────────────────────
 const ProblemSolution = () => (
   <section className="py-24 px-4 sm:px-6 lg:px-8 bg-slate-50 border-t border-slate-100">
     <div className="max-w-6xl mx-auto">
@@ -106,29 +415,27 @@ const ProblemSolution = () => (
   </section>
 );
 
+// ─── Contractor Section ───────────────────────────────────────────────
 const ContractorMarketplace = () => (
   <section id="contractors" className="py-24 px-4 sm:px-6 lg:px-8 bg-slate-900 relative overflow-hidden">
-    <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_right,rgba(30,58,95,0.15)_0%,transparent_60%)]"></div>
     <div className="max-w-6xl mx-auto relative z-10">
       <div className="flex flex-col lg:flex-row items-center gap-16">
         <div className="lg:w-1/2">
-          <div className="inline-flex items-center gap-2 bg-[#1e3a5f]/20 text-[#e8604c] text-sm font-semibold px-4 py-2 rounded-full mb-8 border border-[#1e3a5f]/30">
+          <div className="inline-flex items-center gap-2 bg-white/10 text-[#e8604c] text-sm font-semibold px-4 py-2 rounded-full mb-8 border border-white/10">
             <BadgeCheck className="w-4 h-4" /> Verified Contractor Network
           </div>
           <h2 className="text-3xl md:text-4xl font-extrabold text-white mb-6 leading-tight">
             The right contractor, <span className="text-[#e8604c]">already at your fingertips</span>
           </h2>
           <p className="text-lg text-slate-300 leading-relaxed mb-6">
-            CasaCEO connects you with pre-vetted, licensed contractors in your area — plumbers, electricians, HVAC techs, landscapers, and more. Every contractor is verified, reviewed by real property owners, and linked directly to your service history.
+            CasaCEO connects you with pre-vetted, licensed contractors in your area. Every contractor is verified, reviewed by real property owners, and linked directly to your service history.
           </p>
           <p className="text-lg text-slate-300 leading-relaxed mb-10">
-            No more cold calls. No more Googling. When something breaks, you know exactly who to call — and every job gets logged automatically to your property record.
+            No more cold calls. No more Googling. When something breaks, you know exactly who to call — and every job gets logged automatically.
           </p>
           <div className="flex flex-wrap gap-3">
             {["Plumbing", "Electrical", "HVAC", "Landscaping", "Roofing", "Pest Control", "Painting", "General Repair"].map((cat, i) => (
-              <span key={i} className="px-4 py-2 bg-white/10 text-slate-300 text-sm font-medium rounded-full border border-white/10">
-                {cat}
-              </span>
+              <span key={i} className="px-4 py-2 bg-white/10 text-slate-300 text-sm font-medium rounded-full border border-white/10">{cat}</span>
             ))}
           </div>
         </div>
@@ -136,7 +443,7 @@ const ContractorMarketplace = () => (
           <div className="bg-slate-800 rounded-2xl border border-slate-700 p-6 mb-4">
             <div className="flex items-start justify-between mb-4">
               <div className="flex items-center gap-3">
-                <div className="w-12 h-12 rounded-xl bg-[#1e3a5f]/20 flex items-center justify-center text-[#e8604c] font-bold text-lg">JM</div>
+                <div className="w-12 h-12 rounded-xl bg-[#1e3a5f] flex items-center justify-center text-white font-bold text-lg">JM</div>
                 <div>
                   <p className="font-bold text-white">Johnson & Miller HVAC</p>
                   <p className="text-slate-400 text-sm">Licensed & Insured · Atlanta, GA</p>
@@ -154,9 +461,9 @@ const ContractorMarketplace = () => (
               <Button size="sm" className="bg-[#1e3a5f] hover:bg-[#162d4a] text-white rounded-full text-xs px-4">Book Again</Button>
             </div>
           </div>
-          <div className="bg-[#1e3a5f]/10 border border-[#1e3a5f]/20 rounded-xl p-4 text-center">
+          <div className="bg-white/5 border border-white/10 rounded-xl p-4 text-center">
             <p className="text-blue-300 text-sm font-medium">
-              🏆 <strong>Are you a contractor?</strong> Get listed in our verified network and reach thousands of motivated property owners in your area.
+              🏆 <strong>Are you a contractor?</strong> Get listed and reach thousands of motivated property owners.
             </p>
             <Link to="/signup">
               <button className="mt-3 text-[#e8604c] text-sm font-semibold hover:text-blue-300 transition-colors underline underline-offset-2">
@@ -170,6 +477,7 @@ const ContractorMarketplace = () => (
   </section>
 );
 
+// ─── Pricing ──────────────────────────────────────────────────────────
 const Pricing = () => (
   <section id="pricing" className="py-24 px-4 sm:px-6 lg:px-8 bg-white border-t border-slate-100">
     <div className="max-w-5xl mx-auto">
@@ -198,9 +506,13 @@ const Pricing = () => (
             cta: "Apply to List", highlight: false,
           },
         ].map((plan, i) => (
-          <div key={i} className={`rounded-2xl border p-8 flex flex-col ${plan.highlight ? 'bg-[#1e3a5f] border-blue-500 shadow-2xl shadow-[#1e3a5f]/30 scale-105' : 'bg-white border-slate-200 shadow-lg'}`}>
+          <div key={i} className={`rounded-2xl border p-8 flex flex-col relative ${plan.highlight ? 'bg-[#1e3a5f] border-[#1e3a5f] shadow-2xl shadow-[#1e3a5f]/30 scale-105' : 'bg-white border-slate-200 shadow-lg'}`}>
+            {plan.highlight && (
+              <div className="absolute -top-4 left-1/2 -translate-x-1/2">
+                <span className="bg-[#e8604c] text-white text-xs font-bold px-4 py-1.5 rounded-full shadow-lg">MOST POPULAR</span>
+              </div>
+            )}
             <div className="mb-6">
-              {plan.highlight && <span className="inline-block bg-white/20 text-white text-xs font-bold px-3 py-1 rounded-full mb-4">MOST POPULAR</span>}
               <h3 className={`text-xl font-bold mb-1 ${plan.highlight ? 'text-white' : 'text-slate-900'}`}>{plan.name}</h3>
               <p className={`text-sm mb-4 ${plan.highlight ? 'text-blue-100' : 'text-slate-500'}`}>{plan.desc}</p>
               <div className="flex items-baseline gap-1">
@@ -211,7 +523,7 @@ const Pricing = () => (
             <ul className="space-y-3 mb-8 flex-1">
               {plan.features.map((f, fi) => (
                 <li key={fi} className={`flex items-center gap-2 text-sm ${plan.highlight ? 'text-blue-100' : 'text-slate-600'}`}>
-                  <CheckCircle2 className={`w-4 h-4 flex-shrink-0 ${plan.highlight ? 'text-white' : 'text-[#1e3a5f]'}`} />
+                  <CheckCircle2 className={`w-4 h-4 flex-shrink-0 ${plan.highlight ? 'text-[#e8604c]' : 'text-[#1e3a5f]'}`} />
                   {f}
                 </li>
               ))}
@@ -228,6 +540,7 @@ const Pricing = () => (
   </section>
 );
 
+// ─── Testimonials ─────────────────────────────────────────────────────
 const Testimonials = () => (
   <section className="py-24 px-4 sm:px-6 lg:px-8 bg-slate-50 border-t border-slate-100">
     <div className="max-w-6xl mx-auto">
@@ -246,7 +559,7 @@ const Testimonials = () => (
             </div>
             <p className="text-slate-700 leading-relaxed mb-6 italic">"{t.quote}"</p>
             <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-full bg-blue-50 flex items-center justify-center text-[#1e3a5f] font-bold">{t.name[0]}</div>
+              <div className="w-10 h-10 rounded-full bg-[#1e3a5f]/10 flex items-center justify-center text-[#1e3a5f] font-bold">{t.name[0]}</div>
               <div>
                 <p className="font-bold text-slate-900 text-sm">{t.name}</p>
                 <p className="text-slate-500 text-xs">{t.role}</p>
@@ -259,19 +572,8 @@ const Testimonials = () => (
   </section>
 );
 
+// ─── Main Landing Page ────────────────────────────────────────────────
 const LandingPage = () => {
-  const features = [
-    { icon: <Home className="w-7 h-7 text-[#1e3a5f]" />, title: 'Property Dashboard', description: 'Every home at a glance — mortgage, utilities, maintenance, and expenses all in one view.' },
-    { icon: <DollarSign className="w-7 h-7 text-[#1e3a5f]" />, title: 'Expense & Bill Tracking', description: 'Track every bill, utility, and expense across all properties. Export for taxes in one click.' },
-    { icon: <Wrench className="w-7 h-7 text-[#1e3a5f]" />, title: 'Maintenance Scheduling', description: 'Log service calls, schedule recurring maintenance, and build a full history for every home.' },
-    { icon: <Users className="w-7 h-7 text-[#1e3a5f]" />, title: 'Contractor Directory', description: 'Verified, reviewed contractors at your fingertips — attached to the property they serviced.' },
-    { icon: <FileText className="w-7 h-7 text-[#1e3a5f]" />, title: 'Document Storage', description: 'Insurance policies, warranties, deeds, permits — organized by property, always accessible.' },
-    { icon: <Bell className="w-7 h-7 text-[#1e3a5f]" />, title: 'Smart Reminders', description: "Never miss a payment or inspection. CasaCEO alerts you before things slip through the cracks." },
-    { icon: <LineChart className="w-7 h-7 text-[#1e3a5f]" />, title: 'Financial Reports', description: 'Monthly and annual summaries per property. Know exactly where every dollar goes.' },
-    { icon: <TreePine className="w-7 h-7 text-[#1e3a5f]" />, title: 'Landscape & Plants', description: 'Schedule and track landscaping, lawn care, and plant maintenance across all your properties.' },
-    { icon: <Shield className="w-7 h-7 text-[#1e3a5f]" />, title: 'Insurance Tracker', description: 'Monitor policy expiration dates and coverage across every home you own.' },
-  ];
-
   return (
     <>
       <Helmet>
@@ -281,69 +583,63 @@ const LandingPage = () => {
 
       <div className="min-h-screen bg-slate-50 font-sans flex flex-col">
 
-        {/* Navigation */}
-        <header className="absolute top-0 left-0 right-0 z-50 px-4 sm:px-6 lg:px-8 py-6 flex items-center justify-between">
-          <Link to="/" className="flex items-center outline-none focus-visible:ring-2 focus-visible:ring-blue-600 rounded-full">
-            <CasaCEOLogo className="scale-75 origin-left" />
-          </Link>
-          <nav className="hidden md:flex items-center gap-8 text-sm font-semibold text-white/80">
-            <a href="#features" className="hover:text-white transition-colors">Features</a>
-            <a href="#contractors" className="hover:text-white transition-colors">For Contractors</a>
-            <a href="#pricing" className="hover:text-white transition-colors">Pricing</a>
-          </nav>
-          <div className="flex items-center gap-3">
-            <Link to="/login">
-              <Button variant="ghost" className="text-white hover:bg-white/10 hover:text-white font-semibold rounded-full px-6">Log In</Button>
-            </Link>
-            <Link to="/signup">
-              <Button className="bg-[#1e3a5f] hover:bg-[#162d4a] text-white shadow-[0_0_20px_rgba(30,58,95,0.4)] font-bold px-6 sm:px-8 rounded-full">
-                Start Free
-              </Button>
-            </Link>
-          </div>
-        </header>
+        {/* Sticky Header */}
+        <Header />
 
         {/* Hero */}
         <section className="relative min-h-screen flex items-center justify-center bg-slate-900 overflow-hidden">
           <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,rgba(30,58,95,0.18)_0%,transparent_70%)]"></div>
           <div className="absolute inset-0 bg-[url('https://www.transparenttextures.com/patterns/cubes.png')] opacity-10 mix-blend-overlay"></div>
-          <div className="relative z-10 max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 text-center w-full pt-32 pb-16 flex flex-col items-center">
-            <div className="mb-10 relative">
-              <div className="absolute inset-0 bg-[#1e3a5f] opacity-20 blur-[100px] rounded-full scale-150 animate-pulse"></div>
-              <CasaCEOLogo className="scale-125 md:scale-150 lg:scale-[1.75] transform-gpu" imageClassName="drop-shadow-[0_0_30px_rgba(30,58,95,0.8)]" />
-            </div>
-            <div className="inline-flex items-center gap-2 bg-white/10 text-white/80 text-sm font-medium px-5 py-2 rounded-full border border-white/10 backdrop-blur-sm mb-8">
-              <Home className="w-4 h-4 text-[#e8604c]" />
-              Built by a multi-property owner who lived the chaos
-            </div>
-            <h1 className="text-5xl md:text-6xl lg:text-7xl font-extrabold text-white tracking-tight mb-6 leading-tight">
-              Your Homes.<br className="hidden md:block" />
-              <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-400 to-blue-500"> Organized.</span>
-            </h1>
-            <p className="text-xl md:text-2xl text-slate-300 mb-12 max-w-3xl mx-auto font-medium leading-relaxed">
-              Stop running around juggling bills, utilities, service calls, and documents across multiple homes. CasaCEO is your personal command center — synced, structured, and always at your fingertips.
-            </p>
-            <div className="flex flex-col sm:flex-row items-center justify-center gap-5">
-              <Link to="/signup">
-                <Button size="lg" className="w-full sm:w-auto text-lg px-10 py-7 rounded-full bg-[#1e3a5f] hover:bg-[#162d4a] text-white shadow-[0_0_40px_rgba(30,58,95,0.5)] transition-all hover:-translate-y-1 font-bold">
-                  Get Started Free <ArrowRight className="ml-2 w-5 h-5" />
-                </Button>
-              </Link>
-              <Link to="/dashboard">
-                <Button size="lg" variant="outline" className="w-full sm:w-auto text-lg px-10 py-7 rounded-full bg-white/5 text-white border-white/20 hover:bg-white/10 backdrop-blur-md transition-all font-semibold">
-                  Explore Dashboard
-                </Button>
-              </Link>
-            </div>
-            <div className="mt-16 flex flex-wrap justify-center gap-6 text-sm font-semibold text-slate-300">
-              {["No credit card required", "1 property free forever", "Setup in under 5 minutes"].map((t, i) => (
-                <div key={i} className="flex items-center gap-2 bg-white/5 px-4 py-2 rounded-full border border-white/10">
-                  <CheckCircle2 className="w-4 h-4 text-[#e8604c]" /> {t}
+
+          <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-32 pb-16 w-full">
+            <div className="flex flex-col lg:flex-row items-center gap-16">
+
+              {/* Left — copy */}
+              <div className="lg:w-1/2 text-center lg:text-left">
+                <div className="inline-flex items-center gap-2 bg-white/10 text-white/80 text-sm font-medium px-5 py-2 rounded-full border border-white/10 backdrop-blur-sm mb-8">
+                  <Home className="w-4 h-4 text-[#e8604c]" />
+                  Built by a multi-property owner who lived the chaos
                 </div>
-              ))}
-            </div>
-            <div className="mt-16 animate-bounce">
-              <ChevronDown className="w-6 h-6 text-white/30" />
+
+                <h1 className="text-5xl md:text-6xl lg:text-7xl font-extrabold text-white tracking-tight mb-6 leading-tight">
+                  One home is<br />manageable.<br />
+                  <span className="text-[#e8604c]">Two is chaos.</span>
+                </h1>
+
+                <p className="text-xl text-slate-300 mb-4 max-w-xl leading-relaxed">
+                  CasaCEO is the command center for multi-property owners — bills, maintenance, documents, and contractors, all in one place.
+                </p>
+
+                <p className="text-base text-slate-400 mb-10 max-w-lg leading-relaxed">
+                  Stop juggling spreadsheets, missed payments, and forgotten service calls. Finally feel in control of everything you own.
+                </p>
+
+                <div className="flex flex-col sm:flex-row items-center lg:items-start justify-center lg:justify-start gap-4 mb-10">
+                  <Link to="/signup">
+                    <Button size="lg" className="w-full sm:w-auto text-lg px-10 py-7 rounded-full bg-[#e8604c] hover:bg-[#d4503c] text-white shadow-lg transition-all hover:-translate-y-1 font-bold">
+                      Get Started Free <ArrowRight className="ml-2 w-5 h-5" />
+                    </Button>
+                  </Link>
+                  <Link to="/dashboard">
+                    <Button size="lg" variant="outline" className="w-full sm:w-auto text-lg px-10 py-7 rounded-full bg-white/5 text-white border-white/20 hover:bg-white/10 backdrop-blur-md transition-all font-semibold">
+                      See the Dashboard
+                    </Button>
+                  </Link>
+                </div>
+
+                <div className="flex flex-wrap justify-center lg:justify-start gap-4 text-sm font-semibold text-slate-300">
+                  {["No credit card required", "1 property free forever", "Setup in under 5 minutes"].map((t, i) => (
+                    <div key={i} className="flex items-center gap-2 bg-white/5 px-4 py-2 rounded-full border border-white/10">
+                      <CheckCircle2 className="w-4 h-4 text-[#e8604c]" /> {t}
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              {/* Right — dashboard mockup */}
+              <div className="lg:w-1/2 w-full">
+                <DashboardMockup />
+              </div>
             </div>
           </div>
         </section>
@@ -351,43 +647,55 @@ const LandingPage = () => {
         <FounderStory />
         <ProblemSolution />
 
-        {/* Features */}
+        {/* Features — grouped */}
         <section id="features" className="py-24 px-4 sm:px-6 lg:px-8 bg-white border-t border-slate-100">
           <div className="max-w-7xl mx-auto">
             <div className="text-center mb-16">
               <h2 className="text-3xl md:text-4xl font-extrabold text-slate-900 mb-4">Everything your homes need. Nothing they don't.</h2>
               <p className="text-lg text-slate-600 max-w-2xl mx-auto">Purpose-built for people who own more than one home and just need to stay on top of it.</p>
             </div>
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-              {features.map((f, i) => (
-                <div key={i} className="p-8 rounded-2xl bg-white border border-slate-100 shadow-lg hover:shadow-xl hover:shadow-blue-600/10 hover:-translate-y-1 transition-all group">
-                  <div className="w-14 h-14 rounded-2xl bg-blue-50 flex items-center justify-center mb-5 group-hover:bg-blue-100 group-hover:scale-110 transition-all">
-                    {f.icon}
+
+            {FEATURE_GROUPS.map((group, gi) => (
+              <div key={gi} className="mb-16">
+                <div className="flex items-center gap-3 mb-8">
+                  <div className="w-10 h-10 rounded-xl flex items-center justify-center" style={{ background: group.bg, color: group.color }}>
+                    {group.icon}
                   </div>
-                  <h3 className="text-lg font-bold text-slate-900 mb-2">{f.title}</h3>
-                  <p className="text-slate-600 leading-relaxed text-sm">{f.description}</p>
+                  <h3 className="text-xl font-extrabold text-slate-900">{group.category}</h3>
+                  <div className="h-px flex-1 bg-slate-100"></div>
                 </div>
-              ))}
-            </div>
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                  {group.features.map((f, i) => (
+                    <div key={i} className="p-6 rounded-2xl bg-white border border-slate-100 shadow-sm hover:shadow-md hover:-translate-y-0.5 transition-all group">
+                      <div className="w-12 h-12 rounded-xl flex items-center justify-center mb-4 transition-all" style={{ background: group.bg, color: group.color }}>
+                        {f.icon}
+                      </div>
+                      <h4 className="text-base font-bold text-slate-900 mb-2">{f.title}</h4>
+                      <p className="text-slate-500 leading-relaxed text-sm">{f.description}</p>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            ))}
           </div>
         </section>
 
+        <TrustSection />
         <ContractorMarketplace />
         <Testimonials />
         <Pricing />
 
         {/* Final CTA */}
         <section className="py-24 px-4 sm:px-6 lg:px-8 bg-slate-900 relative overflow-hidden">
-          <div className="absolute -top-48 -left-48 w-[600px] h-[600px] rounded-full bg-[#1e3a5f] opacity-10 blur-[120px]"></div>
           <div className="max-w-3xl mx-auto text-center relative z-10">
             <h2 className="text-4xl md:text-5xl font-extrabold text-white mb-6 leading-tight">
               Stop juggling. <span className="text-[#e8604c]">Start running your homes.</span>
             </h2>
             <p className="text-xl text-slate-300 mb-10">
-              Join property owners who've replaced scattered spreadsheets, lost receipts, and forgotten service calls with one organized command center.
+              Join property owners who've replaced scattered spreadsheets and forgotten service calls with one organized command center.
             </p>
             <Link to="/signup">
-              <Button size="lg" className="text-xl px-14 py-8 rounded-full bg-[#1e3a5f] hover:bg-[#162d4a] text-white shadow-[0_0_50px_rgba(30,58,95,0.5)] transition-all hover:-translate-y-2 font-extrabold">
+              <Button size="lg" className="text-xl px-14 py-8 rounded-full bg-[#e8604c] hover:bg-[#d4503c] text-white shadow-lg transition-all hover:-translate-y-2 font-extrabold">
                 Create Your Free Account <ArrowRight className="ml-3 w-6 h-6" />
               </Button>
             </Link>
@@ -419,8 +727,8 @@ const LandingPage = () => {
               <h4 className="text-white font-bold text-base mb-5">Contact</h4>
               <ul className="space-y-3 text-sm text-slate-400">
                 <li>support@casaceo.com</li>
-                <li>1-800-CASACEO</li>
                 <li><a href="#contractors" className="text-[#e8604c] hover:text-blue-300 font-medium">Contractor Listings →</a></li>
+                <li><Link to="/signup" className="text-[#e8604c] hover:text-blue-300 font-medium">Get Started Free →</Link></li>
               </ul>
             </div>
           </div>
@@ -432,6 +740,16 @@ const LandingPage = () => {
             </div>
           </div>
         </footer>
+
+        {/* Mobile sticky CTA */}
+        <div className="fixed bottom-0 left-0 right-0 z-40 md:hidden bg-slate-900 border-t border-white/10 p-4 flex gap-3">
+          <Link to="/login" className="flex-1">
+            <Button variant="outline" className="w-full text-white border-white/20 rounded-full">Log In</Button>
+          </Link>
+          <Link to="/signup" className="flex-1">
+            <Button className="w-full bg-[#e8604c] hover:bg-[#d4503c] text-white rounded-full font-bold">Start Free</Button>
+          </Link>
+        </div>
       </div>
     </>
   );
