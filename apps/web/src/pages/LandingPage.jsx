@@ -28,7 +28,7 @@ const FounderStory = () => (
             I searched for a tool that could bring it all together. Nothing existed that was built for people like me — not a landlord, not a property manager, just someone who owns more than one home and wants to stay on top of it. So we built it.
           </p>
           <div className="flex items-center gap-4">
-            <div className="w-12 h-12 rounded-full bg-blue-600 flex items-center justify-center text-white font-bold text-lg">R</div>
+            <div className="w-12 h-12 rounded-full bg-[#1e3a5f] flex items-center justify-center text-white font-bold text-lg">R</div>
             <div>
               <p className="font-bold text-slate-900">The CasaCEO Team</p>
               <p className="text-slate-500 text-sm">Multi-property owners, just like you</p>
@@ -108,15 +108,15 @@ const ProblemSolution = () => (
 
 const ContractorMarketplace = () => (
   <section id="contractors" className="py-24 px-4 sm:px-6 lg:px-8 bg-slate-900 relative overflow-hidden">
-    <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_right,rgba(37,99,235,0.15)_0%,transparent_60%)]"></div>
+    <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_right,rgba(30,58,95,0.15)_0%,transparent_60%)]"></div>
     <div className="max-w-6xl mx-auto relative z-10">
       <div className="flex flex-col lg:flex-row items-center gap-16">
         <div className="lg:w-1/2">
-          <div className="inline-flex items-center gap-2 bg-blue-600/20 text-blue-400 text-sm font-semibold px-4 py-2 rounded-full mb-8 border border-blue-600/30">
+          <div className="inline-flex items-center gap-2 bg-[#1e3a5f]/20 text-[#e8604c] text-sm font-semibold px-4 py-2 rounded-full mb-8 border border-[#1e3a5f]/30">
             <BadgeCheck className="w-4 h-4" /> Verified Contractor Network
           </div>
           <h2 className="text-3xl md:text-4xl font-extrabold text-white mb-6 leading-tight">
-            The right contractor, <span className="text-blue-400">already at your fingertips</span>
+            The right contractor, <span className="text-[#e8604c]">already at your fingertips</span>
           </h2>
           <p className="text-lg text-slate-300 leading-relaxed mb-6">
             CasaCEO connects you with pre-vetted, licensed contractors in your area — plumbers, electricians, HVAC techs, landscapers, and more. Every contractor is verified, reviewed by real property owners, and linked directly to your service history.
@@ -136,13 +136,13 @@ const ContractorMarketplace = () => (
           <div className="bg-slate-800 rounded-2xl border border-slate-700 p-6 mb-4">
             <div className="flex items-start justify-between mb-4">
               <div className="flex items-center gap-3">
-                <div className="w-12 h-12 rounded-xl bg-blue-600/20 flex items-center justify-center text-blue-400 font-bold text-lg">JM</div>
+                <div className="w-12 h-12 rounded-xl bg-[#1e3a5f]/20 flex items-center justify-center text-[#e8604c] font-bold text-lg">JM</div>
                 <div>
                   <p className="font-bold text-white">Johnson & Miller HVAC</p>
                   <p className="text-slate-400 text-sm">Licensed & Insured · Atlanta, GA</p>
                 </div>
               </div>
-              <BadgeCheck className="w-6 h-6 text-blue-400 flex-shrink-0" />
+              <BadgeCheck className="w-6 h-6 text-[#e8604c] flex-shrink-0" />
             </div>
             <div className="flex items-center gap-1 mb-3">
               {[1,2,3,4,5].map(s => <Star key={s} className="w-4 h-4 fill-amber-400 text-amber-400" />)}
@@ -151,15 +151,15 @@ const ContractorMarketplace = () => (
             <p className="text-slate-400 text-sm mb-4 italic">"Fixed our AC at the lake house same day. Fast, clean, fair price. Job logged to CasaCEO automatically."</p>
             <div className="flex items-center justify-between">
               <span className="text-slate-500 text-xs">Last used: 3 months ago · Property #2</span>
-              <Button size="sm" className="bg-blue-600 hover:bg-blue-700 text-white rounded-full text-xs px-4">Book Again</Button>
+              <Button size="sm" className="bg-[#1e3a5f] hover:bg-[#162d4a] text-white rounded-full text-xs px-4">Book Again</Button>
             </div>
           </div>
-          <div className="bg-blue-600/10 border border-blue-600/20 rounded-xl p-4 text-center">
+          <div className="bg-[#1e3a5f]/10 border border-[#1e3a5f]/20 rounded-xl p-4 text-center">
             <p className="text-blue-300 text-sm font-medium">
               🏆 <strong>Are you a contractor?</strong> Get listed in our verified network and reach thousands of motivated property owners in your area.
             </p>
             <Link to="/signup">
-              <button className="mt-3 text-blue-400 text-sm font-semibold hover:text-blue-300 transition-colors underline underline-offset-2">
+              <button className="mt-3 text-[#e8604c] text-sm font-semibold hover:text-blue-300 transition-colors underline underline-offset-2">
                 Apply for Contractor Listing →
               </button>
             </Link>
@@ -198,7 +198,7 @@ const Pricing = () => (
             cta: "Apply to List", highlight: false,
           },
         ].map((plan, i) => (
-          <div key={i} className={`rounded-2xl border p-8 flex flex-col ${plan.highlight ? 'bg-blue-600 border-blue-500 shadow-2xl shadow-blue-600/30 scale-105' : 'bg-white border-slate-200 shadow-lg'}`}>
+          <div key={i} className={`rounded-2xl border p-8 flex flex-col ${plan.highlight ? 'bg-[#1e3a5f] border-blue-500 shadow-2xl shadow-[#1e3a5f]/30 scale-105' : 'bg-white border-slate-200 shadow-lg'}`}>
             <div className="mb-6">
               {plan.highlight && <span className="inline-block bg-white/20 text-white text-xs font-bold px-3 py-1 rounded-full mb-4">MOST POPULAR</span>}
               <h3 className={`text-xl font-bold mb-1 ${plan.highlight ? 'text-white' : 'text-slate-900'}`}>{plan.name}</h3>
@@ -211,13 +211,13 @@ const Pricing = () => (
             <ul className="space-y-3 mb-8 flex-1">
               {plan.features.map((f, fi) => (
                 <li key={fi} className={`flex items-center gap-2 text-sm ${plan.highlight ? 'text-blue-100' : 'text-slate-600'}`}>
-                  <CheckCircle2 className={`w-4 h-4 flex-shrink-0 ${plan.highlight ? 'text-white' : 'text-blue-600'}`} />
+                  <CheckCircle2 className={`w-4 h-4 flex-shrink-0 ${plan.highlight ? 'text-white' : 'text-[#1e3a5f]'}`} />
                   {f}
                 </li>
               ))}
             </ul>
             <Link to="/signup">
-              <Button className={`w-full rounded-full font-bold ${plan.highlight ? 'bg-white text-blue-600 hover:bg-blue-50' : 'bg-blue-600 text-white hover:bg-blue-700'}`}>
+              <Button className={`w-full rounded-full font-bold ${plan.highlight ? 'bg-white text-[#1e3a5f] hover:bg-blue-50' : 'bg-[#1e3a5f] text-white hover:bg-[#162d4a]'}`}>
                 {plan.cta}
               </Button>
             </Link>
@@ -246,7 +246,7 @@ const Testimonials = () => (
             </div>
             <p className="text-slate-700 leading-relaxed mb-6 italic">"{t.quote}"</p>
             <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-full bg-blue-50 flex items-center justify-center text-blue-600 font-bold">{t.name[0]}</div>
+              <div className="w-10 h-10 rounded-full bg-blue-50 flex items-center justify-center text-[#1e3a5f] font-bold">{t.name[0]}</div>
               <div>
                 <p className="font-bold text-slate-900 text-sm">{t.name}</p>
                 <p className="text-slate-500 text-xs">{t.role}</p>
@@ -261,15 +261,15 @@ const Testimonials = () => (
 
 const LandingPage = () => {
   const features = [
-    { icon: <Home className="w-7 h-7 text-blue-600" />, title: 'Property Dashboard', description: 'Every home at a glance — mortgage, utilities, maintenance, and expenses all in one view.' },
-    { icon: <DollarSign className="w-7 h-7 text-blue-600" />, title: 'Expense & Bill Tracking', description: 'Track every bill, utility, and expense across all properties. Export for taxes in one click.' },
-    { icon: <Wrench className="w-7 h-7 text-blue-600" />, title: 'Maintenance Scheduling', description: 'Log service calls, schedule recurring maintenance, and build a full history for every home.' },
-    { icon: <Users className="w-7 h-7 text-blue-600" />, title: 'Contractor Directory', description: 'Verified, reviewed contractors at your fingertips — attached to the property they serviced.' },
-    { icon: <FileText className="w-7 h-7 text-blue-600" />, title: 'Document Storage', description: 'Insurance policies, warranties, deeds, permits — organized by property, always accessible.' },
-    { icon: <Bell className="w-7 h-7 text-blue-600" />, title: 'Smart Reminders', description: "Never miss a payment or inspection. CasaCEO alerts you before things slip through the cracks." },
-    { icon: <LineChart className="w-7 h-7 text-blue-600" />, title: 'Financial Reports', description: 'Monthly and annual summaries per property. Know exactly where every dollar goes.' },
-    { icon: <TreePine className="w-7 h-7 text-blue-600" />, title: 'Landscape & Plants', description: 'Schedule and track landscaping, lawn care, and plant maintenance across all your properties.' },
-    { icon: <Shield className="w-7 h-7 text-blue-600" />, title: 'Insurance Tracker', description: 'Monitor policy expiration dates and coverage across every home you own.' },
+    { icon: <Home className="w-7 h-7 text-[#1e3a5f]" />, title: 'Property Dashboard', description: 'Every home at a glance — mortgage, utilities, maintenance, and expenses all in one view.' },
+    { icon: <DollarSign className="w-7 h-7 text-[#1e3a5f]" />, title: 'Expense & Bill Tracking', description: 'Track every bill, utility, and expense across all properties. Export for taxes in one click.' },
+    { icon: <Wrench className="w-7 h-7 text-[#1e3a5f]" />, title: 'Maintenance Scheduling', description: 'Log service calls, schedule recurring maintenance, and build a full history for every home.' },
+    { icon: <Users className="w-7 h-7 text-[#1e3a5f]" />, title: 'Contractor Directory', description: 'Verified, reviewed contractors at your fingertips — attached to the property they serviced.' },
+    { icon: <FileText className="w-7 h-7 text-[#1e3a5f]" />, title: 'Document Storage', description: 'Insurance policies, warranties, deeds, permits — organized by property, always accessible.' },
+    { icon: <Bell className="w-7 h-7 text-[#1e3a5f]" />, title: 'Smart Reminders', description: "Never miss a payment or inspection. CasaCEO alerts you before things slip through the cracks." },
+    { icon: <LineChart className="w-7 h-7 text-[#1e3a5f]" />, title: 'Financial Reports', description: 'Monthly and annual summaries per property. Know exactly where every dollar goes.' },
+    { icon: <TreePine className="w-7 h-7 text-[#1e3a5f]" />, title: 'Landscape & Plants', description: 'Schedule and track landscaping, lawn care, and plant maintenance across all your properties.' },
+    { icon: <Shield className="w-7 h-7 text-[#1e3a5f]" />, title: 'Insurance Tracker', description: 'Monitor policy expiration dates and coverage across every home you own.' },
   ];
 
   return (
@@ -296,7 +296,7 @@ const LandingPage = () => {
               <Button variant="ghost" className="text-white hover:bg-white/10 hover:text-white font-semibold rounded-full px-6">Log In</Button>
             </Link>
             <Link to="/signup">
-              <Button className="bg-blue-600 hover:bg-blue-700 text-white shadow-[0_0_20px_rgba(37,99,235,0.4)] font-bold px-6 sm:px-8 rounded-full">
+              <Button className="bg-[#1e3a5f] hover:bg-[#162d4a] text-white shadow-[0_0_20px_rgba(30,58,95,0.4)] font-bold px-6 sm:px-8 rounded-full">
                 Start Free
               </Button>
             </Link>
@@ -305,15 +305,15 @@ const LandingPage = () => {
 
         {/* Hero */}
         <section className="relative min-h-screen flex items-center justify-center bg-slate-900 overflow-hidden">
-          <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,rgba(37,99,235,0.18)_0%,transparent_70%)]"></div>
+          <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,rgba(30,58,95,0.18)_0%,transparent_70%)]"></div>
           <div className="absolute inset-0 bg-[url('https://www.transparenttextures.com/patterns/cubes.png')] opacity-10 mix-blend-overlay"></div>
           <div className="relative z-10 max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 text-center w-full pt-32 pb-16 flex flex-col items-center">
             <div className="mb-10 relative">
-              <div className="absolute inset-0 bg-blue-600 opacity-20 blur-[100px] rounded-full scale-150 animate-pulse"></div>
-              <CasaCEOLogo className="scale-125 md:scale-150 lg:scale-[1.75] transform-gpu" imageClassName="drop-shadow-[0_0_30px_rgba(37,99,235,0.8)]" />
+              <div className="absolute inset-0 bg-[#1e3a5f] opacity-20 blur-[100px] rounded-full scale-150 animate-pulse"></div>
+              <CasaCEOLogo className="scale-125 md:scale-150 lg:scale-[1.75] transform-gpu" imageClassName="drop-shadow-[0_0_30px_rgba(30,58,95,0.8)]" />
             </div>
             <div className="inline-flex items-center gap-2 bg-white/10 text-white/80 text-sm font-medium px-5 py-2 rounded-full border border-white/10 backdrop-blur-sm mb-8">
-              <Home className="w-4 h-4 text-blue-400" />
+              <Home className="w-4 h-4 text-[#e8604c]" />
               Built by a multi-property owner who lived the chaos
             </div>
             <h1 className="text-5xl md:text-6xl lg:text-7xl font-extrabold text-white tracking-tight mb-6 leading-tight">
@@ -325,7 +325,7 @@ const LandingPage = () => {
             </p>
             <div className="flex flex-col sm:flex-row items-center justify-center gap-5">
               <Link to="/signup">
-                <Button size="lg" className="w-full sm:w-auto text-lg px-10 py-7 rounded-full bg-blue-600 hover:bg-blue-700 text-white shadow-[0_0_40px_rgba(37,99,235,0.5)] transition-all hover:-translate-y-1 font-bold">
+                <Button size="lg" className="w-full sm:w-auto text-lg px-10 py-7 rounded-full bg-[#1e3a5f] hover:bg-[#162d4a] text-white shadow-[0_0_40px_rgba(30,58,95,0.5)] transition-all hover:-translate-y-1 font-bold">
                   Get Started Free <ArrowRight className="ml-2 w-5 h-5" />
                 </Button>
               </Link>
@@ -338,7 +338,7 @@ const LandingPage = () => {
             <div className="mt-16 flex flex-wrap justify-center gap-6 text-sm font-semibold text-slate-300">
               {["No credit card required", "1 property free forever", "Setup in under 5 minutes"].map((t, i) => (
                 <div key={i} className="flex items-center gap-2 bg-white/5 px-4 py-2 rounded-full border border-white/10">
-                  <CheckCircle2 className="w-4 h-4 text-blue-400" /> {t}
+                  <CheckCircle2 className="w-4 h-4 text-[#e8604c]" /> {t}
                 </div>
               ))}
             </div>
@@ -378,16 +378,16 @@ const LandingPage = () => {
 
         {/* Final CTA */}
         <section className="py-24 px-4 sm:px-6 lg:px-8 bg-slate-900 relative overflow-hidden">
-          <div className="absolute -top-48 -left-48 w-[600px] h-[600px] rounded-full bg-blue-600 opacity-10 blur-[120px]"></div>
+          <div className="absolute -top-48 -left-48 w-[600px] h-[600px] rounded-full bg-[#1e3a5f] opacity-10 blur-[120px]"></div>
           <div className="max-w-3xl mx-auto text-center relative z-10">
             <h2 className="text-4xl md:text-5xl font-extrabold text-white mb-6 leading-tight">
-              Stop juggling. <span className="text-blue-400">Start running your homes.</span>
+              Stop juggling. <span className="text-[#e8604c]">Start running your homes.</span>
             </h2>
             <p className="text-xl text-slate-300 mb-10">
               Join property owners who've replaced scattered spreadsheets, lost receipts, and forgotten service calls with one organized command center.
             </p>
             <Link to="/signup">
-              <Button size="lg" className="text-xl px-14 py-8 rounded-full bg-blue-600 hover:bg-blue-700 text-white shadow-[0_0_50px_rgba(37,99,235,0.5)] transition-all hover:-translate-y-2 font-extrabold">
+              <Button size="lg" className="text-xl px-14 py-8 rounded-full bg-[#1e3a5f] hover:bg-[#162d4a] text-white shadow-[0_0_50px_rgba(30,58,95,0.5)] transition-all hover:-translate-y-2 font-extrabold">
                 Create Your Free Account <ArrowRight className="ml-3 w-6 h-6" />
               </Button>
             </Link>
@@ -411,7 +411,7 @@ const LandingPage = () => {
               <h4 className="text-white font-bold text-base mb-5">Product</h4>
               <ul className="space-y-3 text-sm">
                 {[['/', 'Home'], ['/dashboard', 'Dashboard'], ['/login', 'Sign In'], ['/signup', 'Create Account']].map(([href, label]) => (
-                  <li key={href}><Link to={href} className="text-slate-400 hover:text-blue-400 transition-colors">{label}</Link></li>
+                  <li key={href}><Link to={href} className="text-slate-400 hover:text-[#e8604c] transition-colors">{label}</Link></li>
                 ))}
               </ul>
             </div>
@@ -420,15 +420,15 @@ const LandingPage = () => {
               <ul className="space-y-3 text-sm text-slate-400">
                 <li>support@casaceo.com</li>
                 <li>1-800-CASACEO</li>
-                <li><a href="#contractors" className="text-blue-400 hover:text-blue-300 font-medium">Contractor Listings →</a></li>
+                <li><a href="#contractors" className="text-[#e8604c] hover:text-blue-300 font-medium">Contractor Listings →</a></li>
               </ul>
             </div>
           </div>
           <div className="max-w-7xl mx-auto pt-8 border-t border-white/10 text-sm text-slate-500 flex flex-col md:flex-row justify-between items-center">
             <p>© {new Date().getFullYear()} CasaCEO. All rights reserved.</p>
             <div className="flex gap-6 mt-4 md:mt-0">
-              <span className="hover:text-blue-400 cursor-pointer transition-colors">Privacy Policy</span>
-              <span className="hover:text-blue-400 cursor-pointer transition-colors">Terms of Service</span>
+              <span className="hover:text-[#e8604c] cursor-pointer transition-colors">Privacy Policy</span>
+              <span className="hover:text-[#e8604c] cursor-pointer transition-colors">Terms of Service</span>
             </div>
           </div>
         </footer>
