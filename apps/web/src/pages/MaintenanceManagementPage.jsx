@@ -472,7 +472,7 @@ const TaskCard = ({ task, onEdit, onDelete, onLogService }) => {
 };
 
 // ─── Quick Stats ──────────────────────────────────────────────────────
-const QuickStats = ({ tasks }) => {
+const QuickStats = ({ tasks, onFilter }) => {
   const today = new Date();
   const overdue = tasks.filter(t => t.nextServiceDate && new Date(t.nextServiceDate) < today).length;
   const dueSoon = tasks.filter(t => {
@@ -485,20 +485,47 @@ const QuickStats = ({ tasks }) => {
     if (!t.nextServiceDate) return false;
     return new Date(t.nextServiceDate) > today;
   }).length;
+  const total = tasks.length;
+  const completionRate = total > 0 ? Math.round((upToDate / total) * 100) : 0;
 
   return (
-    <div className="grid grid-cols-3 gap-4 mb-8">
-      {[
-        { label: 'Overdue', value: overdue, icon: <AlertCircle className="w-5 h-5 text-red-500" />, color: 'bg-red-50 border-red-100' },
-        { label: 'Due This Month', value: dueSoon, icon: <Clock className="w-5 h-5 text-orange-500" />, color: 'bg-orange-50 border-orange-100' },
-        { label: 'Up To Date', value: upToDate, icon: <CheckCircle2 className="w-5 h-5 text-green-500" />, color: 'bg-green-50 border-green-100' },
-      ].map((s, i) => (
-        <div key={i} className={`${s.color} border rounded-2xl p-4 flex flex-col items-center text-center`}>
-          <div className="mb-2">{s.icon}</div>
-          <p className="text-2xl font-extrabold text-slate-900">{s.value}</p>
-          <p className="text-xs text-slate-500 font-medium mt-0.5">{s.label}</p>
+    <div className="mb-8">
+      <div className="grid grid-cols-3 gap-4 mb-4">
+        {[
+          { label: 'Overdue', value: overdue, icon: <AlertCircle className="w-5 h-5 text-red-500" />, color: 'bg-red-50 border-red-100', filter: 'Overdue', hover: 'hover:bg-red-100' },
+          { label: 'Upcoming This Month', value: dueSoon, icon: <Clock className="w-5 h-5 text-orange-500" />, color: 'bg-orange-50 border-orange-100', filter: 'Due Soon', hover: 'hover:bg-orange-100' },
+          { label: 'Up To Date', value: upToDate, icon: <CheckCircle2 className="w-5 h-5 text-green-500" />, color: 'bg-green-50 border-green-100', filter: 'Up To Date', hover: 'hover:bg-green-100' },
+        ].map((s, i) => (
+          <button
+            key={i}
+            onClick={() => onFilter && onFilter(s.filter)}
+            className={`${s.color} ${s.hover} border rounded-2xl p-4 flex flex-col items-center text-center transition-all hover:-translate-y-0.5 cursor-pointer w-full`}
+            title={`Click to filter by ${s.label}`}
+          >
+            <div className="mb-2">{s.icon}</div>
+            <p className="text-2xl font-extrabold text-slate-900">{s.value}</p>
+            <p className="text-xs text-slate-500 font-medium mt-0.5">{s.label}</p>
+          </button>
+        ))}
+      </div>
+      {total > 0 && (
+        <div className="bg-white border border-slate-100 rounded-2xl p-4 shadow-sm">
+          <div className="flex items-center justify-between mb-2">
+            <p className="text-xs font-semibold text-slate-600">Overall Maintenance Health</p>
+            <p className="text-xs font-bold text-slate-900">{completionRate}% up to date</p>
+          </div>
+          <div className="h-2.5 bg-slate-100 rounded-full overflow-hidden">
+            <div
+              className="h-full rounded-full transition-all duration-700"
+              style={{
+                width: `${completionRate}%`,
+                background: completionRate >= 80 ? '#059669' : completionRate >= 50 ? '#d97706' : '#dc2626'
+              }}
+            ></div>
+          </div>
+          <p className="text-xs text-slate-400 mt-1.5">{upToDate} of {total} tasks up to date</p>
         </div>
-      ))}
+      )}
     </div>
   );
 };
@@ -639,7 +666,7 @@ const MaintenanceManagementPage = () => {
     const matchesStatus =
       filterStatus === 'All' ||
       (filterStatus === 'Overdue' && daysUntil !== null && daysUntil < 0) ||
-      (filterStatus === 'Due Soon' && daysUntil !== null && daysUntil >= 0 && daysUntil <= 30) ||
+      (filterStatus === 'Upcoming' && daysUntil !== null && daysUntil >= 0 && daysUntil <= 30) ||
       (filterStatus === 'Up To Date' && daysUntil !== null && daysUntil > 30);
     return matchesSearch && matchesCategory && matchesStatus;
   });
@@ -669,7 +696,7 @@ const MaintenanceManagementPage = () => {
               </div>
               <div>
                 <h1 className="text-2xl font-extrabold text-slate-900">Maintenance</h1>
-                <p className="text-slate-400 text-sm">{home.name} · {tasks.length} tasks tracked</p>
+                <p className="text-slate-400 text-sm">{home.name} · {tasks.length} tasks tracked{tasks.length > 0 ? ` · Click a status card to filter` : ''}</p>
               </div>
             </div>
             <Button
@@ -704,7 +731,7 @@ const MaintenanceManagementPage = () => {
 
         {activeTab === 'schedule' && (
           <>
-            <QuickStats tasks={tasks} />
+            <QuickStats tasks={tasks} onFilter={setFilterStatus} />
 
             {/* Filters */}
             <div className="flex flex-col sm:flex-row gap-3 mb-6">
@@ -734,7 +761,7 @@ const MaintenanceManagementPage = () => {
               >
                 <option value="All">All Statuses</option>
                 <option value="Overdue">Overdue</option>
-                <option value="Due Soon">Due Soon</option>
+                <option value="Upcoming">Due Soon</option>
                 <option value="Up To Date">Up To Date</option>
               </select>
             </div>
@@ -750,8 +777,8 @@ const MaintenanceManagementPage = () => {
                 <div className="w-16 h-16 bg-slate-100 rounded-2xl flex items-center justify-center mx-auto mb-4">
                   <Wrench className="w-8 h-8 text-slate-400" />
                 </div>
-                <h3 className="text-xl font-bold text-slate-900 mb-2">No maintenance tasks yet</h3>
-                <p className="text-slate-500 mb-6">Add your first task to start tracking maintenance schedules</p>
+                <h3 className="text-xl font-bold text-slate-900 mb-2">No maintenance tasks yet 🔧</h3>
+                <p className="text-slate-500 mb-2">Stay ahead of costly repairs — schedule your first maintenance task today.</p><p className="text-slate-400 text-xs mb-6">Track HVAC filters, pest control, roof inspections, and more across all your properties.</p>
                 <Button
                   onClick={() => { setEditingTask(null); setShowTaskModal(true); }}
                   className="rounded-xl bg-slate-900 text-white px-8"
