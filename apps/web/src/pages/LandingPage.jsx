@@ -76,9 +76,10 @@ const Header = () => {
 
 // ─── Dashboard Mockup ─────────────────────────────────────────────────
 const DashboardMockup = () => (
-  <div className="relative w-full max-w-2xl mx-auto">
-    {/* Glow effect */}
-    <div className="absolute inset-0 bg-[#1e3a5f] opacity-30 blur-3xl rounded-3xl scale-110"></div>
+  <div className="relative w-full max-w-2xl mx-auto lg:scale-105 lg:origin-left">
+    {/* Glow effect — stronger and more visible */}
+    <div className="absolute inset-0 bg-[#1e3a5f] opacity-40 blur-3xl rounded-3xl scale-125"></div>
+    <div className="absolute -bottom-8 left-1/2 -translate-x-1/2 w-3/4 h-16 bg-[#e8604c] opacity-10 blur-3xl"></div>
 
     {/* Browser frame */}
     <div className="relative bg-slate-800 rounded-2xl border border-white/10 shadow-2xl overflow-hidden">
@@ -122,19 +123,29 @@ const DashboardMockup = () => (
           </div>
         </div>
 
-        {/* Stats row */}
-        <div className="grid grid-cols-4 gap-2 mb-3">
-          {[
-            { label: 'Bills Due', value: '3', color: 'bg-blue-500/20 text-blue-300' },
-            { label: 'Overdue', value: '1', color: 'bg-red-500/20 text-red-300' },
-            { label: 'Documents', value: '14', color: 'bg-purple-500/20 text-purple-300' },
-            { label: 'This Month', value: '$2.8k', color: 'bg-green-500/20 text-green-300' },
-          ].map((s, i) => (
-            <div key={i} className={`${s.color} rounded-lg p-2 text-center`}>
-              <p className="text-sm font-bold">{s.value}</p>
-              <p className="text-xs opacity-75">{s.label}</p>
+        {/* Alert items — real homeowner content */}
+        <div className="space-y-2 mb-3">
+          <div className="flex items-center justify-between bg-red-500/15 border border-red-500/20 rounded-xl px-3 py-2">
+            <div className="flex items-center gap-2">
+              <div className="w-2 h-2 rounded-full bg-red-400"></div>
+              <span className="text-red-300 text-xs font-medium">Roof Inspection Due</span>
             </div>
-          ))}
+            <span className="text-red-300 text-xs">Lake House</span>
+          </div>
+          <div className="flex items-center justify-between bg-orange-500/15 border border-orange-500/20 rounded-xl px-3 py-2">
+            <div className="flex items-center gap-2">
+              <div className="w-2 h-2 rounded-full bg-orange-400"></div>
+              <span className="text-orange-300 text-xs font-medium">HVAC Service Overdue</span>
+            </div>
+            <span className="text-orange-300 text-xs">Primary Home</span>
+          </div>
+          <div className="flex items-center justify-between bg-blue-500/15 border border-blue-500/20 rounded-xl px-3 py-2">
+            <div className="flex items-center gap-2">
+              <div className="w-2 h-2 rounded-full bg-blue-400"></div>
+              <span className="text-blue-300 text-xs font-medium">Property Tax Due in 14 days</span>
+            </div>
+            <span className="text-blue-300 text-xs">$2,840</span>
+          </div>
         </div>
 
         {/* Module grid */}
@@ -158,16 +169,16 @@ const DashboardMockup = () => (
       </div>
     </div>
 
-    {/* Floating alert card */}
-    <div className="absolute -right-4 top-20 bg-white rounded-xl shadow-xl p-3 w-44 border border-slate-100 hidden lg:block">
+    {/* Floating alert card — with glow */}
+    <div className="absolute -right-4 top-20 bg-white rounded-xl p-3 w-44 border border-red-100 hidden lg:block" style={{boxShadow: '0 0 0 3px rgba(232,96,76,0.15), 0 8px 24px rgba(0,0,0,0.12)'}}>
       <div className="flex items-center gap-2 mb-2">
-        <div className="w-6 h-6 rounded-full bg-red-100 flex items-center justify-center">
+        <div className="w-6 h-6 rounded-full bg-red-100 flex items-center justify-center animate-pulse">
           <Bell className="w-3 h-3 text-red-500" />
         </div>
-        <span className="text-slate-700 text-xs font-bold">Bill Due</span>
+        <span className="text-slate-700 text-xs font-bold">⚡ Bill Due</span>
       </div>
       <p className="text-slate-600 text-xs">Electric bill due in 2 days</p>
-      <p className="text-[#1e3a5f] text-xs font-bold mt-1">$142.00</p>
+      <p className="text-[#e8604c] text-xs font-bold mt-1">$142.00 — Pay Now →</p>
     </div>
 
     {/* Floating property card */}
@@ -598,20 +609,16 @@ const LandingPage = () => {
               <div className="lg:w-1/2 text-center lg:text-left">
                 <div className="inline-flex items-center gap-2 bg-white/10 text-white/80 text-sm font-medium px-5 py-2 rounded-full border border-white/10 backdrop-blur-sm mb-8">
                   <Home className="w-4 h-4 text-[#e8604c]" />
-                  Built by a multi-property owner who lived the chaos
+                  Built by a multi-property owner who conquered the chaos
                 </div>
 
                 <h1 className="text-5xl md:text-6xl lg:text-7xl font-extrabold text-white tracking-tight mb-6 leading-tight">
-                  One home is<br />manageable.<br />
-                  <span className="text-[#e8604c]">Two is chaos.</span>
+                  <span className="font-light">One home is</span><br /><span className="font-light">manageable.</span><br />
+                  <span className="text-[#e8604c] font-extrabold">Two is chaos.</span>
                 </h1>
 
-                <p className="text-xl text-slate-300 mb-4 max-w-xl leading-relaxed">
-                  CasaCEO is the command center for multi-property owners — bills, maintenance, documents, and contractors, all in one place.
-                </p>
-
-                <p className="text-base text-slate-400 mb-10 max-w-lg leading-relaxed">
-                  Stop juggling spreadsheets, missed payments, and forgotten service calls. Finally feel in control of everything you own.
+                <p className="text-xl text-slate-300 mb-10 max-w-xl leading-relaxed">
+                  CasaCEO is your command center for every home you own — bills, maintenance, documents, and contractors all in one place. Finally feel in control.
                 </p>
 
                 <div className="flex flex-col sm:flex-row items-center lg:items-start justify-center lg:justify-start gap-4 mb-10">
@@ -627,12 +634,20 @@ const LandingPage = () => {
                   </Link>
                 </div>
 
-                <div className="flex flex-wrap justify-center lg:justify-start gap-4 text-sm font-semibold text-slate-300">
+                <div className="flex flex-wrap justify-center lg:justify-start gap-4 text-sm font-semibold text-slate-300 mb-8">
                   {["No credit card required", "1 property free forever", "Setup in under 5 minutes"].map((t, i) => (
                     <div key={i} className="flex items-center gap-2 bg-white/5 px-4 py-2 rounded-full border border-white/10">
                       <CheckCircle2 className="w-4 h-4 text-[#e8604c]" /> {t}
                     </div>
                   ))}
+                </div>
+
+                {/* Testimonial under hero */}
+                <div className="flex items-start gap-3 bg-white/5 border border-white/10 rounded-2xl p-4 max-w-lg">
+                  <div className="flex-shrink-0 mt-0.5">
+                    {[...Array(5)].map((_, i) => <Star key={i} className="w-3 h-3 fill-amber-400 text-amber-400 inline" />)}
+                  </div>
+                  <p className="text-slate-300 text-sm italic">"Finally, a dashboard that makes owning multiple homes feel effortless." <span className="text-slate-400 not-italic">— Early Beta User</span></p>
                 </div>
               </div>
 
