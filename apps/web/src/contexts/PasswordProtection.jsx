@@ -16,7 +16,6 @@ export const PasswordProtectionProvider = ({ children }) => {
     const hostname = window.location.hostname;
 
     const isDevEnvironment =
-      true ||
       hostname === 'localhost' ||
       hostname === '127.0.0.1' ||
       hostname.endsWith('.replit.dev') ||
