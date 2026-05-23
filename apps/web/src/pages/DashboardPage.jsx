@@ -1,494 +1,428 @@
 import React, { useState, useEffect } from 'react';
 import { Helmet } from 'react-helmet';
-import { Link } from 'react-router-dom';
+import pb from '@/lib/horizonsBackend.js';
 import { useHome } from '@/contexts/HomeContext.jsx';
 import { useAuth } from '@/contexts/AuthContext.jsx';
-import pb from '@/lib/horizonsBackend.js';
+import { useToast } from '@/hooks/use-toast.js';
 import { Button } from '@/components/ui/button.jsx';
+import { Input } from '@/components/ui/input.jsx';
+import { Skeleton } from '@/components/ui/skeleton.jsx';
+import { Badge } from '@/components/ui/badge.jsx';
+import DocumentUploadForm from '@/components/DocumentUploadForm.jsx';
+import DocumentTypeList from '@/components/DocumentTypeList.jsx';
 import {
-  Building2, Wrench, FileText, CreditCard, TreePine, ShieldCheck,
-  Home, ShieldCheck, FolderOpen, Users, LineChart,
-  ChevronDown, Plus, MapPin, Check, Bell, AlertCircle,
-  Clock, DollarSign, TrendingUp, Key, Loader2, X,
-  ArrowRight, CheckCircle2, Sparkles
+  ShieldCheck, FileSignature, Receipt, ScrollText,
+  Landmark, Ruler, FileText, Shield, FileMinus,
+  ArrowLeft, FolderOpen, Search, AlertCircle,
+  Clock, CheckCircle2, Upload, Filter, Grid,
+  List, X, ChevronRight, Lock
 } from 'lucide-react';
 
-// ─── Property Switcher ────────────────────────────────────────────────
-const PropertySwitcher = () => {
-  const { homes, selectedHome, switchHome, addHome, loading } = useHome();
-  const { currentUser } = useAuth();
-  const [isOpen, setIsOpen] = useState(false);
-  const [showAddForm, setShowAddForm] = useState(false);
-  const [newHomeName, setNewHomeName] = useState('');
-  const [newHomeAddress, setNewHomeAddress] = useState('');
-  const [adding, setAdding] = useState(false);
-
-  const handleAddHome = async () => {
-    if (!newHomeName.trim()) return;
-    setAdding(true);
-    try {
-      await addHome({ name: newHomeName, address: newHomeAddress });
-      setNewHomeName('');
-      setNewHomeAddress('');
-      setShowAddForm(false);
-      setIsOpen(false);
-    } catch (e) {
-      console.error(e);
-    } finally {
-      setAdding(false);
-    }
-  };
-
-  return (
-    <div className="relative">
-      <button
-        onClick={() => setIsOpen(!isOpen)}
-        className="flex items-center gap-3 bg-white border border-slate-200 rounded-2xl px-5 py-3 shadow-sm hover:shadow-md transition-all group"
-      >
-        <div className="w-9 h-9 bg-navy-50 rounded-xl flex items-center justify-center flex-shrink-0" style={{background:'#eef2f8'}}>
-          <Home className="w-5 h-5" style={{color:'#1e3a5f'}} />
-        </div>
-        <div className="text-left">
-          <p className="text-xs text-slate-400 font-medium uppercase tracking-wide">Active Property</p>
-          <p className="font-bold text-slate-900 text-base leading-tight">
-            {loading ? 'Loading...' : selectedHome?.name || 'Select Property'}
-          </p>
-          {selectedHome?.address && (
-            <p className="text-xs text-slate-400 truncate max-w-40">{selectedHome.address}</p>
-          )}
-        </div>
-        <ChevronDown className={`w-4 h-4 text-slate-400 transition-transform ${isOpen ? 'rotate-180' : ''}`} />
-      </button>
-
-      {isOpen && (
-        <div className="absolute top-full left-0 mt-2 w-80 bg-white rounded-2xl border border-slate-200 shadow-xl z-50 overflow-hidden">
-          <div className="p-3">
-            <p className="text-xs text-slate-400 uppercase tracking-wide font-medium px-2 py-1">Your Properties</p>
-            {homes.length === 0 && !loading && (
-              <p className="text-sm text-slate-400 text-center py-4">No properties yet</p>
-            )}
-            {homes.map(home => (
-              <button
-                key={home.id}
-                onClick={() => { switchHome(home); setIsOpen(false); }}
-                className={`w-full flex items-center gap-3 px-3 py-3 rounded-xl hover:bg-slate-50 transition-colors ${selectedHome?.id === home.id ? 'bg-slate-50' : ''}`}
-              >
-                <div className="w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0" style={{background:'#eef2f8'}}>
-                  <MapPin className="w-4 h-4" style={{color:'#1e3a5f'}} />
-                </div>
-                <div className="text-left flex-1 min-w-0">
-                  <p className="font-semibold text-slate-900 text-sm truncate">{home.name}</p>
-                  {home.address && <p className="text-xs text-slate-400 truncate">{home.address}</p>}
-                </div>
-                {selectedHome?.id === home.id && <Check className="w-4 h-4 text-green-500 flex-shrink-0" />}
-              </button>
-            ))}
-
-            <div className="border-t border-slate-100 mt-2 pt-2">
-              {!showAddForm ? (
-                <button
-                  onClick={() => setShowAddForm(true)}
-                  className="w-full flex items-center gap-2 px-3 py-2.5 rounded-xl hover:bg-slate-50 text-sm font-medium text-slate-500 hover:text-slate-700 transition-colors"
-                >
-                  <Plus className="w-4 h-4" /> Add New Property
-                </button>
-              ) : (
-                <div className="p-2 space-y-2">
-                  <input
-                    autoFocus
-                    placeholder="Property name (e.g. Lake House)"
-                    value={newHomeName}
-                    onChange={e => setNewHomeName(e.target.value)}
-                    className="w-full h-9 px-3 rounded-xl border border-slate-200 text-sm focus:outline-none focus:ring-2 focus:ring-slate-900"
-                  />
-                  <input
-                    placeholder="Address (optional)"
-                    value={newHomeAddress}
-                    onChange={e => setNewHomeAddress(e.target.value)}
-                    className="w-full h-9 px-3 rounded-xl border border-slate-200 text-sm focus:outline-none focus:ring-2 focus:ring-slate-900"
-                  />
-                  <div className="flex gap-2">
-                    <button
-                      onClick={() => setShowAddForm(false)}
-                      className="flex-1 h-9 rounded-xl border border-slate-200 text-sm text-slate-500 hover:bg-slate-50"
-                    >
-                      Cancel
-                    </button>
-                    <button
-                      onClick={handleAddHome}
-                      disabled={!newHomeName.trim() || adding}
-                      className="flex-1 h-9 rounded-xl text-sm font-semibold text-white disabled:opacity-50"
-                      style={{background:'#1e3a5f'}}
-                    >
-                      {adding ? 'Adding...' : 'Add'}
-                    </button>
-                  </div>
-                </div>
-              )}
-            </div>
-          </div>
-        </div>
-      )}
-
-      {isOpen && <div className="fixed inset-0 z-40" onClick={() => setIsOpen(false)} />}
-    </div>
-  );
-};
-
-// ─── Module Tiles ─────────────────────────────────────────────────────
-const MODULES = [
+// ─── Document Categories ──────────────────────────────────────────────
+const DOCUMENT_TYPES = [
   {
-    title: 'Maintenance',
-    description: 'Never miss a maintenance task again',
-    icon: Wrench,
-    link: '/maintenance-management',
-    color: '#f97316',
-    bg: '#fff7ed',
-    badge: null,
-  },
-  {
-    title: 'Bill Pay',
-    description: 'Stay ahead of every due date',
-    icon: CreditCard,
-    link: '/bill-pay',
-    color: '#2563eb',
-    bg: '#eff6ff',
-    badge: null,
-  },
-  {
-    title: 'Documents',
-    description: 'Your secure home document vault',
-    icon: FolderOpen,
-    link: '/documents',
-    color: '#7c3aed',
-    bg: '#f5f3ff',
-    badge: null,
-  },
-  {
-    title: 'Expenses',
-    description: 'Know exactly where your money goes',
-    icon: DollarSign,
-    link: '/expenses',
-    color: '#059669',
-    bg: '#ecfdf5',
-    badge: null,
-  },
-  {
-    title: 'Utilities',
-    description: 'All your utility accounts in one place',
-    icon: Building2,
-    link: '/utilities',
-    color: '#0891b2',
-    bg: '#ecfeff',
-    badge: null,
-  },
-  {
-    title: 'Home Value',
-    description: 'See what your homes are worth today',
-    icon: TrendingUp,
-    link: '/home-valuation',
-    color: '#1e3a5f',
-    bg: '#eef2f8',
-    badge: 'New',
-  },
-  {
-    title: 'Rental Properties',
-    description: 'Manage rentals like a pro',
-    icon: Key,
-    link: '/rental-properties',
-    color: '#db2777',
-    bg: '#fdf2f8',
-    badge: null,
-  },
-  {
-    title: 'Landscaping',
-    description: 'Keep your yards beautiful effortlessly',
-    icon: TreePine,
-    link: '/plants',
-    color: '#16a34a',
-    bg: '#f0fdf4',
-    badge: null,
-  },
-  {
-    title: 'Insurance',
-    description: 'Never let coverage lapse again',
+    type: 'Warranties',
     icon: ShieldCheck,
-    link: '/documents',
-    color: '#dc2626',
-    bg: '#fef2f2',
-    badge: null,
+    description: 'Appliance and system warranties',
+    iconColor: '#1e3a5f', iconBg: '#eef2f8',
+    hasExpiry: true,
+    tip: 'Track expiry dates to know when warranties run out'
   },
   {
-    title: 'Tax Reports',
-    description: 'Tax-ready reports in one click',
+    type: 'Insurance Policies',
+    icon: Shield,
+    description: 'Homeowners and liability insurance',
+    iconColor: '#e8604c', iconBg: '#fdf0ee',
+    hasExpiry: true,
+    tip: 'Never let a policy expire without knowing'
+  },
+  {
+    type: 'Closing Documents',
+    icon: FileSignature,
+    description: 'Final settlement and closing papers',
+    iconColor: '#7c3aed', iconBg: '#f5f3ff',
+    hasExpiry: false,
+    tip: 'Keep your closing docs safe and accessible'
+  },
+  {
+    type: 'Deeds',
+    icon: ScrollText,
+    description: 'Property ownership deeds',
+    iconColor: '#d97706', iconBg: '#fffbeb',
+    hasExpiry: false,
+    tip: 'Your most important ownership documents'
+  },
+  {
+    type: 'Mortgages',
+    icon: Landmark,
+    description: 'Loan and mortgage agreements',
+    iconColor: '#2563eb', iconBg: '#eff6ff',
+    hasExpiry: false,
+    tip: 'All loan documents in one place'
+  },
+  {
+    type: 'Purchase Receipts',
+    icon: Receipt,
+    description: 'Receipts for major purchases and repairs',
+    iconColor: '#059669', iconBg: '#ecfdf5',
+    hasExpiry: false,
+    tip: 'Keep receipts for tax deductions and warranties'
+  },
+  {
+    type: 'Tenant Contracts',
     icon: FileText,
-    link: '/expenses',
-    color: '#d97706',
-    bg: '#fffbeb',
-    badge: 'Soon',
+    description: 'Lease agreements and addendums',
+    iconColor: '#0891b2', iconBg: '#ecfeff',
+    hasExpiry: true,
+    tip: 'Track lease start and end dates'
   },
   {
-    title: 'Vendors',
-    description: 'Find vetted pros near your properties',
-    icon: Users,
-    link: '/maintenance-management',
-    color: '#0369a1',
-    bg: '#f0f9ff',
-    badge: 'Soon',
+    type: 'Architectural Designs',
+    icon: Ruler,
+    description: 'Floor plans and blueprints',
+    iconColor: '#db2777', iconBg: '#fdf2f8',
+    hasExpiry: false,
+    tip: 'Store plans for renovations and permits'
   },
   {
-    title: 'Reports',
-    description: 'Data-driven decisions for every home',
-    icon: LineChart,
-    link: '/expenses',
-    color: '#7c3aed',
-    bg: '#faf5ff',
-    badge: 'Soon',
+    type: 'Lien Waivers',
+    icon: FileMinus,
+    description: 'Contractor lien waivers',
+    iconColor: '#64748b', iconBg: '#f8fafc',
+    hasExpiry: false,
+    tip: 'Protect yourself from contractor liens'
   },
 ];
 
-// ─── Module Tile Component ────────────────────────────────────────────
-const ModuleTile = ({ module }) => {
-  const Icon = module.icon;
+// ─── Category Card ────────────────────────────────────────────────────
+const CategoryCard = ({ docType, count, expiringCount, onClick }) => {
+  const Icon = docType.icon;
+
   return (
-    <Link
-      to={module.link}
-      className="bg-white rounded-2xl border border-slate-100 p-5 hover:shadow-md hover:-translate-y-0.5 transition-all group relative overflow-hidden"
+    <button
+      onClick={() => onClick(docType.type)}
+      className="bg-white rounded-2xl border border-slate-100 p-6 text-left hover:shadow-md hover:-translate-y-0.5 transition-all group w-full shadow-sm"
     >
-      {module.badge && (
-        <span className={`absolute top-3 right-3 text-xs font-bold px-2 py-0.5 rounded-full ${
-          module.badge === 'New' ? 'bg-green-100 text-green-600' : 'bg-slate-100 text-slate-500'
-        }`}>
-          {module.badge}
-        </span>
+      <div className="flex items-start justify-between mb-4">
+        <div className="w-12 h-12 rounded-xl flex items-center justify-center group-hover:scale-110 transition-transform" style={{ background: docType.iconBg }}>
+          <Icon className="w-6 h-6" style={{ color: docType.iconColor }} />
+        </div>
+        <div className="flex items-center gap-2">
+          {expiringCount > 0 && (
+            <span className="flex items-center gap-1 bg-red-50 text-red-500 text-xs font-bold px-2 py-1 rounded-full border border-red-100">
+              <AlertCircle className="w-3 h-3" />
+              {expiringCount} expiring
+            </span>
+          )}
+          {count > 0 && (
+            <span className="bg-slate-100 text-slate-600 text-xs font-bold px-2.5 py-1 rounded-full">
+              {count}
+            </span>
+          )}
+        </div>
+      </div>
+
+      <h3 className="font-bold text-slate-900 text-base mb-1">{docType.type}</h3>
+      <p className="text-slate-400 text-sm leading-relaxed mb-3">{docType.description}</p>
+
+      <div className="flex items-center justify-between">
+        <p className="text-xs text-slate-300 italic">{docType.tip}</p>
+        <ChevronRight className="w-4 h-4 text-slate-300 group-hover:text-slate-500 group-hover:translate-x-0.5 transition-all flex-shrink-0" />
+      </div>
+
+      {count === 0 && (
+        <div className="mt-3 pt-3 border-t border-dashed border-slate-100 flex items-center gap-1.5 text-xs text-slate-400">
+          <Upload className="w-3.5 h-3.5" />
+          Click to add your first document
+        </div>
       )}
-      <div
-        className="w-12 h-12 rounded-xl flex items-center justify-center mb-4 group-hover:scale-110 transition-transform"
-        style={{ background: module.bg }}
-      >
-        <Icon className="w-6 h-6" style={{ color: module.color }} />
-      </div>
-      <h3 className="font-bold text-slate-900 text-base mb-1">{module.title}</h3>
-      <p className="text-slate-400 text-xs leading-relaxed">{module.description}</p>
-      <div className="mt-4 flex items-center gap-1 text-xs font-semibold opacity-0 group-hover:opacity-100 transition-opacity" style={{ color: module.color }}>
-        Open <ArrowRight className="w-3.5 h-3.5" />
-      </div>
-    </Link>
+    </button>
   );
 };
 
-// ─── Quick Alerts ─────────────────────────────────────────────────────
-const QuickAlerts = ({ selectedHome }) => {
-  const [alerts, setAlerts] = useState([]);
+// ─── Expiry Alert Banner ──────────────────────────────────────────────
+const ExpiryAlerts = ({ documents }) => {
+  const today = new Date();
+  const in60Days = new Date(today.getTime() + 60 * 24 * 60 * 60 * 1000);
+
+  const expiring = documents.filter(d => {
+    if (!d.expiryDate) return false;
+    const exp = new Date(d.expiryDate);
+    return exp <= in60Days && exp >= today;
+  });
+
+  const expired = documents.filter(d => {
+    if (!d.expiryDate) return false;
+    return new Date(d.expiryDate) < today;
+  });
+
+  if (expiring.length === 0 && expired.length === 0) return null;
+
+  return (
+    <div className="mb-8 space-y-3">
+      {expired.length > 0 && (
+        <div className="bg-red-50 border border-red-100 rounded-2xl p-4 flex items-start gap-3">
+          <AlertCircle className="w-5 h-5 text-red-500 flex-shrink-0 mt-0.5" />
+          <div>
+            <p className="font-bold text-red-700 text-sm">
+              {expired.length} document{expired.length > 1 ? 's' : ''} expired
+            </p>
+            <p className="text-red-500 text-xs mt-0.5">
+              {expired.map(d => d.documentName || d.documentType).join(', ')}
+            </p>
+          </div>
+        </div>
+      )}
+      {expiring.length > 0 && (
+        <div className="bg-amber-50 border border-amber-100 rounded-2xl p-4 flex items-start gap-3">
+          <Clock className="w-5 h-5 text-amber-500 flex-shrink-0 mt-0.5" />
+          <div>
+            <p className="font-bold text-amber-700 text-sm">
+              {expiring.length} document{expiring.length > 1 ? 's' : ''} expiring soon
+            </p>
+            <p className="text-amber-500 text-xs mt-0.5">
+              {expiring.map(d => d.documentName || d.documentType).join(', ')}
+            </p>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+};
+
+// ─── Vault Stats ──────────────────────────────────────────────────────
+const VaultStats = ({ documents, categories }) => {
+  const totalDocs = documents.length;
+  const withExpiry = documents.filter(d => d.expiryDate).length;
+  const categoriesUsed = new Set(documents.map(d => d.documentType)).size;
+
+  return (
+    <div className="grid grid-cols-3 gap-4 mb-8">
+      {[
+        { label: 'Total Documents', value: totalDocs, icon: <FolderOpen className="w-5 h-5" />, iconColor: '#1e3a5f', bg: '#eef2f8', border: '#c7d5e8' },
+        { label: 'Categories Used', value: `${categoriesUsed}/${categories.length}`, icon: <Grid className="w-5 h-5" />, iconColor: '#7c3aed', bg: '#f5f3ff', border: '#ddd6fe' },
+        { label: 'With Expiry Dates', value: withExpiry, icon: <Clock className="w-5 h-5" />, iconColor: '#d97706', bg: '#fffbeb', border: '#fde68a' },
+      ].map((stat, i) => (
+        <div key={i} className="bg-white rounded-2xl border p-4 flex flex-col items-center text-center shadow-sm" style={{ borderColor: stat.border }}>
+          <div className="w-9 h-9 rounded-xl flex items-center justify-center mb-2" style={{ background: stat.bg, color: stat.iconColor }}>
+            {stat.icon}
+          </div>
+          <p className="text-2xl font-extrabold text-slate-900">{stat.value}</p>
+          <p className="text-xs text-slate-500 font-medium mt-0.5">{stat.label}</p>
+        </div>
+      ))}
+    </div>
+  );
+};
+
+// ─── Main Page ────────────────────────────────────────────────────────
+const DocumentsPage = () => {
+  const { selectedHome } = useHome();
+  const { currentUser } = useAuth();
+  const { toast } = useToast();
+
+  const [selectedDocumentType, setSelectedDocumentType] = useState(null);
+  const [documents, setDocuments] = useState([]);
+  const [allDocuments, setAllDocuments] = useState([]);
+  const [loading, setLoading] = useState(false);
+  const [searchQuery, setSearchQuery] = useState('');
 
   useEffect(() => {
-    if (!selectedHome) return;
-    const mockAlerts = [
-      { type: 'bill', message: 'Electric bill due in 3 days', link: '/bill-pay', urgent: true },
-      { type: 'maintenance', message: 'HVAC service overdue', link: '/maintenance-management', urgent: true },
-      { type: 'document', message: 'Home insurance renews in 30 days', link: '/documents', urgent: false },
-    ];
-    setAlerts(mockAlerts);
-  }, [selectedHome]);
+    if (selectedHome && currentUser) {
+      fetchAllDocuments();
+    }
+  }, [selectedHome, currentUser]);
 
-  if (alerts.length === 0) return null;
+  useEffect(() => {
+    if (selectedDocumentType && selectedHome && currentUser) {
+      fetchDocuments();
+    }
+  }, [selectedDocumentType, selectedHome, currentUser]);
 
-  return (
-    <div className="bg-white rounded-2xl border border-slate-100 p-5 shadow-sm">
-      <div className="flex items-center gap-2 mb-4">
-        <Bell className="w-4 h-4 text-slate-400" />
-        <h2 className="font-bold text-slate-900 text-base">Alerts</h2>
-        <span className="bg-red-100 text-red-600 text-xs font-bold px-2 py-0.5 rounded-full">
-          {alerts.filter(a => a.urgent).length}
-        </span>
-      </div>
-      <div className="space-y-2">
-        {alerts.map((alert, i) => (
-          <Link key={i} to={alert.link}>
-            <div className={`flex items-center gap-3 p-3 rounded-xl hover:opacity-80 transition-opacity ${
-              alert.urgent ? 'bg-red-50' : 'bg-amber-50'
-            }`}>
-              <AlertCircle className={`w-4 h-4 flex-shrink-0 ${alert.urgent ? 'text-red-500' : 'text-amber-500'}`} />
-              <p className="text-sm font-medium text-slate-700">{alert.message}</p>
-              <ArrowRight className="w-3.5 h-3.5 text-slate-300 ml-auto flex-shrink-0" />
-            </div>
-          </Link>
-        ))}
-      </div>
-    </div>
+  const fetchAllDocuments = async () => {
+    try {
+      const records = await pb.collection('property_documents').getFullList({
+        filter: `ownerId="${currentUser.id}" && propertyId="${selectedHome.id}"`,
+        sort: '-uploadDate',
+        $autoCancel: false
+      });
+      setAllDocuments(records);
+    } catch (error) {
+      console.error('Failed to fetch all documents:', error);
+    }
+  };
+
+  const fetchDocuments = async () => {
+    setLoading(true);
+    try {
+      const records = await pb.collection('property_documents').getList(1, 50, {
+        filter: `documentType="${selectedDocumentType}" && ownerId="${currentUser.id}" && propertyId="${selectedHome.id}"`,
+        sort: '-uploadDate',
+        $autoCancel: false
+      });
+      setDocuments(records.items);
+    } catch (error) {
+      toast({ title: 'Error', description: 'Failed to load documents.', variant: 'destructive' });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleDeleteDocument = async (id) => {
+    try {
+      await pb.collection('property_documents').delete(id, { $autoCancel: false });
+      toast({ title: '✅ Document deleted' });
+      fetchDocuments();
+      fetchAllDocuments();
+    } catch (error) {
+      toast({ title: 'Error', description: 'Failed to delete document.', variant: 'destructive' });
+    }
+  };
+
+  const getCountForType = (type) => allDocuments.filter(d => d.documentType === type).length;
+  const getExpiringForType = (type) => {
+    const today = new Date();
+    const in60Days = new Date(today.getTime() + 60 * 24 * 60 * 60 * 1000);
+    return allDocuments.filter(d =>
+      d.documentType === type &&
+      d.expiryDate &&
+      new Date(d.expiryDate) <= in60Days
+    ).length;
+  };
+
+  const filteredCategories = DOCUMENT_TYPES.filter(dt =>
+    dt.type.toLowerCase().includes(searchQuery.toLowerCase())
   );
-};
 
-// ─── Welcome Banner ───────────────────────────────────────────────────
-const WelcomeBanner = ({ user, selectedHome }) => {
-  const hour = new Date().getHours();
-  const greeting = hour < 12 ? 'Good morning' : hour < 17 ? 'Good afternoon' : 'Good evening';
-  const firstName = user?.name?.split(' ')[0] || 'there';
-
-  return (
-    <div className="rounded-2xl p-6 text-white relative overflow-hidden" style={{background:'#1e3a5f'}}>
-      <div className="absolute top-0 right-0 w-48 h-48 rounded-full opacity-10" style={{background:'#c9a96e', transform:'translate(30%, -30%)'}}></div>
-      <div className="absolute bottom-0 left-0 w-32 h-32 rounded-full opacity-5" style={{background:'#c9a96e', transform:'translate(-30%, 30%)'}}></div>
-      <div className="relative z-10">
-        <div className="flex items-start justify-between">
-          <div>
-            <p className="text-blue-200 text-sm font-medium mb-1">{greeting}, {firstName} 👋</p>
-            <h1 className="text-2xl font-extrabold text-white mb-1">
-              {selectedHome ? selectedHome.name : 'Welcome to CasaCEO'}
-            </h1>
-            <p className="text-blue-200 text-sm">
-              {selectedHome?.address || 'Select a property to get started'}
-            </p>
-          </div>
-          <div className="text-right">
-            <p className="text-blue-200 text-xs">
-              {new Date().toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' })}
-            </p>
-          </div>
+  if (!selectedHome) {
+    return (
+      <div className="p-8 text-center">
+        <div className="w-16 h-16 bg-slate-100 rounded-2xl flex items-center justify-center mx-auto mb-4">
+          <FolderOpen className="w-8 h-8 text-slate-400" />
         </div>
+        <p className="text-slate-500 font-medium">Please select a property to view documents.</p>
       </div>
-    </div>
-  );
-};
-
-// ─── Quick Stats ──────────────────────────────────────────────────────
-const QuickStats = () => (
-  <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
-    {[
-      { label: 'Bills Due', value: '3', sublabel: 'this week', trend: '↑ 1 more than last week', trendUp: false, icon: <CreditCard className="w-4 h-4" />, color: '#d97706', bg: '#fffbeb', border: '#fde68a' },
-      { label: 'Maintenance', value: '2', sublabel: 'overdue', trend: '↑ action needed', trendUp: false, icon: <Wrench className="w-4 h-4" />, color: '#dc2626', bg: '#fef2f2', border: '#fecaca' },
-      { label: 'Documents', value: '14', sublabel: 'stored', trend: '↑ 2 added this month', trendUp: true, icon: <FolderOpen className="w-4 h-4" />, color: '#7c3aed', bg: '#f5f3ff', border: '#ddd6fe' },
-      { label: 'This Month', value: '$2,840', sublabel: 'expenses', trend: '↓ 12% vs last month', trendUp: true, icon: <DollarSign className="w-4 h-4" />, color: '#059669', bg: '#ecfdf5', border: '#a7f3d0' },
-    ].map((stat, i) => (
-      <div key={i} className="bg-white rounded-2xl border p-4 shadow-sm" style={{ borderColor: stat.border }}>
-        <div className="flex items-center justify-between mb-3">
-          <div className="w-8 h-8 rounded-lg flex items-center justify-center" style={{ background: stat.bg }}>
-            <span style={{ color: stat.color }}>{stat.icon}</span>
-          </div>
-          <span className="text-xs font-medium" style={{ color: stat.trendUp ? '#059669' : '#dc2626' }}>{stat.trend}</span>
-        </div>
-        <p className="text-2xl font-extrabold text-slate-900">{stat.value}</p>
-        <p className="text-xs text-slate-400 mt-0.5">{stat.label} · {stat.sublabel}</p>
-      </div>
-    ))}
-  </div>
-);
-
-// ─── Main Dashboard ───────────────────────────────────────────────────
-const DashboardPage = () => {
-  const { selectedHome, homes, loading } = useHome();
-  const { currentUser } = useAuth();
+    );
+  }
 
   return (
     <>
       <Helmet>
-        <title>Dashboard — CasaCEO</title>
+        <title>Document Vault — CasaCEO</title>
       </Helmet>
 
-      <div className="min-h-screen bg-slate-50">
+      <div className="max-w-6xl mx-auto space-y-0">
 
-        {/* ── Top Nav Bar ── */}
-        <header className="sticky top-0 z-30 bg-white border-b border-slate-200 px-4 sm:px-6 lg:px-8 h-18 py-3 flex items-center justify-between shadow-sm">
-          <div className="flex items-center gap-3">
-            {/* Logo */}
-            <div className="flex items-center gap-2">
-              <div className="w-9 h-9 rounded-xl flex items-center justify-center" style={{background:'#1e3a5f'}}>
-                <Home className="w-5 h-5 text-white" />
-              </div>
-              <span className="font-extrabold text-lg hidden sm:block" style={{color:'#1e3a5f'}}>
-                Casa<span style={{color:'#c9a96e'}}>CEO</span>
-              </span>
-            </div>
-          </div>
-
-          {/* Property Switcher — CENTER of header */}
-          <PropertySwitcher />
-
-          {/* User */}
-          <div className="flex items-center gap-3">
-            <div className="w-9 h-9 rounded-xl flex items-center justify-center text-white font-bold text-sm" style={{background:'#1e3a5f'}}>
-              {currentUser?.name?.[0] || 'U'}
-            </div>
-          </div>
-        </header>
-
-        {/* ── Main Content ── */}
-        <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-8">
-
-          {/* Welcome Banner */}
-          <WelcomeBanner user={currentUser} selectedHome={selectedHome} />
-
-          {/* Quick Stats */}
-          <QuickStats />
-
-          {/* Two column layout: modules + alerts */}
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-
-            {/* Module Tiles — takes 2/3 */}
-            <div className="lg:col-span-2">
-              <div className="flex items-center justify-between mb-5">
-                <h2 className="text-lg font-extrabold text-slate-900">Your Modules</h2>
-                <p className="text-xs text-slate-400">{selectedHome?.name || 'Add a property to get started'}</p>
-              </div>
-              <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
-                {MODULES.map((module, i) => (
-                  <ModuleTile key={i} module={module} />
-                ))}
-              </div>
-            </div>
-
-            {/* Right column: alerts + quick actions */}
-            <div className="space-y-6">
-              {/* Alerts */}
-              <QuickAlerts selectedHome={selectedHome} />
-
-              {/* Quick Actions */}
-              <div className="bg-white rounded-2xl border border-slate-100 p-5 shadow-sm">
-                <h2 className="font-bold text-slate-900 text-base mb-4 flex items-center gap-2">
-                  <Sparkles className="w-4 h-4 text-amber-500" />
-                  Quick Actions
-                </h2>
-                <div className="space-y-2">
-                  {[
-                    { label: 'Log a bill payment', link: '/bill-pay', icon: <CreditCard className="w-4 h-4" /> },
-                    { label: 'Add maintenance task', link: '/maintenance-management', icon: <Wrench className="w-4 h-4" /> },
-                    { label: 'Upload a document', link: '/documents', icon: <FolderOpen className="w-4 h-4" /> },
-                    { label: 'Check home value', link: '/home-valuation', icon: <TrendingUp className="w-4 h-4" /> },
-                  ].map((action, i) => (
-                    <Link key={i} to={action.link}>
-                      <div className="flex items-center gap-3 p-3 rounded-xl hover:bg-slate-50 transition-colors group">
-                        <div className="w-8 h-8 rounded-lg bg-slate-100 flex items-center justify-center text-slate-500 group-hover:bg-slate-200 flex-shrink-0">
-                          {action.icon}
-                        </div>
-                        <span className="text-sm font-medium text-slate-700">{action.label}</span>
-                        <ArrowRight className="w-3.5 h-3.5 text-slate-300 ml-auto group-hover:text-slate-500 flex-shrink-0" />
-                      </div>
-                    </Link>
-                  ))}
+        {/* Header — Navy branded */}
+        <div className="rounded-3xl p-8 mb-8 text-white relative overflow-hidden" style={{ background: '#1e3a5f' }}>
+          <div className="absolute top-0 right-0 w-64 h-64 rounded-full opacity-10" style={{ background: '#e8604c', transform: 'translate(30%,-30%)' }}></div>
+          <div className="relative z-10">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+              <div className="flex items-center gap-4">
+                {selectedDocumentType && (
+                  <button
+                    onClick={() => setSelectedDocumentType(null)}
+                    className="w-10 h-10 bg-white/10 rounded-xl flex items-center justify-center text-white hover:bg-white/20 transition-colors flex-shrink-0"
+                  >
+                    <ArrowLeft className="w-5 h-5" />
+                  </button>
+                )}
+                <div className="w-12 h-12 bg-white/10 rounded-xl flex items-center justify-center flex-shrink-0">
+                  <Lock className="w-6 h-6 text-white" />
+                </div>
+                <div>
+                  <h1 className="text-2xl font-extrabold text-white">
+                    {selectedDocumentType ? selectedDocumentType : 'Document Vault'}
+                  </h1>
+                  <p className="text-blue-200 text-sm mt-0.5">
+                    {selectedDocumentType
+                      ? `${selectedHome?.name || 'This Property'} · ${getCountForType(selectedDocumentType)} documents`
+                      : `${selectedHome?.name || 'This Property'} · ${allDocuments.length} documents stored`
+                    }
+                  </p>
+                  {!selectedDocumentType && (
+                    <div className="flex items-center gap-1.5 mt-2">
+                      <ShieldCheck className="w-3.5 h-3.5 text-green-300" />
+                      <span className="text-blue-200 text-xs">All documents encrypted and securely stored</span>
+                    </div>
+                  )}
                 </div>
               </div>
 
-              {/* No property prompt */}
-              {!loading && homes.length === 0 && (
-                <div className="bg-amber-50 border border-amber-100 rounded-2xl p-5 text-center">
-                  <Home className="w-8 h-8 text-amber-500 mx-auto mb-3" />
-                  <p className="font-bold text-amber-800 text-sm mb-1">No properties yet</p>
-                  <p className="text-amber-600 text-xs mb-3">Add your first property to unlock your full dashboard.</p>
-                <button
-                  onClick={() => {}}
-                  className="text-xs font-bold px-4 py-2 rounded-xl text-white"
-                  style={{ background: '#1e3a5f' }}
-                >
-                  Add Your First Property →
-                </button>
+              {!selectedDocumentType && (
+                <div className="relative w-full sm:w-72">
+                  <Search className="absolute left-3 top-3 w-4 h-4 text-white/40" />
+                  <Input
+                    placeholder="Search categories..."
+                    value={searchQuery}
+                    onChange={e => setSearchQuery(e.target.value)}
+                    className="pl-9 h-11 rounded-xl border-white/20 bg-white/10 text-white placeholder:text-white/40 focus:bg-white/20"
+                  />
+                  {searchQuery && (
+                    <button onClick={() => setSearchQuery('')} className="absolute right-3 top-3 text-white/40 hover:text-white">
+                      <X className="w-4 h-4" />
+                    </button>
+                  )}
                 </div>
               )}
             </div>
           </div>
-        </main>
+        </div>
+
+        {!selectedDocumentType ? (
+          <>
+            {/* Expiry Alerts */}
+            <ExpiryAlerts documents={allDocuments} />
+
+            {/* Stats */}
+            <VaultStats documents={allDocuments} categories={DOCUMENT_TYPES} />
+
+            {/* Category Grid */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
+              {filteredCategories.map((docType) => (
+                <CategoryCard
+                  key={docType.type}
+                  docType={docType}
+                  count={getCountForType(docType.type)}
+                  expiringCount={getExpiringForType(docType.type)}
+                  onClick={setSelectedDocumentType}
+                />
+              ))}
+            </div>
+
+            {filteredCategories.length === 0 && (
+              <div className="text-center py-16">
+                <p className="text-slate-400 font-medium">No categories match "{searchQuery}"</p>
+              </div>
+            )}
+          </>
+        ) : (
+          <div className="space-y-6">
+            <DocumentUploadForm
+              documentType={selectedDocumentType}
+              propertyId={selectedHome.id}
+              onUploadSuccess={() => {
+                fetchDocuments();
+                fetchAllDocuments();
+              }}
+            />
+
+            {loading ? (
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                {[1, 2, 3].map(i => <Skeleton key={i} className="h-32 w-full rounded-xl" />)}
+              </div>
+            ) : (
+              <DocumentTypeList
+                documentType={selectedDocumentType}
+                documents={documents}
+                onDelete={handleDeleteDocument}
+              />
+            )}
+          </div>
+        )}
       </div>
     </>
   );
 };
 
-export default DashboardPage;
+export default DocumentsPage;
