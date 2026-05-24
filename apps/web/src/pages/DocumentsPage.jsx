@@ -24,8 +24,7 @@ const DOCUMENT_TYPES = [
     type: 'Warranties',
     icon: ShieldCheck,
     description: 'Appliance and system warranties',
-    color: 'bg-blue-50 border-blue-100 text-blue-600',
-    iconBg: 'bg-blue-100',
+    iconColor: '#1e3a5f', iconBg: '#eef2f8',
     hasExpiry: true,
     tip: 'Track expiry dates to know when warranties run out'
   },
@@ -33,17 +32,15 @@ const DOCUMENT_TYPES = [
     type: 'Insurance Policies',
     icon: Shield,
     description: 'Homeowners and liability insurance',
-    color: 'bg-green-50 border-green-100 text-green-600',
-    iconBg: 'bg-green-100',
+    iconColor: '#e8604c', iconBg: '#fdf0ee',
     hasExpiry: true,
-    tip: 'Get reminded before policies expire'
+    tip: 'Never let a policy expire without knowing'
   },
   {
     type: 'Closing Documents',
     icon: FileSignature,
     description: 'Final settlement and closing papers',
-    color: 'bg-purple-50 border-purple-100 text-purple-600',
-    iconBg: 'bg-purple-100',
+    iconColor: '#7c3aed', iconBg: '#f5f3ff',
     hasExpiry: false,
     tip: 'Keep your closing docs safe and accessible'
   },
@@ -51,8 +48,7 @@ const DOCUMENT_TYPES = [
     type: 'Deeds',
     icon: ScrollText,
     description: 'Property ownership deeds',
-    color: 'bg-amber-50 border-amber-100 text-amber-600',
-    iconBg: 'bg-amber-100',
+    iconColor: '#d97706', iconBg: '#fffbeb',
     hasExpiry: false,
     tip: 'Your most important ownership documents'
   },
@@ -60,8 +56,7 @@ const DOCUMENT_TYPES = [
     type: 'Mortgages',
     icon: Landmark,
     description: 'Loan and mortgage agreements',
-    color: 'bg-indigo-50 border-indigo-100 text-indigo-600',
-    iconBg: 'bg-indigo-100',
+    iconColor: '#2563eb', iconBg: '#eff6ff',
     hasExpiry: false,
     tip: 'All loan documents in one place'
   },
@@ -69,8 +64,7 @@ const DOCUMENT_TYPES = [
     type: 'Purchase Receipts',
     icon: Receipt,
     description: 'Receipts for major purchases and repairs',
-    color: 'bg-orange-50 border-orange-100 text-orange-600',
-    iconBg: 'bg-orange-100',
+    iconColor: '#059669', iconBg: '#ecfdf5',
     hasExpiry: false,
     tip: 'Keep receipts for tax deductions and warranties'
   },
@@ -78,8 +72,7 @@ const DOCUMENT_TYPES = [
     type: 'Tenant Contracts',
     icon: FileText,
     description: 'Lease agreements and addendums',
-    color: 'bg-teal-50 border-teal-100 text-teal-600',
-    iconBg: 'bg-teal-100',
+    iconColor: '#0891b2', iconBg: '#ecfeff',
     hasExpiry: true,
     tip: 'Track lease start and end dates'
   },
@@ -87,8 +80,7 @@ const DOCUMENT_TYPES = [
     type: 'Architectural Designs',
     icon: Ruler,
     description: 'Floor plans and blueprints',
-    color: 'bg-pink-50 border-pink-100 text-pink-600',
-    iconBg: 'bg-pink-100',
+    iconColor: '#db2777', iconBg: '#fdf2f8',
     hasExpiry: false,
     tip: 'Store plans for renovations and permits'
   },
@@ -96,8 +88,7 @@ const DOCUMENT_TYPES = [
     type: 'Lien Waivers',
     icon: FileMinus,
     description: 'Contractor lien waivers',
-    color: 'bg-slate-50 border-slate-200 text-slate-600',
-    iconBg: 'bg-slate-100',
+    iconColor: '#64748b', iconBg: '#f8fafc',
     hasExpiry: false,
     tip: 'Protect yourself from contractor liens'
   },
@@ -110,11 +101,11 @@ const CategoryCard = ({ docType, count, expiringCount, onClick }) => {
   return (
     <button
       onClick={() => onClick(docType.type)}
-      className="bg-white rounded-2xl border border-slate-200 p-6 text-left hover:shadow-md hover:-translate-y-0.5 transition-all group w-full"
+      className="bg-white rounded-2xl border border-slate-100 p-6 text-left hover:shadow-md hover:-translate-y-0.5 transition-all group w-full shadow-sm"
     >
       <div className="flex items-start justify-between mb-4">
-        <div className={`w-12 h-12 ${docType.iconBg} rounded-xl flex items-center justify-center group-hover:scale-110 transition-transform`}>
-          <Icon className={`w-6 h-6 ${docType.color.split(' ')[2]}`} />
+        <div className="w-12 h-12 rounded-xl flex items-center justify-center group-hover:scale-110 transition-transform" style={{ background: docType.iconBg }}>
+          <Icon className="w-6 h-6" style={{ color: docType.iconColor }} />
         </div>
         <div className="flex items-center gap-2">
           {expiringCount > 0 && (
@@ -208,12 +199,14 @@ const VaultStats = ({ documents, categories }) => {
   return (
     <div className="grid grid-cols-3 gap-4 mb-8">
       {[
-        { label: 'Total Documents', value: totalDocs, icon: <FolderOpen className="w-5 h-5 text-blue-600" />, color: 'bg-blue-50 border-blue-100' },
-        { label: 'Categories Used', value: `${categoriesUsed}/${categories.length}`, icon: <Grid className="w-5 h-5 text-purple-600" />, color: 'bg-purple-50 border-purple-100' },
-        { label: 'With Expiry Dates', value: withExpiry, icon: <Clock className="w-5 h-5 text-amber-600" />, color: 'bg-amber-50 border-amber-100' },
+        { label: 'Total Documents', value: totalDocs, icon: <FolderOpen className="w-5 h-5" />, iconColor: '#1e3a5f', bg: '#eef2f8', border: '#c7d5e8' },
+        { label: 'Categories Used', value: `${categoriesUsed}/${categories.length}`, icon: <Grid className="w-5 h-5" />, iconColor: '#7c3aed', bg: '#f5f3ff', border: '#ddd6fe' },
+        { label: 'With Expiry Dates', value: withExpiry, icon: <Clock className="w-5 h-5" />, iconColor: '#d97706', bg: '#fffbeb', border: '#fde68a' },
       ].map((stat, i) => (
-        <div key={i} className={`${stat.color} border rounded-2xl p-4 flex flex-col items-center text-center`}>
-          <div className="mb-2">{stat.icon}</div>
+        <div key={i} className="bg-white rounded-2xl border p-4 flex flex-col items-center text-center shadow-sm" style={{ borderColor: stat.border }}>
+          <div className="w-9 h-9 rounded-xl flex items-center justify-center mb-2" style={{ background: stat.bg, color: stat.iconColor }}>
+            {stat.icon}
+          </div>
           <p className="text-2xl font-extrabold text-slate-900">{stat.value}</p>
           <p className="text-xs text-slate-500 font-medium mt-0.5">{stat.label}</p>
         </div>
@@ -303,11 +296,28 @@ const DocumentsPage = () => {
 
   if (!selectedHome) {
     return (
-      <div className="p-8 text-center">
-        <div className="w-16 h-16 bg-slate-100 rounded-2xl flex items-center justify-center mx-auto mb-4">
-          <FolderOpen className="w-8 h-8 text-slate-400" />
+      <div className="max-w-6xl mx-auto">
+        <div className="rounded-3xl p-8 mb-8 text-white relative overflow-hidden" style={{ background: '#1e3a5f' }}>
+          <div className="relative z-10 flex items-center gap-4">
+            <div className="w-12 h-12 bg-white/10 rounded-xl flex items-center justify-center flex-shrink-0">
+              <Lock className="w-6 h-6 text-white" />
+            </div>
+            <div>
+              <h1 className="text-2xl font-extrabold text-white">Document Vault</h1>
+              <p className="text-blue-200 text-sm mt-0.5">Your secure home document storage</p>
+            </div>
+          </div>
         </div>
-        <p className="text-slate-500 font-medium">Please select a property to view documents.</p>
+        <div className="bg-white rounded-3xl border-2 border-dashed border-slate-200 p-16 text-center">
+          <div className="w-16 h-16 rounded-2xl flex items-center justify-center mx-auto mb-5" style={{ background: '#eef2f8' }}>
+            <FolderOpen className="w-8 h-8" style={{ color: '#1e3a5f' }} />
+          </div>
+          <h3 className="text-xl font-bold text-slate-900 mb-2">No property selected</h3>
+          <p className="text-slate-500 max-w-md mx-auto mb-6">Select a property from the top menu to view and manage your documents.</p>
+          <div className="inline-flex items-center gap-2 bg-amber-50 border border-amber-100 rounded-xl px-5 py-3">
+            <span className="text-amber-600 text-sm font-medium">👆 Use the property selector in the top right to choose a home</span>
+          </div>
+        </div>
       </div>
     );
   }
@@ -320,53 +330,59 @@ const DocumentsPage = () => {
 
       <div className="max-w-6xl mx-auto space-y-0">
 
-        {/* Header */}
-        <div className="bg-white border-b border-slate-200 -mx-4 sm:-mx-6 lg:-mx-8 px-4 sm:px-6 lg:px-8 py-8 mb-8">
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-            <div className="flex items-center gap-4">
-              {selectedDocumentType && (
-                <button
-                  onClick={() => setSelectedDocumentType(null)}
-                  className="w-10 h-10 bg-slate-100 rounded-xl flex items-center justify-center text-slate-500 hover:bg-slate-200 transition-colors flex-shrink-0"
-                >
-                  <ArrowLeft className="w-5 h-5" />
-                </button>
-              )}
-              <div className="w-12 h-12 bg-blue-50 rounded-xl flex items-center justify-center flex-shrink-0">
-                <Lock className="w-6 h-6 text-blue-600" />
-              </div>
-              <div>
-                <h1 className="text-2xl font-extrabold text-slate-900">
-                  {selectedDocumentType ? selectedDocumentType : 'Document Vault'}
-                </h1>
-                <p className="text-slate-400 text-sm mt-0.5">
-                  {selectedDocumentType
-                    ? `${selectedHome.name} · ${getCountForType(selectedDocumentType)} documents`
-                    : `${selectedHome.name} · ${allDocuments.length} documents stored`
-                  }
-                </p>
-              </div>
-            </div>
-
-            {!selectedDocumentType && (
-              <div className="relative w-full sm:w-72">
-                <Search className="absolute left-3 top-3 w-4 h-4 text-slate-400" />
-                <Input
-                  placeholder="Search categories..."
-                  value={searchQuery}
-                  onChange={e => setSearchQuery(e.target.value)}
-                  className="pl-9 h-11 rounded-xl border-slate-200"
-                />
-                {searchQuery && (
+        {/* Header — Navy branded */}
+        <div className="rounded-3xl p-8 mb-8 text-white relative overflow-hidden" style={{ background: '#1e3a5f' }}>
+          <div className="absolute top-0 right-0 w-64 h-64 rounded-full opacity-10" style={{ background: '#e8604c', transform: 'translate(30%,-30%)' }}></div>
+          <div className="relative z-10">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+              <div className="flex items-center gap-4">
+                {selectedDocumentType && (
                   <button
-                    onClick={() => setSearchQuery('')}
-                    className="absolute right-3 top-3 text-slate-400 hover:text-slate-600"
+                    onClick={() => setSelectedDocumentType(null)}
+                    className="w-10 h-10 bg-white/10 rounded-xl flex items-center justify-center text-white hover:bg-white/20 transition-colors flex-shrink-0"
                   >
-                    <X className="w-4 h-4" />
+                    <ArrowLeft className="w-5 h-5" />
                   </button>
                 )}
+                <div className="w-12 h-12 bg-white/10 rounded-xl flex items-center justify-center flex-shrink-0">
+                  <Lock className="w-6 h-6 text-white" />
+                </div>
+                <div>
+                  <h1 className="text-2xl font-extrabold text-white">
+                    {selectedDocumentType ? selectedDocumentType : 'Document Vault'}
+                  </h1>
+                  <p className="text-blue-200 text-sm mt-0.5">
+                    {selectedDocumentType
+                      ? `${selectedHome?.name || 'This Property'} · ${getCountForType(selectedDocumentType)} documents`
+                      : `${selectedHome?.name || 'This Property'} · ${allDocuments.length} documents stored`
+                    }
+                  </p>
+                  {!selectedDocumentType && (
+                    <div className="flex items-center gap-1.5 mt-2">
+                      <ShieldCheck className="w-3.5 h-3.5 text-green-300" />
+                      <span className="text-blue-200 text-xs">All documents encrypted and securely stored</span>
+                    </div>
+                  )}
+                </div>
               </div>
-            )}
+
+              {!selectedDocumentType && (
+                <div className="relative w-full sm:w-72">
+                  <Search className="absolute left-3 top-3 w-4 h-4 text-white/40" />
+                  <Input
+                    placeholder="Search categories..."
+                    value={searchQuery}
+                    onChange={e => setSearchQuery(e.target.value)}
+                    className="pl-9 h-11 rounded-xl border-white/20 bg-white/10 text-white placeholder:text-white/40 focus:bg-white/20"
+                  />
+                  {searchQuery && (
+                    <button onClick={() => setSearchQuery('')} className="absolute right-3 top-3 text-white/40 hover:text-white">
+                      <X className="w-4 h-4" />
+                    </button>
+                  )}
+                </div>
+              )}
+            </div>
           </div>
         </div>
 
