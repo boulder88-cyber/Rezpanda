@@ -387,7 +387,20 @@ const ExpensesPage = () => {
     });
   }, [expenses, searchQuery, filterCategory, filterDateRange]);
 
-  if (!selectedHome) return null;
+  if (!selectedHome) {
+    return (
+      <div className="bg-white rounded-3xl border-2 border-dashed border-slate-200 p-16 text-center max-w-lg mx-auto mt-8">
+        <div className="w-14 h-14 rounded-2xl flex items-center justify-center mx-auto mb-4" style={{ background: '#eef2f8' }}>
+          <span className="text-2xl">🏠</span>
+        </div>
+        <h3 className="text-lg font-bold text-slate-900 mb-2">No property selected</h3>
+        <p className="text-slate-500 text-sm mb-4">Select a property from the top menu to get started.</p>
+        <div className="inline-flex items-center gap-2 bg-amber-50 border border-amber-100 rounded-xl px-4 py-2.5">
+          <span className="text-amber-600 text-xs font-medium">👆 Use the property selector in the top right</span>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <>
