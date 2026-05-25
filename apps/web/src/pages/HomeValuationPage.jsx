@@ -36,19 +36,19 @@ const PortfolioSummary = ({ properties }) => {
         <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-8">
           <div>
             <h1 className="text-3xl font-extrabold text-white mb-1">Home Valuations</h1>
-            <p className="text-blue-200 text-base max-w-xl">Your real-estate portfolio, visualized and optimized.</p>
+            <p className="text-blue-200 text-base max-w-xl">Your real-estate portfolio, visualized, optimized, and remembered.</p>
             <div className="flex items-center gap-2 mt-3">
               <ShieldCheck className="w-4 h-4 text-green-300" />
-              <span className="text-blue-200 text-xs">Your property data is encrypted and securely synced.</span>
+              <span className="text-blue-200 text-xs">CasaOS tracks your property values, equity, and appreciation automatically — your homes as a living balance sheet.</span>
             </div>
           </div>
 
           <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
             {[
-              { label: 'Portfolio Value', value: `$${(totalValue/1000).toFixed(0)}K`, sub: `${properties.length} properties`, highlight: true },
-              { label: 'Total Gain', value: `${totalGain >= 0 ? '+' : ''}$${Math.abs(Math.round(totalGain/1000))}K`, sub: `${totalGainPct}% appreciation`, positive: totalGain >= 0 },
-              { label: 'Total Equity', value: `$${(totalEquity/1000).toFixed(0)}K`, sub: 'after mortgages', positive: true },
-              { label: 'Proj. Next Year', value: `$${(projectedNextYear/1000).toFixed(0)}K`, sub: 'at 4% growth', positive: true },
+              { label: 'Total Home Portfolio', value: `$${(totalValue/1000).toFixed(0)}K`, sub: `${properties.length} properties tracked`, highlight: true },
+              { label: 'Appreciation Tracked', value: `${totalGain >= 0 ? '+' : ''}$${Math.abs(Math.round(totalGain/1000))}K`, sub: `${totalGainPct}% gain automatically`, positive: totalGain >= 0 },
+              { label: 'Real Ownership', value: `$${(totalEquity/1000).toFixed(0)}K`, sub: 'equity after mortgages', positive: true },
+              { label: 'Forecasted Growth', value: `$${(projectedNextYear/1000).toFixed(0)}K`, sub: 'projected at 4% annually', positive: true },
             ].map((stat, i) => (
               <div key={i} className={`rounded-2xl p-4 ${stat.highlight ? 'bg-white/15' : 'bg-white/8'} border border-white/10`}>
                 <p className="text-blue-200 text-xs font-medium mb-1">{stat.label}</p>
@@ -66,7 +66,7 @@ const PortfolioSummary = ({ properties }) => {
           <div className="mt-6 bg-white/10 border border-white/10 rounded-2xl px-5 py-3 flex items-center gap-3">
             <Star className="w-4 h-4 text-amber-300 flex-shrink-0" />
             <p className="text-blue-100 text-sm">
-              You've built <span className="font-bold text-white">${Math.round(totalGain).toLocaleString()}</span> in equity across your portfolio — that's financial freedom in motion.
+              CasaOS has tracked <span className="font-bold text-white">${Math.round(totalGain).toLocaleString()}</span> in equity across your portfolio — your Home Operating System creating financial freedom in motion.
             </p>
           </div>
         )}
@@ -194,7 +194,7 @@ const PropertyCard = ({ property, onUpdate }) => {
           className="flex items-center justify-center gap-2 w-full py-2.5 rounded-xl text-sm font-semibold transition-colors"
           style={{ background: '#eef2f8', color: '#1e3a5f' }}
         >
-          <Home className="w-4 h-4" /> Check Zillow Estimate <ArrowUpRight className="w-3.5 h-3.5" />
+          <Home className="w-4 h-4" /> Check Market Estimate <ArrowUpRight className="w-3.5 h-3.5" />
         </a>
       </div>
     </div>
@@ -230,7 +230,7 @@ const MarketComparison = ({ properties }) => {
       )}
 
       <div className="bg-white rounded-2xl border border-slate-100 shadow-sm p-6">
-        <h3 className="font-bold text-slate-900 mb-2">Portfolio vs Market Benchmarks</h3>
+        <h3 className="font-bold text-slate-900 mb-2">Portfolio Intelligence — vs Market Benchmarks</h3>
         <p className="text-slate-500 text-sm mb-6">How your real estate stacks up against alternative investments</p>
 
         <div className="space-y-4">
@@ -459,7 +459,7 @@ const SellOrStayAnalyzer = ({ properties }) => {
               </div>
             )}
 
-            <p className="text-xs text-slate-400 text-center">* Estimates for planning purposes only. Consult a real estate professional before making decisions.</p>
+            <p className="text-xs text-slate-400 text-center">* CasaOS turns your homes into a living portfolio — every property tracked, valued, and optimized automatically. Consult a real estate professional before major decisions.</p>
           </div>
         )}
       </div>
@@ -526,7 +526,7 @@ const HomeValuationPage = () => {
 
   return (
     <div className="pb-20">
-      <Helmet><title>Home Valuations — CasaCEO</title></Helmet>
+      <Helmet><title>Home Valuations — CasaOS Asset Layer</title></Helmet>
 
       <PortfolioSummary properties={properties} />
 
@@ -534,9 +534,9 @@ const HomeValuationPage = () => {
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-8">
         <div className="flex gap-2 bg-white border border-slate-200 rounded-2xl p-1 w-fit shadow-sm">
           {[
-            { key: 'overview', label: '🏠 My Properties' },
-            { key: 'market', label: '📊 Market Compare' },
-            { key: 'analyzer', label: '🔑 Sell or Stay?' },
+            { key: 'overview', label: '🏠 Asset Layer' },
+            { key: 'market', label: '📊 Portfolio Intelligence' },
+            { key: 'analyzer', label: '🔑 Decision Insights' },
           ].map(tab => (
             <button key={tab.key} onClick={() => setActiveTab(tab.key)}
               className="px-5 py-2.5 rounded-xl text-sm font-semibold transition-all"
@@ -561,8 +561,8 @@ const HomeValuationPage = () => {
             <div className="w-12 h-12 rounded-2xl bg-slate-100 group-hover:bg-slate-200 flex items-center justify-center mb-3 transition-colors">
               <Plus className="w-6 h-6" />
             </div>
-            <p className="font-semibold">Add Property</p>
-            <p className="text-sm mt-1 text-slate-300">Add your next investment</p>
+            <p className="font-semibold">Add Your Next Asset</p>
+            <p className="text-sm mt-1 text-slate-300">CasaOS tracks it automatically</p>
           </button>
         </div>
       )}
