@@ -32,6 +32,7 @@ import InsuranceAnalyzerPage from '@/pages/InsuranceAnalyzerPage.jsx';
 import HomeLearnPage from '@/pages/HomeLearnPage.jsx';
 import PropertyTaxPage from '@/pages/PropertyTaxPage.jsx';
 import WarrantyTrackerPage from '@/pages/WarrantyTrackerPage.jsx';
+import HomeTimelinePage from '@/pages/HomeTimelinePage.jsx';
 
 const AppContent = () => {
   const { isAuthenticated } = usePasswordAuth();
@@ -77,7 +78,8 @@ const AppContent = () => {
           <Route path="/rental-tax-guide" element={<ProtectedRoute><Layout><RentalTaxGuidePage /></Layout></ProtectedRoute>} />
           <Route path="/insurance" element={<ProtectedRoute><Layout><InsuranceAnalyzerPage /></Layout></ProtectedRoute>} />
           <Route path="/learn" element={<ProtectedRoute><Layout><HomeLearnPage /></Layout></ProtectedRoute>} />
-          <Route path="/warranty-tracker" element={<ProtectedRoute><Layout><WarrantyTrackerPage /></Layout></ProtectedRoute>} />
+          <Route path="/timeline" element={<ProtectedRoute><Layout><HomeTimelinePage /></Layout></ProtectedRoute>} />
+              <Route path="/warranty-tracker" element={<ProtectedRoute><Layout><WarrantyTrackerPage /></Layout></ProtectedRoute>} />
                 <Route path="/property-tax" element={<ProtectedRoute><Layout><PropertyTaxPage /></Layout></ProtectedRoute>} />
         </Routes>
         <Toaster />
