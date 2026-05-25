@@ -23,74 +23,74 @@ const DOCUMENT_TYPES = [
   {
     type: 'Warranties',
     icon: ShieldCheck,
-    description: 'Appliance and system warranties',
+    description: 'Appliance and system coverage — track expiry and renewal windows.',
     iconColor: '#1e3a5f', iconBg: '#eef2f8',
     hasExpiry: true,
-    tip: 'Track expiry dates to know when warranties run out'
+    tip: 'Track expiry dates and renewal windows across every home'
   },
   {
     type: 'Insurance Policies',
     icon: Shield,
-    description: 'Homeowners and liability insurance',
+    description: 'Homeowners, liability, and umbrella coverage.',
     iconColor: '#e8604c', iconBg: '#fdf0ee',
     hasExpiry: true,
-    tip: 'Never let a policy expire without knowing'
+    tip: 'Never let a policy expire — CasaOS alerts you before renewal'
   },
   {
     type: 'Closing Documents',
     icon: FileSignature,
-    description: 'Final settlement and closing papers',
+    description: 'Settlement and closing papers — every transaction accessible.',
     iconColor: '#7c3aed', iconBg: '#f5f3ff',
     hasExpiry: false,
-    tip: 'Keep your closing docs safe and accessible'
+    tip: 'Keep every transaction record accessible and searchable'
   },
   {
     type: 'Deeds',
     icon: ScrollText,
-    description: 'Property ownership deeds',
+    description: 'Property ownership documents — your most important proof.',
     iconColor: '#d97706', iconBg: '#fffbeb',
     hasExpiry: false,
-    tip: 'Your most important ownership documents'
+    tip: 'Your most important proof of ownership — always accessible'
   },
   {
     type: 'Mortgages',
     icon: Landmark,
-    description: 'Loan and mortgage agreements',
+    description: 'Loan and mortgage agreements — all financing in one place.',
     iconColor: '#2563eb', iconBg: '#eff6ff',
     hasExpiry: false,
-    tip: 'All loan documents in one place'
+    tip: 'All financing documents organized and searchable'
   },
   {
     type: 'Purchase Receipts',
     icon: Receipt,
-    description: 'Receipts for major purchases and repairs',
+    description: 'Major purchases and repairs — keep receipts for tax and warranty claims.',
     iconColor: '#059669', iconBg: '#ecfdf5',
     hasExpiry: false,
-    tip: 'Keep receipts for tax deductions and warranties'
+    tip: 'Keep receipts for tax deductions and warranty claims'
   },
   {
     type: 'Tenant Contracts',
     icon: FileText,
-    description: 'Lease agreements and addendums',
+    description: 'Lease agreements and addendums — track start and end dates.',
     iconColor: '#0891b2', iconBg: '#ecfeff',
     hasExpiry: true,
-    tip: 'Track lease start and end dates'
+    tip: 'Track lease start and end dates automatically'
   },
   {
     type: 'Architectural Designs',
     icon: Ruler,
-    description: 'Floor plans and blueprints',
+    description: 'Floor plans, blueprints, and permits — store plans for future projects.',
     iconColor: '#db2777', iconBg: '#fdf2f8',
     hasExpiry: false,
-    tip: 'Store plans for renovations and permits'
+    tip: 'Store plans for renovations and future projects'
   },
   {
     type: 'Lien Waivers',
     icon: FileMinus,
-    description: 'Contractor lien waivers',
+    description: 'Contractor lien releases — protect yourself from future disputes.',
     iconColor: '#64748b', iconBg: '#f8fafc',
     hasExpiry: false,
-    tip: 'Protect yourself from contractor liens'
+    tip: 'Protect yourself from future disputes'
   },
 ];
 
@@ -199,9 +199,9 @@ const VaultStats = ({ documents, categories }) => {
   return (
     <div className="grid grid-cols-3 gap-4 mb-8">
       {[
-        { label: 'Total Documents', value: totalDocs, icon: <FolderOpen className="w-5 h-5" />, iconColor: '#1e3a5f', bg: '#eef2f8', border: '#c7d5e8' },
-        { label: 'Categories Used', value: `${categoriesUsed}/${categories.length}`, icon: <Grid className="w-5 h-5" />, iconColor: '#7c3aed', bg: '#f5f3ff', border: '#ddd6fe' },
-        { label: 'With Expiry Dates', value: withExpiry, icon: <Clock className="w-5 h-5" />, iconColor: '#d97706', bg: '#fffbeb', border: '#fde68a' },
+        { label: 'Securely Stored', value: totalDocs, icon: <FolderOpen className="w-5 h-5" />, iconColor: '#1e3a5f', bg: '#eef2f8', border: '#c7d5e8' },
+        { label: 'Active Categories', value: `${categoriesUsed}/${categories.length}`, icon: <Grid className="w-5 h-5" />, iconColor: '#7c3aed', bg: '#f5f3ff', border: '#ddd6fe' },
+        { label: 'Renewal Alerts', value: withExpiry, icon: <Clock className="w-5 h-5" />, iconColor: '#d97706', bg: '#fffbeb', border: '#fde68a' },
       ].map((stat, i) => (
         <div key={i} className="bg-white rounded-2xl border p-4 flex flex-col items-center text-center shadow-sm" style={{ borderColor: stat.border }}>
           <div className="w-9 h-9 rounded-xl flex items-center justify-center mb-2" style={{ background: stat.bg, color: stat.iconColor }}>
@@ -304,7 +304,7 @@ const DocumentsPage = () => {
             </div>
             <div>
               <h1 className="text-2xl font-extrabold text-white">Document Vault</h1>
-              <p className="text-blue-200 text-sm mt-0.5">Your secure home document storage</p>
+              <p className="text-blue-200 text-sm mt-0.5">Your secure archive — encrypted, organized, and always accessible.</p>
             </div>
           </div>
         </div>
