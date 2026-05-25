@@ -144,7 +144,7 @@ const MODULES = [
     link: '/maintenance-management',
     color: '#f97316',
     bg: '#fff7ed',
-    badge: { count: 2, label: 'overdue', color: '#dc2626' },
+    badge: null,
   },
   {
     title: 'Bill Pay',
@@ -153,7 +153,7 @@ const MODULES = [
     link: '/bill-pay',
     color: '#2563eb',
     bg: '#eff6ff',
-    badge: { count: 3, label: 'due', color: '#d97706' },
+    badge: null,
   },
   {
     title: 'Documents',
@@ -378,14 +378,14 @@ const QuickStats = () => (
         trend: '↑ 1 more than last week', trendUp: false,
         icon: <CreditCard className="w-4 h-4" />, color: '#d97706', bg: '#fffbeb', border: '#fde68a',
         link: '/bill-pay', tooltip: 'View bills due this week',
-        badge: '3 due',
+        badge: null,
       },
       {
         label: 'Maintenance', value: '2', sublabel: 'overdue',
         trend: '↑ action needed', trendUp: false,
         icon: <Wrench className="w-4 h-4" />, color: '#dc2626', bg: '#fef2f2', border: '#fecaca',
         link: '/maintenance-management', tooltip: 'View overdue maintenance tasks',
-        badge: '2 overdue',
+        badge: null,
       },
       {
         label: 'Documents', value: '14', sublabel: 'stored',
