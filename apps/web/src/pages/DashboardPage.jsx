@@ -237,6 +237,15 @@ const MODULES = [
     badge: 'Soon',
   },
   {
+    title: 'Learning Hub',
+    description: 'Expert guides for maintenance, finance, insurance & more',
+    icon: BookOpen,
+    link: '/learn',
+    color: '#7c3aed',
+    bg: '#f5f3ff',
+    badge: '12 guides',
+  },
+  {
     title: 'Property Tax',
     description: 'Track bills, find exemptions, and appeal over-assessments',
     icon: FileText,
