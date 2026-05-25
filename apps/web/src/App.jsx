@@ -6,7 +6,6 @@ import { PasswordProtectionProvider, usePasswordAuth } from '@/contexts/Password
 import ProtectedRoute from '@/components/ProtectedRoute.jsx';
 import Layout from '@/components/Layout.jsx';
 import { Toaster } from '@/components/ui/toaster.jsx';
-
 import UnderConstructionPage from '@/pages/UnderConstructionPage.jsx';
 import LandingPage from '@/pages/LandingPage.jsx';
 import HomePage from '@/pages/HomePage.jsx';
@@ -32,13 +31,10 @@ import InsuranceAnalyzerPage from '@/pages/InsuranceAnalyzerPage.jsx';
 import HomeLearnPage from '@/pages/HomeLearnPage.jsx';
 import PropertyTaxPage from '@/pages/PropertyTaxPage.jsx';
 import WarrantyTrackerPage from '@/pages/WarrantyTrackerPage.jsx';
-import HomeTimelinePage from '@/pages/HomeTimelinePage.jsx';
 
 const AppContent = () => {
   const { isAuthenticated } = usePasswordAuth();
 
-  // NOT authenticated — show construction page only
-  // AuthProvider wraps it so forgot password works
   if (!isAuthenticated) {
     return (
       <AuthProvider>
@@ -51,7 +47,6 @@ const AppContent = () => {
     );
   }
 
-  // AUTHENTICATED — full app
   return (
     <AuthProvider>
       <HomeProvider>
@@ -78,9 +73,8 @@ const AppContent = () => {
           <Route path="/rental-tax-guide" element={<ProtectedRoute><Layout><RentalTaxGuidePage /></Layout></ProtectedRoute>} />
           <Route path="/insurance" element={<ProtectedRoute><Layout><InsuranceAnalyzerPage /></Layout></ProtectedRoute>} />
           <Route path="/learn" element={<ProtectedRoute><Layout><HomeLearnPage /></Layout></ProtectedRoute>} />
-          <Route path="/timeline" element={<ProtectedRoute><Layout><HomeTimelinePage /></Layout></ProtectedRoute>} />
-              <Route path="/warranty-tracker" element={<ProtectedRoute><Layout><WarrantyTrackerPage /></Layout></ProtectedRoute>} />
-                <Route path="/property-tax" element={<ProtectedRoute><Layout><PropertyTaxPage /></Layout></ProtectedRoute>} />
+          <Route path="/warranty-tracker" element={<ProtectedRoute><Layout><WarrantyTrackerPage /></Layout></ProtectedRoute>} />
+          <Route path="/property-tax" element={<ProtectedRoute><Layout><PropertyTaxPage /></Layout></ProtectedRoute>} />
         </Routes>
         <Toaster />
       </HomeProvider>
