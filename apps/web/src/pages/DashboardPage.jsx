@@ -139,7 +139,7 @@ const PropertySwitcher = () => {
 const MODULES = [
   {
     title: 'Maintenance',
-    description: 'Never miss a maintenance task again',
+    description: 'Schedule, log, and automate every service',
     icon: Wrench,
     link: '/maintenance-management',
     color: '#f97316',
@@ -148,7 +148,7 @@ const MODULES = [
   },
   {
     title: 'Bill Pay',
-    description: 'Stay ahead of every due date',
+    description: 'Centralize every payment and reminder',
     icon: CreditCard,
     link: '/bill-pay',
     color: '#2563eb',
@@ -157,7 +157,7 @@ const MODULES = [
   },
   {
     title: 'Documents',
-    description: 'Your secure home document vault',
+    description: 'Your secure, searchable home archive',
     icon: FolderOpen,
     link: '/documents',
     color: '#7c3aed',
@@ -175,7 +175,7 @@ const MODULES = [
   },
   {
     title: 'Utilities',
-    description: 'All your utility accounts in one place',
+    description: 'All your accounts, one dashboard',
     icon: Building2,
     link: '/utilities',
     color: '#0891b2',
@@ -193,7 +193,7 @@ const MODULES = [
   },
   {
     title: 'Rental Properties',
-    description: 'Manage rentals like a pro',
+    description: 'Manage tenants, leases, and requests',
     icon: Key,
     link: '/rental-properties',
     color: '#db2777',
@@ -202,7 +202,7 @@ const MODULES = [
   },
   {
     title: 'Landscaping',
-    description: 'Keep your yards beautiful effortlessly',
+    description: 'Keep your properties beautiful effortlessly',
     icon: TreePine,
     link: '/plants',
     color: '#16a34a',
@@ -220,7 +220,7 @@ const MODULES = [
   },
   {
     title: 'Tax Reports',
-    description: 'Tax-ready reports in one click',
+    description: 'Export ready-to-file reports in one click',
     icon: FileText,
     link: '/expenses',
     color: '#d97706',
@@ -229,7 +229,7 @@ const MODULES = [
   },
   {
     title: 'Vendors',
-    description: 'Find vetted pros near your properties',
+    description: 'Find vetted pros near your homes',
     icon: Users,
     link: '/maintenance-management',
     color: '#0369a1',
@@ -334,10 +334,10 @@ const WelcomeBanner = ({ user, selectedHome }) => {
           <div>
             <p className="text-blue-200 text-sm font-medium mb-1">{greeting}, {firstName} 👋</p>
             <h1 className="text-2xl font-extrabold text-white mb-1">
-              {selectedHome ? selectedHome.name : 'Welcome to CasaCEO'}
+              {selectedHome ? selectedHome.name : 'Welcome to CasaOS'}
             </h1>
             <p className="text-blue-200 text-sm">
-              {selectedHome?.address || 'Select a property to get started'}
+              {selectedHome?.address || 'Select a property to begin managing your home like an asset'}
             </p>
           </div>
           <div className="text-right">
