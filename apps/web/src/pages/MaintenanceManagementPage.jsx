@@ -492,9 +492,9 @@ const QuickStats = ({ tasks, onFilter }) => {
     <div className="mb-8">
       <div className="grid grid-cols-3 gap-4 mb-4">
         {[
-          { label: 'Overdue', value: overdue, icon: <AlertCircle className="w-5 h-5 text-red-500" />, color: 'bg-red-50 border-red-100', filter: 'Overdue', hover: 'hover:bg-red-100' },
-          { label: 'Upcoming This Month', value: dueSoon, icon: <Clock className="w-5 h-5 text-orange-500" />, color: 'bg-orange-50 border-orange-100', filter: 'Due Soon', hover: 'hover:bg-orange-100' },
-          { label: 'Up To Date', value: upToDate, icon: <CheckCircle2 className="w-5 h-5 text-green-500" />, color: 'bg-green-50 border-green-100', filter: 'Up To Date', hover: 'hover:bg-green-100' },
+          { label: overdue === 0 ? 'All Clear ✓' : 'Overdue', value: overdue, icon: <AlertCircle className="w-5 h-5 text-red-500" />, color: 'bg-red-50 border-red-100', filter: 'Overdue', hover: 'hover:bg-red-100' },
+          { label: 'Upcoming This Month', value: dueSoon, icon: <Clock className="w-5 h-5 text-orange-500" />, color: 'bg-orange-50 border-orange-100', filter: 'Due Soon', hover: 'hover:bg-orange-100', hint: 'Plan ahead to stay proactive' },
+          { label: 'All Systems Go', value: upToDate, icon: <CheckCircle2 className="w-5 h-5 text-green-500" />, color: 'bg-green-50 border-green-100', filter: 'Up To Date', hover: 'hover:bg-green-100' },
         ].map((s, i) => (
           <button
             key={i}
@@ -511,7 +511,7 @@ const QuickStats = ({ tasks, onFilter }) => {
       {total > 0 && (
         <div className="bg-white border border-slate-100 rounded-2xl p-4 shadow-sm">
           <div className="flex items-center justify-between mb-2">
-            <p className="text-xs font-semibold text-slate-600">Overall Maintenance Health</p>
+            <p className="text-xs font-semibold text-slate-600">CasaOS Operations Health</p>
             <p className="text-xs font-bold text-slate-900">{completionRate}% up to date</p>
           </div>
           <div className="h-2.5 bg-slate-100 rounded-full overflow-hidden">
@@ -523,7 +523,7 @@ const QuickStats = ({ tasks, onFilter }) => {
               }}
             ></div>
           </div>
-          <p className="text-xs text-slate-400 mt-1.5">{upToDate} of {total} tasks up to date</p>
+          <p className="text-xs text-slate-400 mt-1.5">{upToDate} of {total} service records up to date</p>
         </div>
       )}
     </div>
@@ -779,7 +779,7 @@ const MaintenanceManagementPage = () => {
                   <Wrench className="w-8 h-8 text-slate-400" />
                 </div>
                 <h3 className="text-xl font-bold text-slate-900 mb-2">No maintenance tasks yet 🔧</h3>
-                <p className="text-slate-500 mb-2">Stay ahead of costly repairs — schedule your first maintenance task today.</p><p className="text-slate-400 text-xs mb-6">Track HVAC filters, pest control, roof inspections, and more across all your properties.</p>
+                <p className="text-slate-500 mb-2">Stay ahead of costly repairs — start building your home's maintenance memory today.</p><p className="text-slate-400 text-xs mb-6">Track HVAC filters, pest control, roof inspections, and more across all your properties.</p>
                 <Button
                   onClick={() => { setEditingTask(null); setShowTaskModal(true); }}
                   className="rounded-xl bg-slate-900 text-white px-8"
