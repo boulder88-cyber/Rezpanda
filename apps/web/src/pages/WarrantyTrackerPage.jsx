@@ -72,7 +72,7 @@ const WarrantyModal = ({ warranty, onSave, onClose }) => {
       <div className="bg-white rounded-3xl shadow-2xl w-full max-w-2xl my-4">
         <div className="rounded-t-3xl px-8 py-6 flex items-center justify-between" style={{ background: '#1e3a5f' }}>
           <div>
-            <h2 className="text-xl font-bold text-white">{warranty ? 'Edit Warranty' : 'Add Warranty'}</h2>
+            <h2 className="text-xl font-bold text-white">{warranty ? 'Edit Coverage' : 'Add Coverage'}</h2>
             <p className="text-blue-200 text-sm">Track your coverage and never miss an expiry</p>
           </div>
           <button onClick={onClose} className="w-8 h-8 bg-white/10 rounded-lg flex items-center justify-center text-white hover:bg-white/20">
@@ -208,7 +208,7 @@ const WarrantyModal = ({ warranty, onSave, onClose }) => {
               className="flex-1 h-12 rounded-xl text-white font-bold disabled:opacity-50"
               style={{ background: '#1e3a5f' }}
             >
-              {warranty ? 'Save Changes' : 'Add Warranty'}
+              {warranty ? 'Save Changes' : 'Add Coverage'}
             </Button>
           </div>
         </div>
@@ -228,7 +228,7 @@ const WarrantyCard = ({ warranty, onEdit, onDelete }) => {
 
   const getStatus = () => {
     if (!daysLeft) return { label: 'No expiry set', color: '#94a3b8', bg: '#f8fafc', urgent: false };
-    if (daysLeft < 0) return { label: 'Expired', color: '#dc2626', bg: '#fef2f2', urgent: true };
+    if (daysLeft < 0) return { label: 'Coverage Ended', color: '#dc2626', bg: '#fef2f2', urgent: true };
     if (daysLeft <= 30) return { label: `${daysLeft}d left`, color: '#dc2626', bg: '#fef2f2', urgent: true };
     if (daysLeft <= 90) return { label: `${daysLeft}d left`, color: '#f97316', bg: '#fff7ed', urgent: false };
     if (daysLeft <= 365) return { label: `${daysLeft}d left`, color: '#d97706', bg: '#fffbeb', urgent: false };
@@ -327,9 +327,9 @@ const QuickStats = ({ warranties }) => {
   return (
     <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 mb-8">
       {[
-        { label: 'Active', value: active, icon: <CheckCircle2 className="w-5 h-5 text-green-500" />, color: 'bg-green-50 border-green-100' },
-        { label: 'Expiring (90d)', value: expiringSoon, icon: <Clock className="w-5 h-5 text-orange-500" />, color: 'bg-orange-50 border-orange-100' },
-        { label: 'Expired', value: expired, icon: <AlertCircle className="w-5 h-5 text-red-500" />, color: 'bg-red-50 border-red-100' },
+        { label: 'Active Coverage', value: active, icon: <CheckCircle2 className="w-5 h-5 text-green-500" />, color: 'bg-green-50 border-green-100', hint: 'All warranties currently in effect' },
+        { label: 'Renewal Window', value: expiringSoon, icon: <Clock className="w-5 h-5 text-orange-500" />, color: 'bg-orange-50 border-orange-100', hint: 'Stay ahead of expiration' },
+        { label: 'Coverage Ended', value: expired, icon: <AlertCircle className="w-5 h-5 text-red-500" />, color: 'bg-red-50 border-red-100', hint: 'Review for renewal or replacement' },
         { label: 'Items Tracked', value: warranties.length, icon: <Package className="w-5 h-5 text-blue-500" />, color: 'bg-blue-50 border-blue-100' },
       ].map((s, i) => (
         <div key={i} className={`${s.color} border rounded-2xl p-4 flex flex-col items-center text-center`}>
@@ -397,7 +397,7 @@ const WarrantyTrackerPage = () => {
 
   return (
     <>
-      <Helmet><title>Warranty Tracker — CasaCEO</title></Helmet>
+      <Helmet><title>Warranty Tracker — CasaOS Protection Layer</title></Helmet>
 
       <div className="max-w-6xl mx-auto pb-20">
 
@@ -422,7 +422,7 @@ const WarrantyTrackerPage = () => {
               className="flex items-center gap-2 bg-white font-bold px-6 py-3 rounded-xl text-sm hover:bg-blue-50 transition-colors flex-shrink-0"
               style={{ color: '#1e3a5f' }}
             >
-              <Plus className="w-4 h-4" /> Add Warranty
+              <Plus className="w-4 h-4" /> Add Coverage
             </button>
           </div>
         </div>
@@ -455,9 +455,9 @@ const WarrantyTrackerPage = () => {
             className="h-11 px-4 rounded-xl border border-slate-200 text-sm font-medium text-slate-700 bg-white"
           >
             <option value="all">All Statuses</option>
-            <option value="active">Active</option>
-            <option value="expiring">Expiring Soon</option>
-            <option value="expired">Expired</option>
+            <option value="active">Active Coverage</option>
+            <option value="expiring">Renewal Window</option>
+            <option value="expired">Coverage Ended</option>
           </select>
         </div>
 
@@ -467,7 +467,7 @@ const WarrantyTrackerPage = () => {
             <div className="w-16 h-16 rounded-2xl flex items-center justify-center mx-auto mb-4 text-3xl" style={{ background: '#eef2f8' }}>
               🛡️
             </div>
-            <h3 className="text-xl font-bold text-slate-900 mb-2">No warranties tracked yet</h3>
+            <h3 className="text-xl font-bold text-slate-900 mb-2">No warranties tracked yet 🛡️</h3>
             <p className="text-slate-500 text-sm max-w-md mx-auto mb-8">
               Add your appliances, systems, and purchases to track warranties and get alerted before they expire.
             </p>
