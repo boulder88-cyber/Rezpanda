@@ -237,6 +237,15 @@ const MODULES = [
     badge: 'Soon',
   },
   {
+    title: 'Property Tax',
+    description: 'Track bills, find exemptions, and appeal over-assessments',
+    icon: FileText,
+    link: '/property-tax',
+    color: '#dc2626',
+    bg: '#fef2f2',
+    badge: null,
+  },
+  {
     title: 'Home Timeline',
     description: 'Every event, update, and insight — remembered automatically',
     icon: Clock,
