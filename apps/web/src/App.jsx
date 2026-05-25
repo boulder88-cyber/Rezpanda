@@ -31,6 +31,8 @@ import InsuranceAnalyzerPage from '@/pages/InsuranceAnalyzerPage.jsx';
 import HomeLearnPage from '@/pages/HomeLearnPage.jsx';
 import PropertyTaxPage from '@/pages/PropertyTaxPage.jsx';
 import WarrantyTrackerPage from '@/pages/WarrantyTrackerPage.jsx';
+import HomeTimelinePage from '@/pages/HomeTimelinePage.jsx';
+<Route path="/timeline" element={<ProtectedRoute><Layout><HomeTimelinePage /></Layout></ProtectedRoute>} />
 
 const AppContent = () => {
   const { isAuthenticated } = usePasswordAuth();
