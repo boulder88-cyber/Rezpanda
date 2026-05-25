@@ -1,448 +1,224 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { Helmet } from 'react-helmet';
 import {
-  Play, BookOpen, Mic, Clock, Star, Search, Filter,
-  ChevronRight, ExternalLink, CheckCircle2, AlertTriangle,
-  Wrench, Zap, Droplets, Wind, TreePine, Shield,
-  ThumbsUp, Tag, ArrowRight, Lightbulb, X, Home
+  BookOpen, Search, X, ChevronRight, Star, Clock,
+  Wrench, DollarSign, Shield, TrendingUp, FileText,
+  Users, Zap, TreePine, Home, CheckCircle2, ShieldCheck,
+  Play, ExternalLink, Lightbulb, Award, Filter
 } from 'lucide-react';
 
-// ─── Content Data ─────────────────────────────────────────────────────
+// ─── Learning Categories ──────────────────────────────────────────────
 const CATEGORIES = [
-  { key: 'all', label: 'All Topics', icon: Home, color: '#1e3a5f', bg: '#eef2f8' },
-  { key: 'plumbing', label: 'Plumbing', icon: Droplets, color: '#0891b2', bg: '#ecfeff' },
-  { key: 'electrical', label: 'Electrical', icon: Zap, color: '#d97706', bg: '#fffbeb' },
-  { key: 'hvac', label: 'HVAC', icon: Wind, color: '#2563eb', bg: '#eff6ff' },
-  { key: 'general', label: 'General Repair', icon: Wrench, color: '#f97316', bg: '#fff7ed' },
-  { key: 'landscaping', label: 'Landscaping', icon: TreePine, color: '#16a34a', bg: '#f0fdf4' },
-  { key: 'safety', label: 'Safety', icon: Shield, color: '#dc2626', bg: '#fef2f2' },
+  { key: 'all', label: 'All Topics', icon: <BookOpen className="w-4 h-4" />, color: '#1e3a5f', bg: '#eef2f8' },
+  { key: 'maintenance', label: 'Maintenance', icon: <Wrench className="w-4 h-4" />, color: '#f97316', bg: '#fff7ed' },
+  { key: 'financial', label: 'Financial', icon: <DollarSign className="w-4 h-4" />, color: '#059669', bg: '#ecfdf5' },
+  { key: 'insurance', label: 'Insurance', icon: <Shield className="w-4 h-4" />, color: '#e8604c', bg: '#fdf0ee' },
+  { key: 'valuation', label: 'Valuation', icon: <TrendingUp className="w-4 h-4" />, color: '#7c3aed', bg: '#f5f3ff' },
+  { key: 'legal', label: 'Legal & Tax', icon: <FileText className="w-4 h-4" />, color: '#dc2626', bg: '#fef2f2' },
+  { key: 'rental', label: 'Rental', icon: <Users className="w-4 h-4" />, color: '#0891b2', bg: '#ecfeff' },
+  { key: 'energy', label: 'Energy', icon: <Zap className="w-4 h-4" />, color: '#d97706', bg: '#fffbeb' },
 ];
 
 const DIFFICULTY = {
-  easy: { label: 'Easy', color: '#059669', bg: '#ecfdf5' },
-  medium: { label: 'Medium', color: '#d97706', bg: '#fffbeb' },
-  hard: { label: 'Hard', color: '#dc2626', bg: '#fef2f2' },
+  beginner: { label: 'Beginner', color: '#059669', bg: '#ecfdf5' },
+  intermediate: { label: 'Intermediate', color: '#d97706', bg: '#fffbeb' },
+  advanced: { label: 'Advanced', color: '#dc2626', bg: '#fef2f2' },
 };
 
-const CONTENT = [
-  // ── PLUMBING ──
-  {
-    id: 1, category: 'plumbing', type: 'video', difficulty: 'easy',
-    title: 'How to Fix a Leaky Faucet',
-    description: 'Stop that drip once and for all. Most faucet leaks are caused by a worn washer or O-ring — a 20 minute fix that saves $100+ on your water bill.',
-    duration: '8 min', diy: true,
-    youtubeSearch: 'how to fix leaky faucet DIY',
-    tools: ['Adjustable wrench', 'Screwdriver', 'Replacement washers'],
-    saves: '$150 plumber visit',
-    tips: ['Turn off water supply valve first', 'Take photos before disassembly', 'Bring old washer to hardware store for exact match'],
-    whenToCallPro: 'If leak is behind the wall or pipe is corroded',
-    tags: ['faucet', 'drip', 'leak', 'quick fix'],
+// ─── Articles ─────────────────────────────────────────────────────────
+const ARTICLES = [
+  // Maintenance
+  { id: 1, category: 'maintenance', title: 'The Complete HVAC Maintenance Guide', summary: 'Everything you need to know about keeping your heating and cooling systems running efficiently — from filter changes to annual tune-ups.', readTime: 8, difficulty: 'beginner', featured: true, emoji: '❄️',
+    content: [
+      { heading: 'Why HVAC Maintenance Matters', body: 'Your HVAC system is one of the most expensive components in your home — replacement costs range from $5,000 to $12,000. Regular maintenance extends its life by 5-10 years and keeps energy bills 15-25% lower.' },
+      { heading: 'Monthly: Change Your Air Filter', body: 'A clogged filter forces your system to work harder, increasing energy consumption and causing premature wear. Use MERV 8-11 rated filters. Mark your calendar for the first of every month.' },
+      { heading: 'Annually: Professional Tune-Up', body: 'A certified HVAC technician should inspect refrigerant levels, clean coils, check electrical connections, and lubricate moving parts. Budget $80-150 per unit per year.' },
+      { heading: 'Seasonal Checklist', body: 'Spring: Test AC before heat arrives. Check condensate drain. Fall: Test heat before cold arrives. Replace batteries in thermostat. Check vents for obstructions.' },
+      { heading: 'When to Replace vs Repair', body: 'If repair costs exceed 50% of replacement cost, or if the unit is 15+ years old, replacement is usually smarter. Energy-efficient models can reduce cooling costs by 20-40%.' },
+    ]
   },
-  {
-    id: 2, category: 'plumbing', type: 'video', difficulty: 'easy',
-    title: 'Unclog a Drain Without Chemicals',
-    description: 'Chemical drain cleaners damage pipes over time. Learn the safer, more effective methods using a drain snake or simple baking soda technique.',
-    duration: '6 min', diy: true,
-    youtubeSearch: 'unclog drain without chemicals DIY',
-    tools: ['Drain snake', 'Baking soda', 'White vinegar', 'Boiling water'],
-    saves: '$80-120 plumber visit',
-    tips: ['Prevention: use drain strainers', 'Monthly baking soda + vinegar treatment keeps drains clear', 'Hair is the #1 cause of bathroom clogs'],
-    whenToCallPro: 'Multiple drains clogged at once — could be main line issue',
-    tags: ['clog', 'drain', 'bathroom', 'kitchen'],
+  { id: 2, category: 'maintenance', title: 'Annual Home Maintenance Calendar', summary: 'A month-by-month breakdown of every maintenance task your home needs — never miss a seasonal service again.', readTime: 6, difficulty: 'beginner', featured: false, emoji: '📅',
+    content: [
+      { heading: 'January–February: Winter Check', body: 'Inspect roof for ice dams. Check pipes for freezing risk. Test smoke and CO detectors. Replace water heater anode rod if 3+ years old.' },
+      { heading: 'March–April: Spring Prep', body: 'Clean gutters. Inspect roof after winter. Service HVAC. Test sprinkler system. Caulk windows and doors. Check foundation for cracks.' },
+      { heading: 'May–June: Summer Ready', body: 'Power wash exterior. Inspect deck for rot. Clean dryer vents. Check window screens. Service lawn equipment.' },
+      { heading: 'July–August: Mid-Summer', body: 'Check AC performance. Inspect attic for heat and moisture. Trim trees away from house. Check exterior paint.' },
+      { heading: 'September–October: Fall Prep', body: 'Clean gutters again. Service heating system. Drain exterior faucets. Check weatherstripping. Inspect chimney.' },
+      { heading: 'November–December: Winter Ready', body: 'Insulate pipes in unheated spaces. Stock emergency supplies. Test generator. Check for drafts. Clean fireplace.' },
+    ]
   },
-  {
-    id: 3, category: 'plumbing', type: 'guide', difficulty: 'easy',
-    title: 'Shut Off Your Water in an Emergency',
-    description: 'Every homeowner needs to know this. Locate your main shutoff valve before a burst pipe turns a small problem into a catastrophe.',
-    duration: '3 min read', diy: true,
-    youtubeSearch: 'how to shut off main water supply home',
-    tools: ['Nothing — just knowledge'],
-    saves: 'Thousands in water damage',
-    tips: ['Main shutoff is usually near water meter or where pipe enters house', 'Test it annually so it doesn\'t freeze seized', 'Label it clearly for family members'],
-    whenToCallPro: 'Immediately after shutting off — for burst pipes call a plumber same day',
-    tags: ['emergency', 'shutoff', 'burst pipe', 'must know'],
+  { id: 3, category: 'maintenance', title: 'Plumbing 101: What Every Homeowner Should Know', summary: 'How to prevent costly water damage, identify early signs of trouble, and know when to call a plumber.', readTime: 7, difficulty: 'beginner', featured: false, emoji: '🔧',
+    content: [
+      { heading: 'Know Your Shutoff Valves', body: 'Find your main water shutoff before you need it. It\'s usually near the water meter or where the main line enters the house. Every adult in your home should know its location.' },
+      { heading: 'Early Warning Signs', body: 'Watch for: water stains on ceilings, slow drains (early clog warning), low water pressure (pipe or fixture issue), discolored water (rust or sediment), and unusual sounds in pipes.' },
+      { heading: 'Water Heater Maintenance', body: 'Flush your water heater annually to remove sediment. Check the anode rod every 3 years. Most water heaters last 8-12 years — budget for replacement around year 10.' },
+      { heading: 'Prevent Frozen Pipes', body: 'Keep cabinet doors open under sinks on exterior walls during cold snaps. Let faucets drip slightly. Know how to shut off water if a pipe bursts.' },
+      { heading: 'When to DIY vs Call a Pro', body: 'DIY: replacing faucets, fixing running toilets, unclogging drains. Call a pro: anything involving the main line, gas connections, or work requiring permits.' },
+    ]
   },
-  {
-    id: 4, category: 'plumbing', type: 'video', difficulty: 'medium',
-    title: 'Replace a Toilet Flapper',
-    description: 'A running toilet can waste 200 gallons of water per day. The flapper is usually the culprit and takes 10 minutes to replace for under $10.',
-    duration: '10 min', diy: true,
-    youtubeSearch: 'replace toilet flapper running toilet fix',
-    tools: ['Replacement flapper ($5-10)', 'Your hands — no tools needed'],
-    saves: '$200/year on water bill + $120 plumber',
-    tips: ['Universal flappers fit most toilets', 'Add food coloring to tank — if it appears in bowl without flushing, flapper is leaking', 'Replace every 3-5 years proactively'],
-    whenToCallPro: 'If replacing flapper doesn\'t stop running — may be fill valve',
-    tags: ['toilet', 'running', 'flapper', 'water waste'],
+  // Financial
+  { id: 4, category: 'financial', title: 'Understanding Home Equity: Your Wealth Engine', summary: 'How equity builds, how to access it, and how to use it strategically as part of your financial portfolio.', readTime: 9, difficulty: 'intermediate', featured: true, emoji: '📈',
+    content: [
+      { heading: 'What Is Home Equity?', body: 'Equity is the difference between your home\'s market value and what you owe. If your home is worth $425,000 and you owe $280,000, your equity is $145,000.' },
+      { heading: 'How Equity Builds', body: 'Two ways: appreciation (market forces) and principal paydown (every mortgage payment reduces your balance). In the first years, most payments go to interest — this shifts over time.' },
+      { heading: 'Accessing Your Equity', body: 'Home Equity Loan: lump sum at fixed rate. HELOC: revolving credit line, flexible draws. Cash-Out Refinance: replaces mortgage with larger one. Each has different rates, terms, and tax implications.' },
+      { heading: 'Strategic Uses of Equity', body: 'High-ROI home improvements (kitchens, baths). Down payment on additional property. Debt consolidation (replacing high-interest debt with lower-rate home equity). Education funding.' },
+      { heading: 'The Risk', body: 'Your home is collateral. Borrowing against equity increases risk if property values decline. Never borrow more than you can comfortably repay.' },
+    ]
   },
-
-  // ── ELECTRICAL ──
-  {
-    id: 5, category: 'electrical', type: 'video', difficulty: 'easy',
-    title: 'Reset a Tripped Circuit Breaker',
-    description: 'Power out in one room? Before calling an electrician, check your breaker panel. Most tripped breakers are a simple reset — takes 30 seconds.',
-    duration: '4 min', diy: true,
-    youtubeSearch: 'how to reset tripped circuit breaker',
-    tools: ['Nothing needed'],
-    saves: '$200 electrician call',
-    tips: ['Breakers should snap firmly to ON — partial position means tripped', 'If it trips again immediately, unplug devices and try again', 'Repeatedly tripping = overloaded circuit or short circuit — call a pro'],
-    whenToCallPro: 'Breaker won\'t reset or keeps tripping — could be dangerous wiring',
-    tags: ['circuit breaker', 'power out', 'electrical panel', 'quick fix'],
+  { id: 5, category: 'financial', title: 'Property Expense Tracking for Tax Season', summary: 'Which home expenses are deductible, how to document them properly, and how to prepare tax-ready records.', readTime: 7, difficulty: 'intermediate', featured: false, emoji: '🧾',
+    content: [
+      { heading: 'Primary Home Deductions', body: 'Mortgage interest (up to $750K loan), property taxes (up to $10K SALT cap), and mortgage points are the main deductions for a primary home. Home office deduction requires exclusive business use.' },
+      { heading: 'Rental Property Deductions', body: 'Rental properties have far more deductions: mortgage interest, property taxes, insurance, repairs, maintenance, property management fees, utilities you pay, and depreciation (27.5 years).' },
+      { heading: 'Capital Improvements vs Repairs', body: 'Repairs are immediately deductible on rentals. Improvements must be depreciated over time. A new roof is an improvement; patching the existing roof is a repair.' },
+      { heading: 'The Records You Need', body: 'Keep all receipts, invoices, and contracts for at least 3 years (IRS) or 7 years (to be safe). Photograph major repairs. Note dates, vendors, and purpose on every receipt.' },
+      { heading: 'Cost Basis Tracking', body: 'Your cost basis affects capital gains when you sell. It includes purchase price plus improvements. Track every improvement — it could save you thousands in taxes when you sell.' },
+    ]
   },
-  {
-    id: 6, category: 'electrical', type: 'video', difficulty: 'easy',
-    title: 'Replace a Light Switch',
-    description: 'A dead switch is a simple swap. With basic safety steps, replacing a standard light switch is a beginner-friendly 15 minute project.',
-    duration: '12 min', diy: true,
-    youtubeSearch: 'how to replace light switch DIY beginner',
-    tools: ['Flathead screwdriver', 'Phillips screwdriver', 'Voltage tester ($10)', 'Replacement switch ($3)'],
-    saves: '$150 electrician visit',
-    tips: ['ALWAYS turn off breaker first and test with voltage tester', 'Take a photo of old wiring before disconnecting', 'Match switch type — single pole vs 3-way'],
-    whenToCallPro: 'Wires are aluminum (silver colored), more than 3 wires present, or sparks',
-    tags: ['light switch', 'electrical', 'beginner', 'replace'],
+  // Insurance
+  { id: 6, category: 'insurance', title: 'Home Insurance: What You\'re Actually Covered For', summary: 'Decode your policy, understand common exclusions, and make sure you\'re not underinsured before disaster strikes.', readTime: 8, difficulty: 'beginner', featured: true, emoji: '🛡️',
+    content: [
+      { heading: 'Standard HO-3 Coverage', body: 'Most homeowners have an HO-3 policy covering: dwelling (structure), other structures (detached garage, fence), personal property, liability, and additional living expenses if you can\'t occupy your home.' },
+      { heading: 'Common Exclusions', body: 'Floods: not covered — requires separate NFIP or private flood policy. Earthquakes: separate policy needed. Normal wear and tear: not covered. Mold from long-term neglect: often excluded.' },
+      { heading: 'Replacement Cost vs Actual Cash Value', body: 'Replacement cost pays what it costs to rebuild at today\'s prices. Actual cash value deducts depreciation. Always choose replacement cost — the premium difference is worth it.' },
+      { heading: 'Are You Underinsured?', body: 'Construction costs have risen 30-40% since 2020. If your dwelling coverage hasn\'t been updated, you may be significantly underinsured. Get an updated replacement cost estimate from your agent.' },
+      { heading: 'Umbrella Policy', body: 'Standard liability is $100K-300K. An umbrella policy adds $1-5M in coverage for about $150-300/year. Essential for multi-property owners, pool owners, and anyone with significant assets.' },
+    ]
   },
-  {
-    id: 7, category: 'electrical', type: 'guide', difficulty: 'easy',
-    title: 'Test and Replace GFCI Outlets',
-    description: 'GFCI outlets in bathrooms and kitchens save lives. They should be tested monthly — takes 10 seconds.',
-    duration: '5 min read', diy: true,
-    youtubeSearch: 'test replace GFCI outlet bathroom kitchen',
-    tools: ['GFCI outlet ($15-25)', 'Screwdrivers', 'Voltage tester'],
-    saves: 'Could save your life + $150 electrician',
-    tips: ['Test button = trips it. Reset button = restores power', 'Replace if test/reset doesn\'t work properly', 'Required by code in bathrooms, kitchens, garages, outdoors'],
-    whenToCallPro: 'If GFCI keeps tripping without obvious cause — ground fault somewhere',
-    tags: ['GFCI', 'outlet', 'bathroom', 'safety', 'monthly check'],
+  { id: 7, category: 'insurance', title: 'Rental Property Insurance: What Landlords Need', summary: 'Standard homeowners policies don\'t cover rentals. Here\'s what coverage landlords actually need.', readTime: 6, difficulty: 'intermediate', featured: false, emoji: '🔑',
+    content: [
+      { heading: 'Landlord Policy (DP-3)', body: 'A standard HO-3 policy is void when you rent out your property. You need a Dwelling Policy (DP-3) or Landlord Policy. It covers the structure and your liability — not tenant belongings.' },
+      { heading: 'Loss of Rental Income', body: 'If your rental is damaged and uninhabitable, loss of rental income coverage pays your lost rent during repairs. This is critical — don\'t skip it.' },
+      { heading: 'Require Tenant\'s Insurance', body: 'Make renters insurance a lease requirement. It protects tenant belongings and provides their own liability coverage, reducing your exposure.' },
+      { heading: 'Liability Coverage', body: 'As a landlord, you\'re liable for slip-and-falls, dog bites by tenants\' pets (sometimes), and habitability failures. $500K-$1M liability is recommended. An umbrella policy is wise.' },
+      { heading: 'Vacant Property', body: 'Standard policies often exclude coverage for vacant properties after 30-60 days. If a property is between tenants, notify your insurer and get a vacant property endorsement.' },
+    ]
   },
-
-  // ── HVAC ──
-  {
-    id: 8, category: 'hvac', type: 'video', difficulty: 'easy',
-    title: 'Change Your HVAC Air Filter',
-    description: 'The single most important maintenance task most homeowners skip. A dirty filter makes your HVAC work 15% harder and costs you money every month.',
-    duration: '5 min', diy: true,
-    youtubeSearch: 'how to change HVAC air filter home',
-    tools: ['Replacement filter (check size on old filter)', 'Vacuum (optional)'],
-    saves: '$200-400/year on energy bills + extends HVAC life',
-    tips: ['Check filter monthly — change every 1-3 months', 'MERV 8-11 is ideal for most homes', 'Arrow on filter points toward the blower (away from return duct)', 'Write install date on filter with marker'],
-    whenToCallPro: 'If you notice reduced airflow after changing filter — may need duct cleaning',
-    tags: ['HVAC', 'filter', 'monthly', 'energy savings', 'must do'],
+  // Valuation
+  { id: 8, category: 'valuation', title: 'How Property Values Are Determined', summary: 'Understanding the appraisal process, what drives appreciation, and how to increase your home\'s value strategically.', readTime: 7, difficulty: 'beginner', featured: false, emoji: '🏠',
+    content: [
+      { heading: 'The Appraisal Process', body: 'A licensed appraiser compares your home to recent sales of similar properties (comps) within a mile radius. They adjust for differences in size, condition, age, and amenities.' },
+      { heading: 'Key Value Drivers', body: 'Location (school district, walkability, neighborhood trajectory). Size (square footage, lot size). Condition (updated vs dated systems and finishes). Unique features (pool, views, garage).' },
+      { heading: 'Best ROI Improvements', body: 'Kitchen remodel (60-80% ROI). Bathroom update (60-70%). Curb appeal/landscaping (100%+ if neglected). New roof (60-70%). Adding square footage (varies widely by market).' },
+      { heading: 'Low ROI to Avoid', body: 'Swimming pools in most markets (negative ROI). Luxury upgrades in non-luxury neighborhoods (over-improvement). Highly personalized finishes. Converting a garage.' },
+      { heading: 'Monitoring Value', body: 'Check Zillow, Redfin, and Realtor.com estimates monthly. But remember: these are algorithms. A real appraisal or agent CMA gives you the most accurate current value.' },
+    ]
   },
-  {
-    id: 9, category: 'hvac', type: 'video', difficulty: 'easy',
-    title: 'Clean Your AC Condenser Unit',
-    description: 'That big metal box outside needs annual cleaning. Dirty coils reduce efficiency by 25%. A garden hose and 20 minutes saves hundreds in energy costs.',
-    duration: '15 min', diy: true,
-    youtubeSearch: 'clean AC condenser unit outside DIY',
-    tools: ['Garden hose with sprayer', 'Fin comb (optional)', 'Coil cleaner spray ($10)'],
-    saves: '$300-500/year in energy + longer equipment life',
-    tips: ['Turn off power at disconnect box first', 'Spray from inside out to push debris out', 'Keep plants and debris 2 feet away year-round', 'Best done in spring before cooling season'],
-    whenToCallPro: 'Bent fins over 20% of coil or refrigerant leak (hissing sound)',
-    tags: ['AC', 'condenser', 'annual', 'energy savings', 'summer prep'],
+  // Legal
+  { id: 9, category: 'legal', title: 'Property Tax Appeals: A Step-by-Step Guide', summary: 'How to challenge an over-assessment, gather evidence, and potentially save thousands annually.', readTime: 8, difficulty: 'intermediate', featured: true, emoji: '⚖️',
+    content: [
+      { heading: 'When to Appeal', body: 'Appeal if your assessed value exceeds your market value. Studies show 30-60% of assessments are over-valued. The average successful appeal saves $1,200-$2,400/year.' },
+      { heading: 'Step 1: Review Your Assessment', body: 'Check the county\'s records for your property. Look for errors: wrong square footage, wrong number of bedrooms, outdated data. These errors alone can win an appeal.' },
+      { heading: 'Step 2: Gather Comparable Sales', body: 'Find 3-5 recent sales of similar homes in your neighborhood. Use Zillow, Redfin, or the county recorder\'s office. If comps are lower than your assessed value, you have evidence.' },
+      { heading: 'Step 3: File the Appeal', body: 'Most counties require filing within 45-90 days of the assessment notice. File online or in person with your county Board of Assessors. There is usually no fee.' },
+      { heading: 'Step 4: The Hearing', body: 'Present your comps and any errors to the Board of Equalization. Be professional and factual. Most hearings take 15-30 minutes. You don\'t need an attorney.' },
+    ]
   },
-  {
-    id: 10, category: 'hvac', type: 'guide', difficulty: 'medium',
-    title: 'Program Your Smart Thermostat',
-    description: 'A properly programmed smart thermostat pays for itself in 1-2 months. Most people never set it up correctly.',
-    duration: '10 min read', diy: true,
-    youtubeSearch: 'program smart thermostat save money Nest Ecobee',
-    tools: ['Your thermostat app or manual'],
-    saves: '$180/year average household savings',
-    tips: ['68°F when home, 60°F when away/asleep in winter is the sweet spot', 'Each degree lower saves ~3% on heating', 'Use geofencing if your thermostat supports it'],
-    whenToCallPro: 'Thermostat wiring issues or C-wire problems during installation',
-    tags: ['thermostat', 'smart home', 'energy savings', 'Nest', 'Ecobee'],
+  { id: 10, category: 'legal', title: 'Georgia Landlord-Tenant Law: What You Must Know', summary: 'Security deposits, eviction procedures, notice requirements, and fair housing compliance for Georgia landlords.', readTime: 10, difficulty: 'advanced', featured: false, emoji: '📋',
+    content: [
+      { heading: 'Security Deposit Rules', body: 'Georgia law (O.C.G.A. § 44-7-30) requires returning deposits within 30 days of move-out, or providing a written itemization of deductions. Hold deposits in a separate account or surety bond.' },
+      { heading: 'Required Disclosures', body: 'Lead paint disclosure for pre-1978 properties (federal law). Provide EPA pamphlet. Georgia has no mandatory disclosure form, but best practice is to document all known defects.' },
+      { heading: 'Notice Requirements', body: '60 days written notice required for non-renewal of annual lease. Month-to-month requires 30 days notice. Always send notices via certified mail and keep copies.' },
+      { heading: 'Eviction Process', body: 'File a Dispossessory Warrant with Magistrate Court. Tenant has 7 days to respond. If no response, you get a default judgment. Hearing usually within 2-3 weeks of filing. Cannot self-help evict.' },
+      { heading: 'Fair Housing', body: 'Cannot discriminate based on race, color, religion, sex, national origin, disability, or familial status. Georgia adds age as a protected class. Violations can result in significant penalties.' },
+    ]
   },
-
-  // ── GENERAL REPAIR ──
-  {
-    id: 11, category: 'general', type: 'video', difficulty: 'easy',
-    title: 'Caulk a Bathtub or Shower',
-    description: 'Old, moldy caulk isn\'t just ugly — it leads to water damage behind walls. Recaulking is a $10 fix that prevents $10,000 in damage.',
-    duration: '20 min', diy: true,
-    youtubeSearch: 'how to caulk bathtub shower DIY',
-    tools: ['Caulk remover tool ($5)', 'Mold-resistant silicone caulk ($8)', 'Caulk gun', 'Painter\'s tape'],
-    saves: 'Prevents major water damage',
-    tips: ['Use 100% silicone for wet areas — NOT latex', 'Fill tub with water while caulking so joint is slightly stretched', 'Let cure 24 hours before using shower'],
-    whenToCallPro: 'Water damage already behind walls — soft drywall, staining, mold smell',
-    tags: ['caulk', 'bathroom', 'shower', 'waterproofing', 'prevention'],
+  // Rental
+  { id: 11, category: 'rental', title: 'Setting the Right Rent Price', summary: 'How to research your local market, price competitively, and adjust for seasonality and property type.', readTime: 6, difficulty: 'beginner', featured: false, emoji: '💰',
+    content: [
+      { heading: 'Research Comparable Rentals', body: 'Search Zillow, Apartments.com, and Facebook Marketplace for similar units in your area. Compare square footage, bedrooms, amenities, and location within a half-mile radius.' },
+      { heading: 'The 1% Rule', body: 'A rough guideline: monthly rent should be 1% of purchase price. A $300,000 home should rent for $3,000/month. This doesn\'t account for local market conditions — always verify with comps.' },
+      { heading: 'Seasonality Matters', body: 'Rental demand peaks May-September. Listing in winter may require pricing 5-10% below peak. Consider when your lease ends — try to time renewals for spring.' },
+      { heading: 'Price for Low Vacancy', body: 'A vacancy of even 1 month erases 8% of annual income. Pricing 5% below market may attract better tenants faster and pay off more than holding out for top dollar.' },
+      { heading: 'Annual Increases', body: 'Build annual increases into leases (typically 3-5%). Check local ordinances — some areas have rent control or increase caps. Give proper notice before any increase.' },
+    ]
   },
-  {
-    id: 12, category: 'general', type: 'video', difficulty: 'easy',
-    title: 'Patch a Drywall Hole',
-    description: 'Doorknob dents, picture hanging mistakes, or accidents — drywall holes are one of the most common fixes. Smaller than 6" is a beginner DIY.',
-    duration: '30 min + dry time', diy: true,
-    youtubeSearch: 'patch drywall hole repair DIY small large',
-    tools: ['Spackle or joint compound', 'Putty knife', 'Sandpaper (120 grit)', 'Primer', 'Paint'],
-    saves: '$200-400 handyman visit',
-    tips: ['Small holes (under 3"): spackle, sand, paint', 'Medium holes: use mesh patch kit ($8)', 'Match texture before painting for invisible repair'],
-    whenToCallPro: 'Structural damage, water damage, or holes near electrical/plumbing',
-    tags: ['drywall', 'patch', 'hole', 'wall repair', 'beginner'],
-  },
-  {
-    id: 13, category: 'general', type: 'guide', difficulty: 'easy',
-    title: '10 Things to Check Every Spring',
-    description: 'A simple annual walkthrough catches small problems before they become expensive ones. This checklist takes 2 hours and could save thousands.',
-    duration: '8 min read', diy: true,
-    youtubeSearch: 'spring home maintenance checklist annual inspection',
-    tools: ['Flashlight', 'Binoculars (for roof)', 'Garden hose'],
-    saves: 'Prevents thousands in deferred maintenance',
-    tips: [
-      'Gutters: clean and check for sagging',
-      'Roof: look for missing/curled shingles from ground',
-      'Caulking: check windows, doors, and penetrations',
-      'HVAC: replace filter, clean condenser',
-      'Deck/patio: check for loose boards and rot',
-    ],
-    whenToCallPro: 'Anything structural, roof damage, or foundation cracks',
-    tags: ['spring', 'checklist', 'annual', 'inspection', 'prevention'],
-  },
-  {
-    id: 14, category: 'general', type: 'video', difficulty: 'medium',
-    title: 'Fix a Squeaky Floor',
-    description: 'That annoying creak at 2am waking everyone up. Most squeaky floors are fixable from above with one screw and a special bit — no subfloor access needed.',
-    duration: '15 min', diy: true,
-    youtubeSearch: 'fix squeaky floor from above without removing floor',
-    tools: ['Squeeeeek No More kit ($20)', 'Drill', 'Score tool'],
-    saves: '$300-500 flooring contractor',
-    tips: ['Works through carpet or hardwood', 'Screw goes through flooring into joist — snaps off flush', 'Find the joist with a stud finder first'],
-    whenToCallPro: 'Squeaking over entire large area or if floor feels springy/soft — structural issue',
-    tags: ['squeaky floor', 'hardwood', 'carpet', 'quick fix'],
-  },
-
-  // ── LANDSCAPING ──
-  {
-    id: 15, category: 'landscaping', type: 'guide', difficulty: 'easy',
-    title: 'Winterize Your Sprinkler System',
-    description: 'Skipping sprinkler winterization leads to burst pipes come spring — a $500+ repair. Blowing out the lines takes 30 minutes and a compressor.',
-    duration: '30 min', diy: true,
-    youtubeSearch: 'how to winterize sprinkler system blow out DIY',
-    tools: ['Air compressor (rent for $30-50)', 'Safety glasses'],
-    saves: '$500+ in burst pipe repairs',
-    tips: ['Blow out each zone separately, 2-3 passes each', 'Don\'t exceed 50 PSI for poly pipe, 80 PSI for PVC', 'Turn off backflow preventer and controller after'],
-    whenToCallPro: 'If you have a complex system or are unsure — sprinkler companies charge $75-100',
-    tags: ['sprinkler', 'winterize', 'irrigation', 'fall prep'],
-  },
-  {
-    id: 16, category: 'landscaping', type: 'video', difficulty: 'easy',
-    title: 'Fix a Dead Patch in Your Lawn',
-    description: 'Dead grass patches are usually easy to fix with overseeding or sod plugs. Identify the cause first or it\'ll keep coming back.',
-    duration: '15 min', diy: true,
-    youtubeSearch: 'fix dead patches lawn grass repair overseeding',
-    tools: ['Rake', 'Grass seed or sod plugs', 'Topsoil', 'Fertilizer'],
-    saves: '$200+ landscaper visit',
-    tips: ['Rule out grubs or disease first (pull back dead grass — white grubs visible)', 'Best time to seed: early fall for cool season, spring for warm season', 'Water 2x daily for 2 weeks until established'],
-    whenToCallPro: 'Large areas or if grubs/disease confirmed — may need treatment first',
-    tags: ['lawn', 'grass', 'dead patch', 'overseeding'],
-  },
-
-  // ── SAFETY ──
-  {
-    id: 17, category: 'safety', type: 'guide', difficulty: 'easy',
-    title: 'Test Every Smoke & CO Detector',
-    description: 'Most fire deaths happen because smoke detectors had dead batteries or were missing. This 10-minute monthly task is the most important safety check you can do.',
-    duration: '10 min monthly', diy: true,
-    youtubeSearch: 'test smoke detector carbon monoxide detector home safety',
-    tools: ['9V batteries', 'Step stool'],
-    saves: 'Could save your life',
-    tips: ['Test monthly — press test button for 5+ seconds', 'Replace batteries annually even if they work', 'Replace entire unit every 10 years — sensors degrade', 'CO detectors needed on every level near sleeping areas'],
-    whenToCallPro: 'Never — this is always a DIY task',
-    tags: ['smoke detector', 'carbon monoxide', 'safety', 'monthly', 'batteries'],
-  },
-  {
-    id: 18, category: 'safety', type: 'guide', difficulty: 'easy',
-    title: 'Check Your Fire Extinguisher',
-    description: 'Do you even know where your fire extinguisher is? 60% of homeowners either don\'t have one or have one that\'s expired. 5-minute check.',
-    duration: '5 min', diy: true,
-    youtubeSearch: 'how to check fire extinguisher home inspection',
-    tools: ['Your existing extinguisher'],
-    saves: 'Could save your home',
-    tips: ['Needle should be in green zone — red zone means recharge or replace', 'ABC rated for homes handles most fires', 'Kitchen: aim away from grease fire — use lid to smother instead', 'Know PASS: Pull, Aim, Squeeze, Sweep'],
-    whenToCallPro: 'Never for inspection — take to fire station for recharge',
-    tags: ['fire extinguisher', 'safety', 'annual check', 'PASS'],
+  // Energy
+  { id: 12, category: 'energy', title: 'Energy Efficiency: Reduce Bills and Increase Value', summary: 'The highest-ROI energy upgrades for homeowners — from simple fixes to major improvements worth making.', readTime: 7, difficulty: 'beginner', featured: false, emoji: '⚡',
+    content: [
+      { heading: 'Start With an Audit', body: 'Georgia Power and most utilities offer free energy audits. An auditor identifies air leaks, insulation gaps, and inefficient equipment. It\'s the most valuable first step.' },
+      { heading: 'Quick Wins Under $500', body: 'LED bulbs throughout ($50, saves $150/year). Smart thermostat ($150, saves 10-15% on HVAC). Weatherstripping doors and windows ($100). Water heater insulation blanket ($30).' },
+      { heading: 'Mid-Range: $500-$5,000', body: 'Attic insulation (30-50% of heat loss through roof). Air sealing (most homes lose 30% of conditioned air through leaks). Energy-efficient windows (10-20% reduction in bills).' },
+      { heading: 'Major Upgrades with Incentives', body: 'Heat pump HVAC (30% federal tax credit through 2032). Solar panels (30% federal tax credit + Georgia Power net metering). EV charger installation (30% credit).' },
+      { heading: 'Effect on Home Value', body: 'Energy-efficient homes sell for 2-8% more than comparable inefficient homes. A green certification (ENERGY STAR, LEED) can add 5-10% in some markets.' },
+    ]
   },
 ];
 
-// ─── Content Card ─────────────────────────────────────────────────────
-const ContentCard = ({ item, onClick }) => {
-  const cat = CATEGORIES.find(c => c.key === item.category);
-  const diff = DIFFICULTY[item.difficulty];
-  const Icon = cat?.icon || Wrench;
+// ─── Article Card ─────────────────────────────────────────────────────
+const ArticleCard = ({ article, onClick }) => {
+  const cat = CATEGORIES.find(c => c.key === article.category) || CATEGORIES[0];
+  const diff = DIFFICULTY[article.difficulty];
 
   return (
     <button
-      onClick={() => onClick(item)}
-      className="bg-white rounded-2xl border border-slate-100 shadow-sm hover:shadow-md hover:-translate-y-0.5 transition-all text-left group w-full"
+      onClick={() => onClick(article)}
+      className="bg-white rounded-2xl border border-slate-100 shadow-sm hover:shadow-md hover:-translate-y-0.5 transition-all text-left w-full p-6 flex flex-col"
     >
-      <div className="p-5">
-        <div className="flex items-start justify-between mb-3">
-          <div className="flex items-center gap-2">
-            <div className="w-9 h-9 rounded-xl flex items-center justify-center flex-shrink-0" style={{ background: cat?.bg }}>
-              <Icon className="w-4 h-4" style={{ color: cat?.color }} />
-            </div>
-            <div className="flex items-center gap-1.5">
-              {item.type === 'video' && (
-                <span className="flex items-center gap-1 text-xs font-bold px-2 py-0.5 rounded-full bg-red-50 text-red-500">
-                  <Play className="w-3 h-3" /> Video
-                </span>
-              )}
-              {item.type === 'guide' && (
-                <span className="flex items-center gap-1 text-xs font-bold px-2 py-0.5 rounded-full bg-blue-50 text-blue-500">
-                  <BookOpen className="w-3 h-3" /> Guide
-                </span>
-              )}
-              {item.type === 'podcast' && (
-                <span className="flex items-center gap-1 text-xs font-bold px-2 py-0.5 rounded-full bg-purple-50 text-purple-500">
-                  <Mic className="w-3 h-3" /> Podcast
-                </span>
-              )}
-            </div>
-          </div>
-          <span className="text-xs font-bold px-2 py-0.5 rounded-full flex-shrink-0" style={{ background: diff?.bg, color: diff?.color }}>
-            {diff?.label}
+      <div className="flex items-start justify-between mb-3">
+        <span className="text-3xl">{article.emoji}</span>
+        {article.featured && (
+          <span className="flex items-center gap-1 text-xs font-bold px-2.5 py-1 rounded-full bg-amber-50 text-amber-600">
+            <Star className="w-3 h-3 fill-amber-400" /> Featured
           </span>
-        </div>
-
-        <h3 className="font-bold text-slate-900 text-sm mb-1.5 group-hover:text-blue-600 transition-colors leading-snug">
-          {item.title}
-        </h3>
-        <p className="text-slate-400 text-xs leading-relaxed mb-3 line-clamp-2">{item.description}</p>
-
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <span className="flex items-center gap-1 text-xs text-slate-400">
-              <Clock className="w-3 h-3" /> {item.duration}
-            </span>
-            {item.saves && (
-              <span className="flex items-center gap-1 text-xs text-green-600 font-medium">
-                <ThumbsUp className="w-3 h-3" /> {item.saves}
-              </span>
-            )}
-          </div>
-          <ChevronRight className="w-4 h-4 text-slate-300 group-hover:text-blue-400 group-hover:translate-x-0.5 transition-all" />
+        )}
+      </div>
+      <h3 className="font-bold text-slate-900 text-base mb-2 leading-tight">{article.title}</h3>
+      <p className="text-slate-500 text-sm leading-relaxed flex-1 mb-4">{article.summary}</p>
+      <div className="flex items-center gap-2 flex-wrap">
+        <span className="text-xs font-semibold px-2.5 py-1 rounded-full" style={{ background: cat.bg, color: cat.color }}>
+          {cat.label}
+        </span>
+        <span className="text-xs font-semibold px-2.5 py-1 rounded-full" style={{ background: diff.bg, color: diff.color }}>
+          {diff.label}
+        </span>
+        <div className="flex items-center gap-1 text-xs text-slate-400 ml-auto">
+          <Clock className="w-3 h-3" /> {article.readTime} min read
         </div>
       </div>
     </button>
   );
 };
 
-// ─── Detail Modal ─────────────────────────────────────────────────────
-const DetailModal = ({ item, onClose }) => {
-  const cat = CATEGORIES.find(c => c.key === item.category);
-  const diff = DIFFICULTY[item.difficulty];
-  const Icon = cat?.icon || Wrench;
-
-  const youtubeUrl = `https://www.youtube.com/results?search_query=${encodeURIComponent(item.youtubeSearch)}`;
+// ─── Article Reader ───────────────────────────────────────────────────
+const ArticleReader = ({ article, onClose }) => {
+  const cat = CATEGORIES.find(c => c.key === article.category) || CATEGORIES[0];
+  const diff = DIFFICULTY[article.difficulty];
 
   return (
-    <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4 overflow-y-auto">
-      <div className="bg-white rounded-3xl shadow-2xl w-full max-w-2xl my-4">
-        {/* Header */}
-        <div className="rounded-t-3xl px-8 py-6 relative" style={{ background: cat?.color || '#1e3a5f' }}>
-          <button
-            onClick={onClose}
-            className="absolute top-4 right-4 w-8 h-8 bg-white/10 rounded-lg flex items-center justify-center text-white hover:bg-white/20"
-          >
+    <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+      <div className="bg-white rounded-3xl shadow-2xl w-full max-w-2xl max-h-[90vh] overflow-y-auto">
+        <div className="sticky top-0 bg-white border-b border-slate-100 px-8 py-4 flex items-center justify-between rounded-t-3xl">
+          <div className="flex items-center gap-2">
+            <span className="text-2xl">{article.emoji}</span>
+            <span className="text-xs font-semibold px-2.5 py-1 rounded-full" style={{ background: cat.bg, color: cat.color }}>{cat.label}</span>
+            <span className="text-xs font-semibold px-2.5 py-1 rounded-full" style={{ background: diff.bg, color: diff.color }}>{diff.label}</span>
+            <span className="flex items-center gap-1 text-xs text-slate-400"><Clock className="w-3 h-3" /> {article.readTime} min</span>
+          </div>
+          <button onClick={onClose} className="w-9 h-9 bg-slate-100 rounded-xl flex items-center justify-center text-slate-500 hover:bg-slate-200">
             <X className="w-4 h-4" />
           </button>
-          <div className="flex items-center gap-3 mb-3">
-            <div className="w-10 h-10 rounded-xl bg-white/20 flex items-center justify-center">
-              <Icon className="w-5 h-5 text-white" />
-            </div>
-            <div className="flex items-center gap-2">
-              <span className="text-white/70 text-xs">{cat?.label}</span>
-              <span className="text-white/40">·</span>
-              <span className="text-xs font-bold px-2 py-0.5 rounded-full bg-white/20 text-white">{diff?.label}</span>
-            </div>
-          </div>
-          <h2 className="text-xl font-extrabold text-white mb-1">{item.title}</h2>
-          <p className="text-white/70 text-sm">{item.description}</p>
         </div>
-
-        <div className="p-8 space-y-6">
-          {/* Watch / Find Content */}
-          <a
-            href={youtubeUrl}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="flex items-center gap-3 p-4 rounded-2xl border-2 border-red-100 bg-red-50 hover:bg-red-100 transition-colors group"
-          >
-            <div className="w-12 h-12 bg-red-500 rounded-xl flex items-center justify-center flex-shrink-0">
-              <Play className="w-6 h-6 text-white" />
-            </div>
-            <div className="flex-1">
-              <p className="font-bold text-slate-900">Watch on YouTube</p>
-              <p className="text-slate-500 text-xs">Search: "{item.youtubeSearch}"</p>
-            </div>
-            <ExternalLink className="w-4 h-4 text-red-400 group-hover:text-red-600" />
-          </a>
-
-          {/* Quick Stats */}
-          <div className="grid grid-cols-3 gap-3">
-            <div className="bg-slate-50 rounded-xl p-3 text-center">
-              <Clock className="w-4 h-4 text-slate-400 mx-auto mb-1" />
-              <p className="text-xs font-bold text-slate-900">{item.duration}</p>
-              <p className="text-xs text-slate-400">Time needed</p>
-            </div>
-            <div className="bg-green-50 rounded-xl p-3 text-center">
-              <ThumbsUp className="w-4 h-4 text-green-500 mx-auto mb-1" />
-              <p className="text-xs font-bold text-green-700 leading-tight">{item.saves}</p>
-              <p className="text-xs text-slate-400">You save</p>
-            </div>
-            <div className="bg-blue-50 rounded-xl p-3 text-center">
-              <CheckCircle2 className="w-4 h-4 text-blue-500 mx-auto mb-1" />
-              <p className="text-xs font-bold text-blue-700">{item.diy ? 'DIY' : 'Pro Advised'}</p>
-              <p className="text-xs text-slate-400">Recommended</p>
-            </div>
+        <div className="px-8 py-6">
+          <h1 className="text-2xl font-extrabold text-slate-900 mb-2">{article.title}</h1>
+          <p className="text-slate-500 text-base mb-8 leading-relaxed">{article.summary}</p>
+          <div className="space-y-6">
+            {article.content.map((section, i) => (
+              <div key={i}>
+                <h2 className="text-lg font-bold text-slate-900 mb-2 flex items-center gap-2">
+                  <span className="w-6 h-6 rounded-full text-white text-xs flex items-center justify-center font-bold flex-shrink-0" style={{ background: cat.color }}>{i + 1}</span>
+                  {section.heading}
+                </h2>
+                <p className="text-slate-600 leading-relaxed pl-8">{section.body}</p>
+              </div>
+            ))}
           </div>
-
-          {/* Tools Needed */}
-          <div>
-            <h3 className="font-bold text-slate-900 text-sm mb-3 flex items-center gap-2">
-              <Wrench className="w-4 h-4 text-slate-400" /> Tools & Materials
-            </h3>
-            <div className="flex flex-wrap gap-2">
-              {item.tools.map((tool, i) => (
-                <span key={i} className="text-xs font-medium px-3 py-1.5 rounded-full bg-slate-100 text-slate-700">
-                  {tool}
-                </span>
-              ))}
-            </div>
-          </div>
-
-          {/* Pro Tips */}
-          <div>
-            <h3 className="font-bold text-slate-900 text-sm mb-3 flex items-center gap-2">
-              <Lightbulb className="w-4 h-4 text-amber-500" /> Pro Tips
-            </h3>
-            <div className="space-y-2">
-              {item.tips.map((tip, i) => (
-                <div key={i} className="flex items-start gap-2.5 p-3 bg-amber-50 rounded-xl">
-                  <Star className="w-3.5 h-3.5 text-amber-500 flex-shrink-0 mt-0.5" />
-                  <p className="text-xs text-slate-700">{tip}</p>
-                </div>
-              ))}
-            </div>
-          </div>
-
-          {/* When to Call a Pro */}
-          <div className="bg-red-50 border border-red-100 rounded-xl p-4">
-            <h3 className="font-bold text-red-700 text-sm mb-2 flex items-center gap-2">
-              <AlertTriangle className="w-4 h-4" /> When to Call a Pro Instead
-            </h3>
-            <p className="text-xs text-red-600 leading-relaxed">{item.whenToCallPro}</p>
-          </div>
-
-          {/* Log it */}
-          <div className="bg-slate-50 border border-slate-200 rounded-xl p-4 flex items-center justify-between">
+          <div className="mt-8 bg-slate-50 border border-slate-100 rounded-2xl p-5 flex items-start gap-3">
+            <Lightbulb className="w-5 h-5 text-amber-500 flex-shrink-0 mt-0.5" />
             <div>
-              <p className="font-bold text-slate-700 text-sm">Did this fix your problem?</p>
-              <p className="text-slate-400 text-xs">Log it in your Maintenance tracker</p>
+              <p className="font-bold text-slate-900 text-sm">CasaOS Tip</p>
+              <p className="text-slate-500 text-sm mt-1">Use CasaOS to track and document everything in this guide — from maintenance schedules to expense records and policy documents.</p>
             </div>
-            <a
-              href="/maintenance-management"
-              className="flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-bold text-white"
-              style={{ background: '#1e3a5f' }}
-            >
-              Log Repair <ArrowRight className="w-3.5 h-3.5" />
-            </a>
           </div>
         </div>
       </div>
@@ -452,150 +228,161 @@ const DetailModal = ({ item, onClose }) => {
 
 // ─── Main Page ────────────────────────────────────────────────────────
 const HomeLearnPage = () => {
-  const [activeCategory, setActiveCategory] = useState('all');
-  const [activeType, setActiveType] = useState('all');
-  const [activeDifficulty, setActiveDifficulty] = useState('all');
   const [searchQuery, setSearchQuery] = useState('');
-  const [selectedItem, setSelectedItem] = useState(null);
+  const [activeCategory, setActiveCategory] = useState('all');
+  const [activeDifficulty, setActiveDifficulty] = useState('all');
+  const [selectedArticle, setSelectedArticle] = useState(null);
 
-  const filtered = CONTENT.filter(item => {
-    const matchesCat = activeCategory === 'all' || item.category === activeCategory;
-    const matchesType = activeType === 'all' || item.type === activeType;
-    const matchesDiff = activeDifficulty === 'all' || item.difficulty === activeDifficulty;
-    const matchesSearch = !searchQuery ||
-      item.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      item.description.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      item.tags.some(t => t.toLowerCase().includes(searchQuery.toLowerCase()));
-    return matchesCat && matchesType && matchesDiff && matchesSearch;
-  });
+  const filtered = useMemo(() => {
+    return ARTICLES.filter(a => {
+      const matchSearch = !searchQuery ||
+        a.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        a.summary.toLowerCase().includes(searchQuery.toLowerCase());
+      const matchCat = activeCategory === 'all' || a.category === activeCategory;
+      const matchDiff = activeDifficulty === 'all' || a.difficulty === activeDifficulty;
+      return matchSearch && matchCat && matchDiff;
+    });
+  }, [searchQuery, activeCategory, activeDifficulty]);
+
+  const featured = ARTICLES.filter(a => a.featured);
 
   return (
     <>
-      <Helmet>
-        <title>Home Learning Hub — CasaCEO</title>
-      </Helmet>
+      <Helmet><title>Home Learning Hub — CasaOS</title></Helmet>
 
       <div className="max-w-6xl mx-auto pb-20">
 
         {/* Header */}
         <div className="rounded-3xl p-8 mb-8 text-white relative overflow-hidden" style={{ background: '#1e3a5f' }}>
-          <div className="absolute top-0 right-0 w-64 h-64 rounded-full opacity-10" style={{ background: '#c9a96e', transform: 'translate(30%,-30%)' }}></div>
+          <div className="absolute top-0 right-0 w-64 h-64 rounded-full opacity-10" style={{ background: '#e8604c', transform: 'translate(30%,-30%)' }}></div>
           <div className="relative z-10">
-            <h1 className="text-3xl font-extrabold text-white mb-2">Home Learning Hub</h1>
-            <p className="text-blue-200 text-base max-w-2xl leading-relaxed">
-              Popular DIY fixes, maintenance guides, and pro tips — organized by category and difficulty. Know when to DIY and when to call a pro.
+            <div className="flex items-center gap-3 mb-3">
+              <div className="w-10 h-10 bg-white/10 rounded-xl flex items-center justify-center">
+                <BookOpen className="w-5 h-5 text-white" />
+              </div>
+              <h1 className="text-3xl font-extrabold text-white">Home Learning Hub</h1>
+            </div>
+            <p className="text-blue-200 text-base max-w-xl leading-relaxed mb-6">
+              Expert guides for every aspect of home ownership — maintenance, finance, insurance, legal, and more.
             </p>
-            <div className="flex flex-wrap gap-3 mt-5">
+
+            {/* Search */}
+            <div className="relative max-w-xl">
+              <Search className="absolute left-4 top-3.5 w-4 h-4 text-white/40" />
+              <input
+                type="text"
+                placeholder='Search guides... try "HVAC", "equity", "insurance"'
+                value={searchQuery}
+                onChange={e => setSearchQuery(e.target.value)}
+                className="w-full h-12 pl-11 pr-10 rounded-xl bg-white/10 border border-white/20 text-white placeholder:text-white/40 focus:outline-none focus:bg-white/20 text-sm"
+              />
+              {searchQuery && (
+                <button onClick={() => setSearchQuery('')} className="absolute right-3 top-3.5 text-white/40 hover:text-white">
+                  <X className="w-4 h-4" />
+                </button>
+              )}
+            </div>
+
+            {/* Quick stats */}
+            <div className="flex items-center gap-6 mt-6 text-sm">
               {[
-                { label: `${CONTENT.length} Guides & Videos`, icon: <BookOpen className="w-3.5 h-3.5" /> },
-                { label: 'Quick fixes to weekend projects', icon: <Clock className="w-3.5 h-3.5" /> },
-                { label: 'DIY vs Pro guidance on every topic', icon: <Wrench className="w-3.5 h-3.5" /> },
-              ].map((tag, i) => (
-                <span key={i} className="flex items-center gap-1.5 bg-white/10 text-blue-200 text-xs font-medium px-3 py-1.5 rounded-full border border-white/10">
-                  {tag.icon} {tag.label}
-                </span>
+                { value: ARTICLES.length, label: 'Expert guides' },
+                { value: '8', label: 'Topics covered' },
+                { value: 'Free', label: 'Always' },
+              ].map((stat, i) => (
+                <div key={i} className="flex items-center gap-2">
+                  <span className="font-extrabold text-white text-lg">{stat.value}</span>
+                  <span className="text-blue-200 text-xs">{stat.label}</span>
+                </div>
               ))}
             </div>
           </div>
         </div>
 
-        {/* Search */}
-        <div className="relative mb-6">
-          <Search className="absolute left-4 top-3.5 w-4 h-4 text-slate-400" />
-          <input
-            placeholder="Search guides... try 'leaky faucet', 'smoke detector', 'HVAC filter'"
-            value={searchQuery}
-            onChange={e => setSearchQuery(e.target.value)}
-            className="w-full h-12 pl-11 pr-4 rounded-2xl border border-slate-200 bg-white text-sm shadow-sm focus:outline-none focus:ring-2 focus:ring-slate-900"
-          />
-          {searchQuery && (
-            <button onClick={() => setSearchQuery('')} className="absolute right-4 top-3.5 text-slate-400 hover:text-slate-600">
-              <X className="w-4 h-4" />
-            </button>
-          )}
-        </div>
-
-        {/* Category Filter */}
-        <div className="flex gap-2 flex-wrap mb-4">
-          {CATEGORIES.map(cat => {
-            const Icon = cat.icon;
-            return (
-              <button
-                key={cat.key}
-                onClick={() => setActiveCategory(cat.key)}
-                className={`flex items-center gap-1.5 px-4 py-2 rounded-xl text-sm font-semibold border transition-all ${
-                  activeCategory === cat.key ? 'text-white border-transparent' : 'bg-white border-slate-200 text-slate-600 hover:border-slate-400'
-                }`}
-                style={activeCategory === cat.key ? { background: cat.color } : {}}
-              >
-                <Icon className="w-3.5 h-3.5" />
-                {cat.label}
-              </button>
-            );
-          })}
-        </div>
-
-        {/* Secondary Filters */}
-        <div className="flex gap-3 mb-8 flex-wrap">
-          <div className="flex gap-2 bg-white border border-slate-200 rounded-xl p-1">
-            {['all', 'video', 'guide'].map(type => (
-              <button
-                key={type}
-                onClick={() => setActiveType(type)}
-                className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-all ${
-                  activeType === type ? 'bg-slate-900 text-white' : 'text-slate-500 hover:text-slate-900'
-                }`}
-              >
-                {type === 'all' ? 'All Types' : type === 'video' ? '▶ Video' : '📖 Guide'}
-              </button>
-            ))}
-          </div>
-          <div className="flex gap-2 bg-white border border-slate-200 rounded-xl p-1">
-            {['all', 'easy', 'medium', 'hard'].map(diff => (
-              <button
-                key={diff}
-                onClick={() => setActiveDifficulty(diff)}
-                className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-all ${
-                  activeDifficulty === diff ? 'bg-slate-900 text-white' : 'text-slate-500 hover:text-slate-900'
-                }`}
-              >
-                {diff === 'all' ? 'All Levels' : DIFFICULTY[diff]?.label}
-              </button>
-            ))}
-          </div>
-          <p className="text-xs text-slate-400 self-center ml-auto">{filtered.length} results</p>
-        </div>
-
-        {/* Content Grid */}
-        {filtered.length === 0 ? (
-          <div className="bg-white rounded-3xl border-2 border-dashed border-slate-200 p-16 text-center">
-            <Search className="w-10 h-10 text-slate-200 mx-auto mb-3" />
-            <p className="font-bold text-slate-400 text-sm">No results for "{searchQuery}"</p>
-            <button onClick={() => { setSearchQuery(''); setActiveCategory('all'); }} className="mt-3 text-xs text-blue-500 hover:text-blue-600">
-              Clear filters
-            </button>
-          </div>
-        ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
-            {filtered.map(item => (
-              <ContentCard key={item.id} item={item} onClick={setSelectedItem} />
-            ))}
+        {/* Featured Articles */}
+        {!searchQuery && activeCategory === 'all' && (
+          <div className="mb-10">
+            <h2 className="text-lg font-bold text-slate-900 mb-4 flex items-center gap-2">
+              <Star className="w-4 h-4 text-amber-400 fill-amber-400" /> Featured Guides
+            </h2>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
+              {featured.map(article => (
+                <ArticleCard key={article.id} article={article} onClick={setSelectedArticle} />
+              ))}
+            </div>
           </div>
         )}
 
-        {/* Coming Soon */}
-        <div className="mt-10 bg-gradient-to-br from-slate-50 to-slate-100 rounded-2xl border border-slate-200 p-6 text-center">
-          <Lightbulb className="w-8 h-8 text-amber-500 mx-auto mb-3" />
-          <h3 className="font-bold text-slate-900 mb-2">More Content Coming Soon</h3>
-          <p className="text-slate-500 text-sm max-w-lg mx-auto">
-            We're building original CasaCEO video guides, seasonal maintenance checklists, and a podcast series with expert contractors. Stay tuned.
+        {/* Category filters */}
+        <div className="flex flex-wrap gap-2 mb-4">
+          {CATEGORIES.map(cat => (
+            <button
+              key={cat.key}
+              onClick={() => setActiveCategory(cat.key)}
+              className="flex items-center gap-1.5 px-4 py-2 rounded-full text-xs font-semibold border transition-all"
+              style={activeCategory === cat.key
+                ? { background: cat.color, color: '#fff', borderColor: cat.color }
+                : { background: cat.bg, color: cat.color, borderColor: 'transparent' }
+              }
+            >
+              {cat.icon} {cat.label}
+            </button>
+          ))}
+        </div>
+
+        {/* Difficulty filter */}
+        <div className="flex items-center gap-2 mb-8">
+          <span className="text-xs text-slate-400 font-medium">Level:</span>
+          {['all', 'beginner', 'intermediate', 'advanced'].map(d => (
+            <button
+              key={d}
+              onClick={() => setActiveDifficulty(d)}
+              className="px-3 py-1.5 rounded-full text-xs font-semibold border transition-all capitalize"
+              style={activeDifficulty === d
+                ? { background: '#1e3a5f', color: '#fff', borderColor: '#1e3a5f' }
+                : { background: '#fff', color: '#64748b', borderColor: '#e2e8f0' }
+              }
+            >
+              {d === 'all' ? 'All Levels' : d}
+            </button>
+          ))}
+        </div>
+
+        {/* Articles Grid */}
+        {filtered.length === 0 ? (
+          <div className="bg-white rounded-3xl border-2 border-dashed border-slate-200 p-16 text-center">
+            <div className="text-5xl mb-4">🔍</div>
+            <h3 className="text-xl font-bold text-slate-900 mb-2">No guides found</h3>
+            <p className="text-slate-500 mb-4">Try a different search term or category</p>
+            <button onClick={() => { setSearchQuery(''); setActiveCategory('all'); setActiveDifficulty('all'); }} className="text-sm font-semibold underline" style={{ color: '#1e3a5f' }}>Clear filters</button>
+          </div>
+        ) : (
+          <>
+            <div className="flex items-center justify-between mb-4">
+              <h2 className="text-lg font-bold text-slate-900">
+                {activeCategory === 'all' && !searchQuery ? 'All Guides' : `${filtered.length} guide${filtered.length !== 1 ? 's' : ''} found`}
+              </h2>
+              <span className="text-xs text-slate-400">{filtered.length} articles</span>
+            </div>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
+              {filtered.map(article => (
+                <ArticleCard key={article.id} article={article} onClick={setSelectedArticle} />
+              ))}
+            </div>
+          </>
+        )}
+
+        {/* Footer */}
+        <div className="mt-12 bg-slate-50 border border-slate-100 rounded-2xl p-6 text-center">
+          <p className="text-slate-500 text-sm">
+            CasaOS Learning Hub is built for multi-property owners. All guides are educational — consult professionals for legal, tax, and financial decisions.
           </p>
         </div>
       </div>
 
-      {/* Detail Modal */}
-      {selectedItem && (
-        <DetailModal item={selectedItem} onClose={() => setSelectedItem(null)} />
+      {/* Article Reader Modal */}
+      {selectedArticle && (
+        <ArticleReader article={selectedArticle} onClose={() => setSelectedArticle(null)} />
       )}
     </>
   );
