@@ -140,7 +140,7 @@ const COVERAGE_RECOMMENDATIONS = {
   },
 };
 
-// ─── Coverage Score ───────────────────────────────────────────────────
+// ─── Protection Score ───────────────────────────────────────────────────
 const getCoverageScore = (policies) => {
   if (policies.length === 0) return { score: 0, grade: 'F', color: '#dc2626' };
   let score = 0;
@@ -201,7 +201,7 @@ const PolicyModal = ({ policy, onSave, onClose }) => {
       <div className="bg-white rounded-3xl shadow-2xl w-full max-w-2xl my-4">
         <div className="rounded-t-3xl px-8 py-6 flex items-center justify-between" style={{ background: '#1e3a5f' }}>
           <div>
-            <h2 className="text-xl font-bold text-white">{policy ? 'Edit Policy' : 'Add Insurance Policy'}</h2>
+            <h2 className="text-xl font-bold text-white">{policy ? 'Edit Coverage' : 'Add Insurance Policy'}</h2>
             <p className="text-blue-200 text-sm">Keep all your coverage in one place</p>
           </div>
           <button onClick={onClose} className="w-8 h-8 bg-white/10 rounded-lg flex items-center justify-center text-white hover:bg-white/20">
@@ -510,9 +510,9 @@ const CoverageAnalyzer = ({ policies }) => {
 
   return (
     <div className="space-y-6">
-      {/* Coverage Score */}
+      {/* Protection Score */}
       <div className="bg-white rounded-2xl border border-slate-100 shadow-sm p-6">
-        <h2 className="text-lg font-extrabold text-slate-900 mb-6">Coverage Score</h2>
+        <h2 className="text-lg font-extrabold text-slate-900 mb-6">Protection Score</h2>
         <div className="flex items-center gap-8">
           <div className="relative w-32 h-32 flex-shrink-0">
             <svg viewBox="0 0 100 100" className="w-full h-full -rotate-90">
@@ -730,7 +730,7 @@ const InsuranceAnalyzerPage = () => {
   return (
     <>
       <Helmet>
-        <title>Insurance Analyzer — CasaCEO</title>
+        <title>Insurance — CasaOS Protection Layer</title>
       </Helmet>
 
       <div className="max-w-6xl mx-auto pb-20">
@@ -740,7 +740,7 @@ const InsuranceAnalyzerPage = () => {
           <div className="absolute top-0 right-0 w-64 h-64 rounded-full opacity-10" style={{ background: '#c9a96e', transform: 'translate(30%,-30%)' }}></div>
           <div className="relative z-10 flex flex-col md:flex-row md:items-center justify-between gap-6">
             <div>
-              <h1 className="text-3xl font-extrabold text-white mb-2">Insurance Analyzer</h1>
+              <h1 className="text-3xl font-extrabold text-white mb-2">Insurance</h1>
               <p className="text-blue-200 text-base leading-relaxed max-w-xl">
                 Track all your policies, analyze coverage gaps, and make sure you're protected across every property and risk.
               </p>
@@ -763,7 +763,7 @@ const InsuranceAnalyzerPage = () => {
               {policies.length > 0 && (
                 <div className="bg-white/10 rounded-2xl px-5 py-4 text-center border border-white/10">
                   <p className="text-3xl font-extrabold" style={{ color: scoreInfo.color === '#059669' ? '#6ee7b7' : '#fbbf24' }}>{scoreInfo.grade}</p>
-                  <p className="text-blue-200 text-xs">Coverage Score</p>
+                  <p className="text-blue-200 text-xs">Protection Score</p>
                   <p className="text-blue-300 text-xs">${totalPremium.toLocaleString()}/yr</p>
                 </div>
               )}
