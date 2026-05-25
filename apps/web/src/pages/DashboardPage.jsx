@@ -144,7 +144,7 @@ const MODULES = [
     link: '/maintenance-management',
     color: '#f97316',
     bg: '#fff7ed',
-    badge: null,
+    badge: { count: 2, label: 'overdue', color: '#dc2626' },
   },
   {
     title: 'Bill Pay',
@@ -153,7 +153,7 @@ const MODULES = [
     link: '/bill-pay',
     color: '#2563eb',
     bg: '#eff6ff',
-    badge: null,
+    badge: { count: 3, label: 'due', color: '#d97706' },
   },
   {
     title: 'Documents',
@@ -355,21 +355,56 @@ const WelcomeBanner = ({ user, selectedHome }) => {
 const QuickStats = () => (
   <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
     {[
-      { label: 'Bills Due', value: '3', sublabel: 'this week', trend: '↑ 1 more than last week', trendUp: false, icon: <CreditCard className="w-4 h-4" />, color: '#d97706', bg: '#fffbeb', border: '#fde68a' },
-      { label: 'Maintenance', value: '2', sublabel: 'overdue', trend: '↑ action needed', trendUp: false, icon: <Wrench className="w-4 h-4" />, color: '#dc2626', bg: '#fef2f2', border: '#fecaca' },
-      { label: 'Documents', value: '14', sublabel: 'stored', trend: '↑ 2 added this month', trendUp: true, icon: <FolderOpen className="w-4 h-4" />, color: '#7c3aed', bg: '#f5f3ff', border: '#ddd6fe' },
-      { label: 'This Month', value: '$2,840', sublabel: 'expenses', trend: '↓ 12% vs last month', trendUp: true, icon: <DollarSign className="w-4 h-4" />, color: '#059669', bg: '#ecfdf5', border: '#a7f3d0' },
+      {
+        label: 'Bills Due', value: '3', sublabel: 'this week',
+        trend: '↑ 1 more than last week', trendUp: false,
+        icon: <CreditCard className="w-4 h-4" />, color: '#d97706', bg: '#fffbeb', border: '#fde68a',
+        link: '/bill-pay', tooltip: 'View bills due this week',
+        badge: '3 due',
+      },
+      {
+        label: 'Maintenance', value: '2', sublabel: 'overdue',
+        trend: '↑ action needed', trendUp: false,
+        icon: <Wrench className="w-4 h-4" />, color: '#dc2626', bg: '#fef2f2', border: '#fecaca',
+        link: '/maintenance-management', tooltip: 'View overdue maintenance tasks',
+        badge: '2 overdue',
+      },
+      {
+        label: 'Documents', value: '14', sublabel: 'stored',
+        trend: '↑ 2 added this month', trendUp: true,
+        icon: <FolderOpen className="w-4 h-4" />, color: '#7c3aed', bg: '#f5f3ff', border: '#ddd6fe',
+        link: '/documents', tooltip: 'Open document vault',
+        badge: null,
+      },
+      {
+        label: 'This Month', value: '$2,840', sublabel: 'expenses',
+        trend: '↓ 12% vs last month', trendUp: true,
+        icon: <DollarSign className="w-4 h-4" />, color: '#059669', bg: '#ecfdf5', border: '#a7f3d0',
+        link: '/expenses', tooltip: 'View expense breakdown',
+        badge: null,
+      },
     ].map((stat, i) => (
-      <div key={i} className="bg-white rounded-2xl border p-4 shadow-sm" style={{ borderColor: stat.border }}>
+      <Link
+        key={i}
+        to={stat.link}
+        title={stat.tooltip}
+        className="bg-white rounded-2xl border p-4 shadow-sm hover:shadow-md hover:-translate-y-0.5 transition-all group cursor-pointer block"
+        style={{ borderColor: stat.border }}
+      >
         <div className="flex items-center justify-between mb-3">
-          <div className="w-8 h-8 rounded-lg flex items-center justify-center" style={{ background: stat.bg }}>
+          <div className="w-8 h-8 rounded-lg flex items-center justify-center group-hover:scale-110 transition-transform" style={{ background: stat.bg }}>
             <span style={{ color: stat.color }}>{stat.icon}</span>
           </div>
           <span className="text-xs font-medium" style={{ color: stat.trendUp ? '#059669' : '#dc2626' }}>{stat.trend}</span>
         </div>
         <p className="text-2xl font-extrabold text-slate-900">{stat.value}</p>
-        <p className="text-xs text-slate-400 mt-0.5">{stat.label} · {stat.sublabel}</p>
-      </div>
+        <div className="flex items-center justify-between mt-0.5">
+          <p className="text-xs text-slate-400">{stat.label} · {stat.sublabel}</p>
+          <span className="text-xs font-bold opacity-0 group-hover:opacity-100 transition-opacity flex items-center gap-0.5" style={{ color: stat.color }}>
+            View <ArrowRight className="w-3 h-3" />
+          </span>
+        </div>
+      </Link>
     ))}
   </div>
 );
