@@ -486,4 +486,3 @@ const HomeTimelinePage = () => {
 };
 
 export default HomeTimelinePage;
-
