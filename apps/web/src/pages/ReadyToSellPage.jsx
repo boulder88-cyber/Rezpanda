@@ -4,24 +4,19 @@ import { Link } from 'react-router-dom';
 import {
   Home, Wrench, FileText, ShieldCheck, Camera, Users,
   TrendingUp, Clock, Download, Share2, Star, ArrowRight,
-  X, CheckCircle2, Sparkles, ChevronRight, BookOpen, Receipt
+  X, CheckCircle2, ChevronRight, Receipt, Zap, Award
 } from 'lucide-react';
 
 // ─── Dossier Modal ────────────────────────────────────────────────────
 const DossierModal = ({ onClose }) => (
   <div
     className="fixed inset-0 z-50 flex items-center justify-center p-4"
-    style={{ background: 'rgba(15,23,42,0.5)' }}
+    style={{ background: 'rgba(15,23,42,0.6)' }}
     onClick={e => e.target === e.currentTarget && onClose()}
   >
     <div className="bg-white rounded-3xl shadow-2xl w-full max-w-md overflow-hidden">
-
-      {/* Modal Header */}
       <div className="relative p-7 pb-5" style={{ background: '#1e3a5f' }}>
-        <button
-          onClick={onClose}
-          className="absolute top-4 right-4 w-8 h-8 rounded-full flex items-center justify-center hover:bg-white/10 transition-colors"
-        >
+        <button onClick={onClose} className="absolute top-4 right-4 w-8 h-8 rounded-full flex items-center justify-center hover:bg-white/10 transition-colors">
           <X className="w-4 h-4 text-white/70" />
         </button>
         <div className="flex items-center gap-3 mb-3">
@@ -34,50 +29,18 @@ const DossierModal = ({ onClose }) => (
           </div>
         </div>
         <p className="text-blue-200 text-sm leading-relaxed">
-          Your home's full history is compiled and ready to share. Choose how you'd like to use it.
+          Your home's full history is compiled and ready to share.
         </p>
       </div>
-
-      {/* Modal Actions */}
       <div className="p-5 space-y-3">
         {[
-          {
-            icon: <Download className="w-5 h-5" />,
-            label: 'Download Dossier',
-            sub: 'PDF report, ready to print or send',
-            color: '#1e3a5f',
-            bg: '#eef2f8',
-          },
-          {
-            icon: <Share2 className="w-5 h-5" />,
-            label: 'Share with My Agent',
-            sub: 'Send a secure link to your agent',
-            color: '#e8604c',
-            bg: '#fdf1ef',
-          },
-          {
-            icon: <Star className="w-5 h-5" />,
-            label: 'Get Pre-Listing Recommendations',
-            sub: 'See what to fix, stage, or highlight',
-            color: '#7c3aed',
-            bg: '#f5f3ff',
-          },
-          {
-            icon: <FileText className="w-5 h-5" />,
-            label: 'View Dossier',
-            sub: 'Browse your full home history',
-            color: '#059669',
-            bg: '#ecfdf5',
-          },
+          { icon: <Download className="w-5 h-5" />, label: 'Download Dossier', sub: 'PDF report, ready to print or send', color: '#1e3a5f', bg: '#eef2f8' },
+          { icon: <Share2 className="w-5 h-5" />, label: 'Share with My Agent', sub: 'Send a secure link to your agent', color: '#e8604c', bg: '#fdf1ef' },
+          { icon: <Star className="w-5 h-5" />, label: 'Get Pre-Listing Recommendations', sub: 'See what to fix, stage, or highlight', color: '#7c3aed', bg: '#f5f3ff' },
+          { icon: <FileText className="w-5 h-5" />, label: 'View Dossier', sub: 'Browse your full home history', color: '#059669', bg: '#ecfdf5' },
         ].map((action, i) => (
-          <button
-            key={i}
-            className="w-full flex items-center gap-4 p-4 rounded-2xl border border-slate-100 hover:border-slate-200 hover:shadow-sm transition-all text-left group"
-          >
-            <div
-              className="w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0 group-hover:scale-105 transition-transform"
-              style={{ background: action.bg }}
-            >
+          <button key={i} className="w-full flex items-center gap-4 p-4 rounded-2xl border border-slate-100 hover:border-slate-200 hover:shadow-sm transition-all text-left group">
+            <div className="w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0 group-hover:scale-105 transition-transform" style={{ background: action.bg }}>
               <span style={{ color: action.color }}>{action.icon}</span>
             </div>
             <div className="flex-1 min-w-0">
@@ -88,42 +51,59 @@ const DossierModal = ({ onClose }) => (
           </button>
         ))}
       </div>
-
       <div className="px-5 pb-5">
-        <p className="text-xs text-slate-400 text-center">
-          Selling soon? Your home's story is already written.
-        </p>
+        <p className="text-xs text-slate-400 text-center">Selling soon? Your home's story is already written.</p>
       </div>
     </div>
   </div>
 );
 
-// ─── Dossier Items ────────────────────────────────────────────────────
-const DOSSIER_ITEMS = [
-  { icon: Wrench, label: 'Full maintenance & repair history', color: '#f97316', bg: '#fff7ed' },
-  { icon: Receipt, label: 'Renovation notes and receipts', color: '#2563eb', bg: '#eff6ff' },
-  { icon: Clock, label: 'Appliance & system ages', color: '#1e3a5f', bg: '#eef2f8' },
-  { icon: ShieldCheck, label: 'Insurance claims', color: '#dc2626', bg: '#fef2f2' },
-  { icon: Users, label: 'Contractor records', color: '#0369a1', bg: '#f0f9ff' },
-  { icon: Camera, label: 'Photos & documents', color: '#7c3aed', bg: '#f5f3ff' },
-  { icon: Star, label: 'Pre-listing recommendations', color: '#e8604c', bg: '#fdf1ef' },
-  { icon: TrendingUp, label: 'Estimated valuation & comps', color: '#059669', bg: '#ecfdf5' },
-];
+// ─── CTA Button ───────────────────────────────────────────────────────
+const CTAButton = ({ onClick, label = 'Generate Home Dossier', large = false }) => (
+  <div className="flex flex-col items-center gap-2">
+    <button
+      onClick={onClick}
+      className={`inline-flex items-center gap-2.5 font-bold text-white transition-all hover:opacity-90 active:scale-95 rounded-2xl ${large ? 'px-8 py-4 text-base' : 'px-6 py-3.5 text-sm'}`}
+      style={{ background: '#1A1A1A', border: '1px solid rgba(255,255,255,0.08)' }}
+    >
+      <Home className={large ? 'w-5 h-5' : 'w-4 h-4'} />
+      {label}
+      <ArrowRight className={large ? 'w-5 h-5' : 'w-4 h-4'} />
+    </button>
+    <p className="text-xs text-slate-400">Selling soon? Your home's story is already written.</p>
+  </div>
+);
 
 // ─── Main Page ────────────────────────────────────────────────────────
 const ReadyToSellPage = () => {
   const [modalOpen, setModalOpen] = useState(false);
 
+  const DOSSIER_ITEMS = [
+    { icon: Wrench, label: 'Full maintenance & repair history', color: '#f97316', bg: '#fff7ed' },
+    { icon: Receipt, label: 'Renovation notes and receipts', color: '#2563eb', bg: '#eff6ff' },
+    { icon: Clock, label: 'Appliance & system ages', color: '#1e3a5f', bg: '#eef2f8' },
+    { icon: ShieldCheck, label: 'Insurance claims', color: '#dc2626', bg: '#fef2f2' },
+    { icon: Users, label: 'Contractor records', color: '#0369a1', bg: '#f0f9ff' },
+    { icon: Camera, label: 'Photos & documents', color: '#7c3aed', bg: '#f5f3ff' },
+    { icon: Star, label: 'Pre-listing recommendations', color: '#e8604c', bg: '#fdf1ef' },
+    { icon: TrendingUp, label: 'Estimated valuation & comps', color: '#059669', bg: '#ecfdf5' },
+  ];
+
+  const STEPS = [
+    { step: '1', title: 'Live your life.', body: 'CasaCEO captures everything in the background — repairs, upgrades, documents, and more.' },
+    { step: '2', title: 'Tap Generate Home Dossier.', body: 'When you\'re ready to sell, one tap compiles your complete home history.' },
+    { step: '3', title: 'Download or share.', body: 'Send it to your agent, download it as a PDF, or use it to prepare your listing.' },
+    { step: '4', title: 'Sell with confidence.', body: 'Your home\'s full story is complete, verified, and ready for buyers.' },
+  ];
+
   return (
     <>
-      <Helmet>
-        <title>Ready to Sell — CasaCEO</title>
-      </Helmet>
+      <Helmet><title>Ready to Sell — CasaCEO</title></Helmet>
 
       <div className="min-h-screen bg-slate-50">
 
-        {/* ── Top Nav Bar ── */}
-        <header className="sticky top-0 z-30 bg-white border-b border-slate-200 px-4 sm:px-6 lg:px-8 h-18 py-3 flex items-center justify-between shadow-sm">
+        {/* ── Nav ── */}
+        <header className="sticky top-0 z-30 bg-white border-b border-slate-200 px-4 sm:px-6 lg:px-8 py-3 flex items-center justify-between shadow-sm">
           <Link to="/dashboard" className="flex items-center gap-2">
             <div className="w-9 h-9 rounded-xl flex items-center justify-center" style={{ background: '#1e3a5f' }}>
               <Home className="w-5 h-5 text-white" />
@@ -132,69 +112,69 @@ const ReadyToSellPage = () => {
               Casa<span style={{ color: '#c9a96e' }}>CEO</span>
             </span>
           </Link>
-          <Link to="/dashboard" className="text-sm text-slate-500 hover:text-slate-700 flex items-center gap-1">
-            ← Back to Dashboard
-          </Link>
+          <Link to="/dashboard" className="text-sm text-slate-500 hover:text-slate-700">← Back to Dashboard</Link>
         </header>
 
-        <main className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-12 space-y-12">
+        <main className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8 py-16 space-y-20">
 
-          {/* ── Hero Section ── */}
-          <div className="rounded-3xl overflow-hidden relative" style={{ background: '#1e3a5f' }}>
-            <div className="absolute top-0 right-0 w-80 h-80 rounded-full opacity-5" style={{ background: '#c9a96e', transform: 'translate(30%, -30%)' }} />
-            <div className="absolute bottom-0 left-0 w-48 h-48 rounded-full opacity-5" style={{ background: '#e8604c', transform: 'translate(-20%, 30%)' }} />
-
-            <div className="relative z-10 p-10 sm:p-14">
-              <div className="inline-flex items-center gap-2 bg-white/10 rounded-full px-4 py-1.5 mb-6">
-                <Sparkles className="w-3.5 h-3.5 text-amber-300" />
-                <span className="text-white/80 text-xs font-semibold uppercase tracking-wide">Seller Feature</span>
-              </div>
-
-              <h1 className="text-3xl sm:text-4xl font-extrabold text-white leading-tight mb-4 max-w-xl">
-                When you're ready to sell, your home is already ready.
-              </h1>
-              <p className="text-blue-200 text-base leading-relaxed max-w-lg mb-8">
-                CasaCEO quietly builds your home's digital history — so when it's time to sell,
-                everything you need is already organized.
-              </p>
-
-              <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4">
-                <button
-                  onClick={() => setModalOpen(true)}
-                  className="flex items-center gap-2.5 px-6 py-3.5 rounded-2xl font-bold text-white text-sm transition-all hover:opacity-90 active:scale-95"
-                  style={{ background: '#1A1A1A', border: '1px solid rgba(255,255,255,0.15)' }}
-                >
-                  <Home className="w-4 h-4" />
-                  Ready to Sell
-                  <ArrowRight className="w-4 h-4" />
-                </button>
-                <p className="text-blue-300 text-xs">Selling soon? Your home's story is already written.</p>
-              </div>
+          {/* ── HERO ── */}
+          <section className="text-center space-y-6">
+            <h1 className="text-4xl sm:text-5xl font-extrabold text-slate-900 leading-tight">
+              When you're ready to sell,<br />
+              <span style={{ color: '#1e3a5f' }}>your home is already ready.</span>
+            </h1>
+            <p className="text-slate-500 text-lg max-w-xl mx-auto leading-relaxed">
+              CasaCEO quietly builds your home's digital history — so when it's time to sell, everything you need is already organized.
+            </p>
+            <div className="flex flex-col sm:flex-row items-center justify-center gap-4 pt-2">
+              <CTAButton onClick={() => setModalOpen(true)} large />
+              <button className="text-sm font-semibold underline underline-offset-4" style={{ color: '#1e3a5f' }}>
+                Learn how it works
+              </button>
             </div>
-          </div>
+          </section>
 
-          {/* ── What Is a Home Dossier ── */}
-          <div>
-            <div className="mb-8 text-center">
-              <h2 className="text-2xl font-extrabold text-slate-900 mb-2">Your Home Dossier</h2>
-              <p className="text-slate-500 text-base max-w-xl mx-auto">
-                Think of it as the CarFax for your home — a verified, agent-ready record that increases
-                trust, reduces friction, and helps you sell for more.
-              </p>
+          {/* ── SECTION 1 — The Problem ── */}
+          <section className="bg-white rounded-3xl border border-slate-100 p-10 shadow-sm space-y-5">
+            <h2 className="text-2xl font-extrabold text-slate-900">Selling a home shouldn't mean starting from scratch.</h2>
+            <div className="space-y-4 text-slate-500 text-base leading-relaxed">
+              <p>Most homeowners scramble when it's time to sell. Documents are scattered. Receipts are missing. Maintenance history is forgotten. Contractor details are buried in old emails.</p>
+              <p>Buyers want transparency. Agents want clarity. Insurers want documentation.</p>
+              <p>But the home — the largest asset most families own — has no memory.</p>
+              <p className="font-bold text-slate-800">CasaCEO fixes that.</p>
             </div>
+          </section>
 
+          {/* ── SECTION 2 — The Solution ── */}
+          <section className="space-y-8">
+            <div className="text-center space-y-3">
+              <h2 className="text-2xl font-extrabold text-slate-900">Your home's story, captured automatically.</h2>
+              <p className="text-slate-500 text-base max-w-lg mx-auto">
+                CasaCEO keeps track of everything that happens inside your home. When you're ready to sell, it turns all of this into a Home Dossier — a clean, complete, verified history.
+              </p>
+              <p className="font-bold text-base" style={{ color: '#1e3a5f' }}>It's the seller's version of CarFax.</p>
+            </div>
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+              {['Repairs', 'Upgrades', 'Maintenance', 'Contractors', 'Insurance claims', 'Appliances & systems', 'Renovations', 'Photos & documents'].map((item, i) => (
+                <div key={i} className="bg-white rounded-2xl border border-slate-100 p-4 flex items-center gap-2">
+                  <CheckCircle2 className="w-4 h-4 text-green-400 flex-shrink-0" />
+                  <span className="text-slate-700 text-sm font-medium">{item}</span>
+                </div>
+              ))}
+            </div>
+          </section>
+
+          {/* ── SECTION 3 — The Dossier ── */}
+          <section className="space-y-8">
+            <div className="text-center space-y-3">
+              <h2 className="text-2xl font-extrabold text-slate-900">One tap. Complete transparency.</h2>
+            </div>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               {DOSSIER_ITEMS.map((item, i) => {
                 const Icon = item.icon;
                 return (
-                  <div
-                    key={i}
-                    className="flex items-center gap-4 bg-white rounded-2xl border border-slate-100 p-5 hover:shadow-sm transition-all"
-                  >
-                    <div
-                      className="w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0"
-                      style={{ background: item.bg }}
-                    >
+                  <div key={i} className="flex items-center gap-4 bg-white rounded-2xl border border-slate-100 p-5 hover:shadow-sm transition-all">
+                    <div className="w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0" style={{ background: item.bg }}>
                       <Icon className="w-5 h-5" style={{ color: item.color }} />
                     </div>
                     <div className="flex items-center gap-2 flex-1">
@@ -205,76 +185,92 @@ const ReadyToSellPage = () => {
                 );
               })}
             </div>
-          </div>
-
-          {/* ── Value Statement ── */}
-          <div className="bg-white rounded-3xl border border-slate-100 p-10 text-center shadow-sm">
-            <div className="w-14 h-14 rounded-2xl mx-auto mb-5 flex items-center justify-center" style={{ background: '#eef2f8' }}>
-              <TrendingUp className="w-7 h-7" style={{ color: '#1e3a5f' }} />
+            <div className="text-center pt-2">
+              <p className="text-lg font-extrabold text-slate-900 mb-6">You don't prepare your home for sale.<br />CasaCEO already did.</p>
+              <CTAButton onClick={() => setModalOpen(true)} />
             </div>
-            <h2 className="text-2xl font-extrabold text-slate-900 mb-3">
-              You don't start from scratch.<br />You start from prepared.
-            </h2>
-            <p className="text-slate-500 text-base max-w-md mx-auto mb-8">
-              Every repair, upgrade, document, warranty, and contractor interaction is captured
-              automatically. One tap generates a complete, seller-ready package.
-            </p>
-            <button
-              onClick={() => setModalOpen(true)}
-              className="inline-flex items-center gap-2.5 px-7 py-4 rounded-2xl font-bold text-white text-sm transition-all hover:opacity-90 active:scale-95"
-              style={{ background: '#1A1A1A' }}
-            >
-              <Home className="w-4 h-4" />
-              Generate Home Dossier
-              <ArrowRight className="w-4 h-4" />
-            </button>
-          </div>
+          </section>
 
-          {/* ── Relationship Loop Block ── */}
-          <div
-            className="rounded-3xl p-10 relative overflow-hidden"
-            style={{ background: 'linear-gradient(135deg, #fdf1ef 0%, #fff5f0 100%)', border: '1px solid #f5cdc6' }}
-          >
-            <div className="absolute top-0 right-0 w-48 h-48 rounded-full opacity-20" style={{ background: '#e8604c', transform: 'translate(30%, -30%)' }} />
-            <div className="relative z-10 max-w-lg">
-              <div className="inline-flex items-center gap-2 rounded-full px-4 py-1.5 mb-5" style={{ background: '#fde8e4' }}>
-                <Share2 className="w-3.5 h-3.5" style={{ color: '#e8604c' }} />
-                <span className="text-xs font-semibold uppercase tracking-wide" style={{ color: '#e8604c' }}>Agent Connection</span>
+          {/* ── SECTION 4 — Relationship Loop ── */}
+          <section className="rounded-3xl p-10 space-y-4" style={{ background: '#fdf1ef', border: '1px solid #f5cdc6' }}>
+            <div className="flex items-center gap-3 mb-2">
+              <div className="w-10 h-10 rounded-2xl flex items-center justify-center" style={{ background: '#e8604c' }}>
+                <Share2 className="w-5 h-5 text-white" />
               </div>
-              <h2 className="text-2xl font-extrabold text-slate-900 mb-3">
-                Your next transaction starts here.
-              </h2>
-              <p className="text-slate-600 text-base leading-relaxed mb-4">
-                CasaCEO keeps your home's story alive — and when you're ready to sell, it reconnects
-                you with the people who helped you buy it.
-              </p>
-              <p className="text-slate-500 text-sm leading-relaxed">
-                If you worked with an agent or brokerage, your Home Dossier can be shared with them
-                instantly for a smoother, faster, more informed sale. The relationship doesn't end at
-                closing — it continues through the entire ownership lifecycle.
-              </p>
+              <h2 className="text-2xl font-extrabold text-slate-900">Reconnect with your agent instantly.</h2>
             </div>
-          </div>
+            <p className="text-slate-600 text-base leading-relaxed">
+              If you worked with an agent or brokerage, your Home Dossier can be shared with them in one tap. No searching. No scanning. No guesswork.
+            </p>
+            <p className="text-slate-600 text-base leading-relaxed">
+              The relationship doesn't end at closing — it continues through the entire ownership lifecycle. This is the missing link in real estate.
+            </p>
+          </section>
 
-          {/* ── Bottom CTA ── */}
-          <div className="flex flex-col sm:flex-row items-center justify-between bg-white rounded-2xl border border-slate-100 p-6 gap-4 shadow-sm">
-            <div>
-              <p className="font-bold text-slate-900 text-base">Your home's full history is captured automatically.</p>
-              <p className="text-slate-400 text-sm mt-0.5">When you're ready to sell, you're one tap away.</p>
+          {/* ── SECTION 5 — Why It Matters ── */}
+          <section className="space-y-6">
+            <h2 className="text-2xl font-extrabold text-slate-900 text-center">Homes with documented histories sell faster and for more.</h2>
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+              {[
+                { icon: <Users className="w-5 h-5" />, title: 'Buyers trust it', body: 'Clear histories reduce doubt and speed up decisions.', color: '#2563eb', bg: '#eff6ff' },
+                { icon: <Award className="w-5 h-5" />, title: 'Agents love it', body: 'Complete documentation makes listings stand out.', color: '#7c3aed', bg: '#f5f3ff' },
+                { icon: <Zap className="w-5 h-5" />, title: 'Transactions move faster', body: 'Less back-and-forth, fewer surprises, smoother closes.', color: '#059669', bg: '#ecfdf5' },
+              ].map((card, i) => (
+                <div key={i} className="bg-white rounded-2xl border border-slate-100 p-6 space-y-3">
+                  <div className="w-10 h-10 rounded-xl flex items-center justify-center" style={{ background: card.bg }}>
+                    <span style={{ color: card.color }}>{card.icon}</span>
+                  </div>
+                  <p className="font-bold text-slate-900">{card.title}</p>
+                  <p className="text-slate-500 text-sm leading-relaxed">{card.body}</p>
+                </div>
+              ))}
             </div>
-            <button
-              onClick={() => setModalOpen(true)}
-              className="flex-shrink-0 flex items-center gap-2 px-6 py-3 rounded-2xl font-bold text-white text-sm transition-all hover:opacity-90 active:scale-95 whitespace-nowrap"
-              style={{ background: '#1e3a5f' }}
-            >
-              Ready to Sell <ArrowRight className="w-4 h-4" />
-            </button>
-          </div>
+          </section>
+
+          {/* ── SECTION 6 — How It Works ── */}
+          <section className="space-y-8">
+            <h2 className="text-2xl font-extrabold text-slate-900 text-center">Simple. Automatic. Ready when you are.</h2>
+            <div className="space-y-4">
+              {STEPS.map((s, i) => (
+                <div key={i} className="flex items-start gap-5 bg-white rounded-2xl border border-slate-100 p-6">
+                  <div className="w-10 h-10 rounded-2xl flex items-center justify-center font-extrabold text-white text-sm flex-shrink-0" style={{ background: '#1e3a5f' }}>
+                    {s.step}
+                  </div>
+                  <div>
+                    <p className="font-bold text-slate-900 mb-1">{s.title}</p>
+                    <p className="text-slate-500 text-sm leading-relaxed">{s.body}</p>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </section>
+
+          {/* ── SECTION 7 — Final CTA ── */}
+          <section className="rounded-3xl p-12 text-center space-y-6" style={{ background: '#1e3a5f' }}>
+            <h2 className="text-3xl font-extrabold text-white">Ready to sell?</h2>
+            <p className="text-blue-200 text-base max-w-md mx-auto leading-relaxed">
+              Your home's full history is already organized. Your Home Dossier is one tap away.
+            </p>
+            <div className="flex flex-col items-center gap-3">
+              <button
+                onClick={() => setModalOpen(true)}
+                className="inline-flex items-center gap-2.5 px-8 py-4 rounded-2xl font-bold text-white text-base transition-all hover:opacity-90 active:scale-95"
+                style={{ background: '#1A1A1A' }}
+              >
+                <Home className="w-5 h-5" />
+                Generate Home Dossier
+                <ArrowRight className="w-5 h-5" />
+              </button>
+              <p className="text-blue-300 text-xs">Selling soon? Your home's story is already written.</p>
+              <Link to="/dashboard" className="text-blue-300 text-sm font-semibold underline underline-offset-4 hover:text-white transition-colors mt-1">
+                Explore CasaCEO
+              </Link>
+            </div>
+          </section>
 
         </main>
       </div>
 
-      {/* ── Modal ── */}
       {modalOpen && <DossierModal onClose={() => setModalOpen(false)} />}
     </>
   );
