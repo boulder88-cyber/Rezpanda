@@ -10,7 +10,7 @@ import {
   Home, FolderOpen, Users, LineChart,
   ChevronDown, Plus, MapPin, Check, Bell, AlertCircle,
   Clock, DollarSign, TrendingUp, Key, Loader2, X,
-  ArrowRight, CheckCircle2, Sparkles
+  ArrowRight, CheckCircle2, Sparkles, BookOpen
 } from 'lucide-react';
 
 // ─── Property Switcher ────────────────────────────────────────────────
