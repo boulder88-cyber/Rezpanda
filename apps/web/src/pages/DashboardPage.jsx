@@ -281,6 +281,15 @@ const MODULES = [
     bg: '#faf5ff',
     badge: 'Soon',
   },
+  {
+    title: 'Ready to Sell',
+    description: 'Your Home Dossier is one tap away',
+    icon: Home,
+    link: '/ready-to-sell',
+    color: '#1A1A1A',
+    bg: '#f1f5f9',
+    badge: null,
+  },
 ];
 
 // ─── Module Tile Component ────────────────────────────────────────────
@@ -396,28 +405,24 @@ const QuickStats = () => (
         trend: '↑ 1 more than last week', trendUp: false,
         icon: <CreditCard className="w-4 h-4" />, color: '#d97706', bg: '#fffbeb', border: '#fde68a',
         link: '/bill-pay', tooltip: 'View bills due this week',
-        badge: null,
       },
       {
         label: 'Maintenance', value: '2', sublabel: 'overdue',
         trend: '↑ action needed', trendUp: false,
         icon: <Wrench className="w-4 h-4" />, color: '#dc2626', bg: '#fef2f2', border: '#fecaca',
         link: '/maintenance-management', tooltip: 'View overdue maintenance tasks',
-        badge: null,
       },
       {
         label: 'Documents', value: '14', sublabel: 'stored',
         trend: '↑ 2 added this month', trendUp: true,
         icon: <FolderOpen className="w-4 h-4" />, color: '#7c3aed', bg: '#f5f3ff', border: '#ddd6fe',
         link: '/documents', tooltip: 'Open document vault',
-        badge: null,
       },
       {
         label: 'This Month', value: '$2,840', sublabel: 'expenses',
         trend: '↓ 12% vs last month', trendUp: true,
         icon: <DollarSign className="w-4 h-4" />, color: '#059669', bg: '#ecfdf5', border: '#a7f3d0',
         link: '/expenses', tooltip: 'View expense breakdown',
-        badge: null,
       },
     ].map((stat, i) => (
       <Link
@@ -461,7 +466,6 @@ const DashboardPage = () => {
         {/* ── Top Nav Bar ── */}
         <header className="sticky top-0 z-30 bg-white border-b border-slate-200 px-4 sm:px-6 lg:px-8 h-18 py-3 flex items-center justify-between shadow-sm">
           <div className="flex items-center gap-3">
-            {/* Logo */}
             <div className="flex items-center gap-2">
               <div className="w-9 h-9 rounded-xl flex items-center justify-center" style={{background:'#1e3a5f'}}>
                 <Home className="w-5 h-5 text-white" />
@@ -472,11 +476,18 @@ const DashboardPage = () => {
             </div>
           </div>
 
-          {/* Property Switcher — CENTER of header */}
           <PropertySwitcher />
 
-          {/* User */}
           <div className="flex items-center gap-3">
+            {/* Ready to Sell button — top right */}
+            <Link
+              to="/ready-to-sell"
+              className="hidden sm:flex items-center gap-2 px-4 py-2 rounded-xl font-semibold text-white text-sm hover:opacity-90 transition-all"
+              style={{ background: '#1A1A1A' }}
+            >
+              <Home className="w-4 h-4" />
+              Ready to Sell
+            </Link>
             <div className="w-9 h-9 rounded-xl flex items-center justify-center text-white font-bold text-sm" style={{background:'#1e3a5f'}}>
               {currentUser?.name?.[0] || 'U'}
             </div>
@@ -486,16 +497,11 @@ const DashboardPage = () => {
         {/* ── Main Content ── */}
         <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-8">
 
-          {/* Welcome Banner */}
           <WelcomeBanner user={currentUser} selectedHome={selectedHome} />
-
-          {/* Quick Stats */}
           <QuickStats />
 
-          {/* Two column layout: modules + alerts */}
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
 
-            {/* Module Tiles — takes 2/3 */}
             <div className="lg:col-span-2">
               <div className="flex items-center justify-between mb-5">
                 <h2 className="text-lg font-extrabold text-slate-900">Your Modules</h2>
@@ -508,12 +514,9 @@ const DashboardPage = () => {
               </div>
             </div>
 
-            {/* Right column: alerts + quick actions */}
             <div className="space-y-6">
-              {/* Alerts */}
               <QuickAlerts selectedHome={selectedHome} />
 
-              {/* Quick Actions */}
               <div className="bg-white rounded-2xl border border-slate-100 p-5 shadow-sm">
                 <h2 className="font-bold text-slate-900 text-base mb-4 flex items-center gap-2">
                   <Sparkles className="w-4 h-4 text-amber-500" />
@@ -525,6 +528,7 @@ const DashboardPage = () => {
                     { label: 'Add maintenance task', link: '/maintenance-management', icon: <Wrench className="w-4 h-4" /> },
                     { label: 'Upload a document', link: '/documents', icon: <FolderOpen className="w-4 h-4" /> },
                     { label: 'Check home value', link: '/home-valuation', icon: <TrendingUp className="w-4 h-4" /> },
+                    { label: 'Ready to Sell', link: '/ready-to-sell', icon: <Home className="w-4 h-4" /> },
                   ].map((action, i) => (
                     <Link key={i} to={action.link}>
                       <div className="flex items-center gap-3 p-3 rounded-xl hover:bg-slate-50 transition-colors group">
@@ -539,19 +543,18 @@ const DashboardPage = () => {
                 </div>
               </div>
 
-              {/* No property prompt */}
               {!loading && homes.length === 0 && (
                 <div className="bg-amber-50 border border-amber-100 rounded-2xl p-5 text-center">
                   <Home className="w-8 h-8 text-amber-500 mx-auto mb-3" />
                   <p className="font-bold text-amber-800 text-sm mb-1">No properties yet</p>
                   <p className="text-amber-600 text-xs mb-3">Add your first property to unlock your full dashboard.</p>
-                <button
-                  onClick={() => {}}
-                  className="text-xs font-bold px-4 py-2 rounded-xl text-white"
-                  style={{ background: '#1e3a5f' }}
-                >
-                  Add Your First Property →
-                </button>
+                  <button
+                    onClick={() => {}}
+                    className="text-xs font-bold px-4 py-2 rounded-xl text-white"
+                    style={{ background: '#1e3a5f' }}
+                  >
+                    Add Your First Property →
+                  </button>
                 </div>
               )}
             </div>
