@@ -33,6 +33,10 @@ import PropertyTaxPage from '@/pages/PropertyTaxPage.jsx';
 import WarrantyTrackerPage from '@/pages/WarrantyTrackerPage.jsx';
 import HomeTimelinePage from '@/pages/HomeTimelinePage.jsx';
 import ReadyToSellPage from '@/pages/ReadyToSellPage.jsx';
+import HomeProfilePage from '@/pages/HomeProfilePage.jsx';
+import NotificationsCenterPage from '@/pages/NotificationsCenterPage.jsx';
+import VendorDirectoryPage from '@/pages/VendorDirectoryPage.jsx';
+import ReportsPage from '@/pages/ReportsPage.jsx';
 
 const AppContent = () => {
   const { isAuthenticated } = usePasswordAuth();
@@ -79,6 +83,10 @@ const AppContent = () => {
           <Route path="/property-tax" element={<ProtectedRoute><Layout><PropertyTaxPage /></Layout></ProtectedRoute>} />
           <Route path="/timeline" element={<ProtectedRoute><Layout><HomeTimelinePage /></Layout></ProtectedRoute>} />
           <Route path="/ready-to-sell" element={<ProtectedRoute><Layout><ReadyToSellPage /></Layout></ProtectedRoute>} />
+          <Route path="/home-profile" element={<ProtectedRoute><HomeProfilePage /></ProtectedRoute>} />
+          <Route path="/notifications" element={<ProtectedRoute><NotificationsCenterPage /></ProtectedRoute>} />
+          <Route path="/vendors" element={<ProtectedRoute><VendorDirectoryPage /></ProtectedRoute>} />
+          <Route path="/reports" element={<ProtectedRoute><ReportsPage /></ProtectedRoute>} />
         </Routes>
         <Toaster />
       </HomeProvider>
