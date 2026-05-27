@@ -39,6 +39,7 @@ import NotificationsCenterPage from '@/pages/NotificationsCenterPage.jsx';
 import VendorDirectoryPage from '@/pages/VendorDirectoryPage.jsx';
 import ReportsPage from '@/pages/ReportsPage.jsx';
 import PortfolioOverviewPage from '@/pages/PortfolioOverviewPage.jsx';
+import ValuationEquityPage from '@/pages/ValuationEquityPage.jsx';
 
 const AppContent = () => {
   const { isAuthenticated } = usePasswordAuth();
@@ -87,6 +88,7 @@ const AppContent = () => {
           <Route path="/expenses" element={<ProtectedRoute><Layout><ExpensesPage /></Layout></ProtectedRoute>} />
           <Route path="/home-valuation" element={<ProtectedRoute><Layout><HomeValuationPage /></Layout></ProtectedRoute>} />
           <Route path="/property-tax" element={<ProtectedRoute><Layout><PropertyTaxPage /></Layout></ProtectedRoute>} />
+          <Route path="/valuation-equity" element={<ProtectedRoute><Layout><ValuationEquityPage /></Layout></ProtectedRoute>} />
 
           {/* ── Maintenance & Home ── */}
           <Route path="/maintenance-management" element={<ProtectedRoute><Layout><MaintenanceManagementPage /></Layout></ProtectedRoute>} />
