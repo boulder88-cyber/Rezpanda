@@ -53,7 +53,7 @@ const SectionLabel = ({ text }) => (
 const SectionHeader = ({ label, title, subtitle, center = false }) => (
   <div style={{ textAlign: center ? 'center' : 'left', marginBottom: '48px' }}>
     {label && <SectionLabel text={label} />}
-    <h2 className="font-semibold text-slate-900" style={{ fontSize: '36px', lineHeight: '1.2', marginBottom: '16px', maxWidth: center ? '700px', margin: center ? '0 auto 16px' : undefined }}>
+    <h2 className="font-semibold text-slate-900" style={{ fontSize: '36px', lineHeight: '1.2', marginBottom: '16px', maxWidth: center ? '700px' : undefined, margin: center ? '0 auto 16px' : undefined }}>
       {title}
     </h2>
     {subtitle && (
