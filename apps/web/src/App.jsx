@@ -63,6 +63,12 @@ import BrokerageValuePage from '@/pages/BrokerageValuePage.jsx';
 import HomeownerJourneyPage from '@/pages/HomeownerJourneyPage.jsx';
 import CompassHomeOSPreviewPage from '@/pages/CompassHomeOSPreviewPage.jsx';
 
+// ── Tier-4 Info Pages (public, no auth) ─────────────────────────────
+import PricingPage from '@/pages/PricingPage.jsx';
+import SecurityPrivacyPage from '@/pages/SecurityPrivacyPage.jsx';
+import AboutPage from '@/pages/AboutPage.jsx';
+import ContactPage from '@/pages/ContactPage.jsx';
+
 // ═══════════════════════════════════════════════════════════════════════
 
 const AppContent = () => {
@@ -100,6 +106,12 @@ const AppContent = () => {
           <Route path="/brokerage-value" element={<BrokerageValuePage />} />
           <Route path="/homeowner-journey" element={<HomeownerJourneyPage />} />
           <Route path="/compass-preview" element={<CompassHomeOSPreviewPage />} />
+
+          {/* ── Tier-4 Info Pages (public, no Layout) ─────────────── */}
+          <Route path="/pricing" element={<PricingPage />} />
+          <Route path="/security" element={<SecurityPrivacyPage />} />
+          <Route path="/about" element={<AboutPage />} />
+          <Route path="/contact" element={<ContactPage />} />
 
           {/* ── Core (protected, no Layout wrapper) ───────────────── */}
           <Route path="/dashboard" element={<ProtectedRoute><DashboardPage /></ProtectedRoute>} />
