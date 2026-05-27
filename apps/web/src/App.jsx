@@ -76,6 +76,18 @@ import CookiePolicyPage from '@/pages/CookiePolicyPage.jsx';
 import StatusPage from '@/pages/StatusPage.jsx';
 import ChangelogPage from '@/pages/ChangelogPage.jsx';
 
+// ── Tier-6 Future Expansion Modules (protected, Layout) ─────────────
+import CopilotPage from '@/pages/CopilotPage.jsx';
+import MarketplacePage from '@/pages/MarketplacePage.jsx';
+import DocumentIntelligencePage from '@/pages/DocumentIntelligencePage.jsx';
+import ApplianceTrackerPage from '@/pages/ApplianceTrackerPage.jsx';
+import RenovationPlannerPage from '@/pages/RenovationPlannerPage.jsx';
+import SharedAccessPage from '@/pages/SharedAccessPage.jsx';
+import TemplatesPage from '@/pages/TemplatesPage.jsx';
+import ValueEnginePage from '@/pages/ValueEnginePage.jsx';
+import SmartHomeHubPage from '@/pages/SmartHomeHubPage.jsx';
+import InsightsReportsPage from '@/pages/InsightsReportsPage.jsx';
+
 // ═══════════════════════════════════════════════════════════════════════
 
 const AppContent = () => {
@@ -167,6 +179,18 @@ const AppContent = () => {
           <Route path="/learn" element={<ProtectedRoute><Layout><HomeLearnPage /></Layout></ProtectedRoute>} />
           <Route path="/home-learn" element={<ProtectedRoute><Layout><HomeLearnPage /></Layout></ProtectedRoute>} />
           <Route path="/ready-to-sell" element={<ProtectedRoute><Layout><ReadyToSellPage /></Layout></ProtectedRoute>} />
+
+          {/* ── Tier-6 Future Expansion Modules (protected + Layout) ─ */}
+          <Route path="/copilot" element={<ProtectedRoute><CopilotPage /></ProtectedRoute>} />
+          <Route path="/marketplace" element={<ProtectedRoute><Layout><MarketplacePage /></Layout></ProtectedRoute>} />
+          <Route path="/document-intelligence" element={<ProtectedRoute><Layout><DocumentIntelligencePage /></Layout></ProtectedRoute>} />
+          <Route path="/appliance-tracker" element={<ProtectedRoute><Layout><ApplianceTrackerPage /></Layout></ProtectedRoute>} />
+          <Route path="/renovation-planner" element={<ProtectedRoute><Layout><RenovationPlannerPage /></Layout></ProtectedRoute>} />
+          <Route path="/shared-access" element={<ProtectedRoute><Layout><SharedAccessPage /></Layout></ProtectedRoute>} />
+          <Route path="/templates" element={<ProtectedRoute><Layout><TemplatesPage /></Layout></ProtectedRoute>} />
+          <Route path="/value-engine" element={<ProtectedRoute><Layout><ValueEnginePage /></Layout></ProtectedRoute>} />
+          <Route path="/smart-home" element={<ProtectedRoute><Layout><SmartHomeHubPage /></Layout></ProtectedRoute>} />
+          <Route path="/insights" element={<ProtectedRoute><Layout><InsightsReportsPage /></Layout></ProtectedRoute>} />
 
         </Routes>
         <Toaster />
