@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Helmet } from 'react-helmet';
+import { Link } from 'react-router-dom';
 import pb from '@/lib/horizonsBackend.js';
 import { useHome } from '@/contexts/HomeContext.jsx';
 import { useAuth } from '@/contexts/AuthContext.jsx';
@@ -7,16 +8,17 @@ import { useToast } from '@/hooks/use-toast.js';
 import { Button } from '@/components/ui/button.jsx';
 import { Input } from '@/components/ui/input.jsx';
 import { Label } from '@/components/ui/label.jsx';
-import { Badge } from '@/components/ui/badge.jsx';
 import {
-  Wrench, Plus, X, Check, Edit2, Trash2, ChevronRight,
-  Calendar, Clock, AlertCircle, CheckCircle2, User,
-  Phone, Mail, Star, Search, Filter, ArrowLeft,
-  ClipboardList, RotateCcw, Building2, ChevronDown,
-  FileText, DollarSign, Bell
+  Wrench, Plus, X, Check, Edit2, Trash2, Calendar, Clock,
+  AlertCircle, CheckCircle2, User, Phone, Mail, Star, Search,
+  ClipboardList, DollarSign, Download, TreePine, Wind, Sun,
+  Snowflake, ArrowRight, ChevronRight, BarChart2, Home
 } from 'lucide-react';
 
-// ─── Maintenance Categories ───────────────────────────────────────────
+// ═══════════════════════════════════════════════════════════════════════
+// CONSTANTS
+// ═══════════════════════════════════════════════════════════════════════
+
 const MAINTENANCE_CATEGORIES = [
   { name: 'HVAC', icon: '❄️', color: 'bg-blue-50 border-blue-100', cadences: ['Monthly', 'Quarterly', 'Semi-Annual', 'Annual'] },
   { name: 'Plumbing', icon: '🔧', color: 'bg-cyan-50 border-cyan-100', cadences: ['Monthly', 'Quarterly', 'Annual'] },
@@ -47,227 +49,155 @@ const RECOMMENDED_VENDORS = {
   'General': ['TaskRabbit', 'Angi', 'HomeAdvisor'],
 };
 
-// ─── Add/Edit Task Modal ──────────────────────────────────────────────
+const SEASONAL_TASKS = {
+  Spring: { icon: TreePine, color: '#16a34a', bg: '#f0fdf4', tasks: ['Gutter cleaning', 'HVAC tune-up', 'Exterior inspection', 'Lawn fertilization', 'Pest control check'] },
+  Summer: { icon: Sun, color: '#d97706', bg: '#fffbeb', tasks: ['AC service', 'Pool maintenance', 'Pest control', 'Irrigation check', 'Deck inspection'] },
+  Fall: { icon: Wind, color: '#f97316', bg: '#fff7ed', tasks: ['Roof inspection', 'Heating prep', 'Gutter cleaning', 'Weatherization', 'Chimney sweep'] },
+  Winter: { icon: Snowflake, color: '#2563eb', bg: '#eff6ff', tasks: ['Pipe insulation', 'Heating check', 'Storm prep', 'Generator test', 'Smoke detector check'] },
+};
+
+const CADENCE_DAYS = {
+  'Weekly': 7, 'Bi-Weekly': 14, 'Monthly': 30, 'Quarterly': 90,
+  'Semi-Annual': 180, 'Annual': 365, 'Every 3 Years': 365 * 3,
+  'Every 5 Years': 365 * 5, 'Every 10 Years': 365 * 10, 'Seasonal': 90,
+};
+
+// ═══════════════════════════════════════════════════════════════════════
+// HELPERS
+// ═══════════════════════════════════════════════════════════════════════
+
+const calcNextDate = (lastDate, cadence) => {
+  if (!lastDate) return '';
+  const d = new Date(lastDate);
+  d.setDate(d.getDate() + (CADENCE_DAYS[cadence] || 365));
+  return d.toISOString().split('T')[0];
+};
+
+const getTaskStatus = (task) => {
+  const today = new Date();
+  const nextDate = task.nextServiceDate ? new Date(task.nextServiceDate) : null;
+  const daysUntil = nextDate ? Math.ceil((nextDate - today) / (1000 * 60 * 60 * 24)) : null;
+  if (daysUntil === null) return { label: 'No date set', color: 'bg-slate-100 text-slate-500', urgent: false, days: null };
+  if (daysUntil < 0) return { label: `${Math.abs(daysUntil)}d overdue`, color: 'bg-red-100 text-red-600', urgent: true, days: daysUntil };
+  if (daysUntil <= 14) return { label: `Due in ${daysUntil}d`, color: 'bg-orange-100 text-orange-600', urgent: true, days: daysUntil };
+  if (daysUntil <= 30) return { label: `Due in ${daysUntil}d`, color: 'bg-yellow-100 text-yellow-600', urgent: false, days: daysUntil };
+  return { label: `Due in ${daysUntil}d`, color: 'bg-green-100 text-green-600', urgent: false, days: daysUntil };
+};
+
+// ═══════════════════════════════════════════════════════════════════════
+// TASK MODAL
+// ═══════════════════════════════════════════════════════════════════════
+
 const TaskModal = ({ task, onSave, onClose }) => {
   const [form, setForm] = useState({
-    taskName: task?.taskName || '',
-    category: task?.category || 'HVAC',
-    cadence: task?.cadence || 'Annual',
-    lastServiceDate: task?.lastServiceDate || '',
-    nextServiceDate: task?.nextServiceDate || '',
-    vendorName: task?.vendorName || '',
-    vendorPhone: task?.vendorPhone || '',
-    vendorEmail: task?.vendorEmail || '',
-    estimatedCost: task?.estimatedCost || '',
-    notes: task?.notes || '',
+    taskName: task?.taskName || '', category: task?.category || 'HVAC',
+    cadence: task?.cadence || 'Annual', lastServiceDate: task?.lastServiceDate || '',
+    nextServiceDate: task?.nextServiceDate || '', vendorName: task?.vendorName || '',
+    vendorPhone: task?.vendorPhone || '', vendorEmail: task?.vendorEmail || '',
+    estimatedCost: task?.estimatedCost || '', notes: task?.notes || '',
   });
 
   const selectedCategory = MAINTENANCE_CATEGORIES.find(c => c.name === form.category);
   const suggestedVendors = RECOMMENDED_VENDORS[form.category] || [];
 
-  const calcNextDate = (lastDate, cadence) => {
-    if (!lastDate) return '';
-    const d = new Date(lastDate);
-    const map = {
-      'Weekly': 7, 'Bi-Weekly': 14, 'Monthly': 30,
-      'Quarterly': 90, 'Semi-Annual': 180, 'Annual': 365,
-      'Every 3 Years': 365 * 3, 'Every 5 Years': 365 * 5, 'Every 10 Years': 365 * 10, 'Seasonal': 90
-    };
-    d.setDate(d.getDate() + (map[cadence] || 365));
-    return d.toISOString().split('T')[0];
-  };
-
-  const handleLastDateChange = (val) => {
-    setForm(prev => ({
-      ...prev,
-      lastServiceDate: val,
-      nextServiceDate: calcNextDate(val, prev.cadence)
-    }));
-  };
-
-  const handleCadenceChange = (val) => {
-    setForm(prev => ({
-      ...prev,
-      cadence: val,
-      nextServiceDate: calcNextDate(prev.lastServiceDate, val)
-    }));
-  };
-
   return (
     <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4 overflow-y-auto">
-      <div className="bg-white rounded-3xl shadow-2xl w-full max-w-lg my-4">
-        <div className="bg-slate-900 rounded-t-3xl px-8 py-6 flex items-center justify-between">
-          <h2 className="text-xl font-bold text-white">
-            {task ? 'Edit Task' : 'Add Maintenance Task'}
-          </h2>
-          <button onClick={onClose} className="w-8 h-8 bg-white/10 rounded-lg flex items-center justify-center text-white hover:bg-white/20">
-            <X className="w-4 h-4" />
+      <div className="bg-white w-full max-w-lg my-4" style={{ borderRadius: '16px', boxShadow: '0 25px 50px rgba(0,0,0,0.2)' }}>
+        <div className="flex items-center justify-between" style={{ background: '#1e3a5f', borderRadius: '16px 16px 0 0', padding: '20px 24px' }}>
+          <h2 className="font-semibold text-white" style={{ fontSize: '18px' }}>{task ? 'Edit Task' : 'Add Maintenance Task'}</h2>
+          <button onClick={onClose} className="flex items-center justify-center rounded-full hover:bg-white/10 transition-colors" style={{ width: '32px', height: '32px' }}>
+            <X style={{ width: '16px', height: '16px', color: 'rgba(255,255,255,0.7)' }} />
           </button>
         </div>
 
-        <div className="p-8 space-y-5">
-          {/* Task Name */}
+        <div style={{ padding: '24px', display: 'flex', flexDirection: 'column', gap: '16px' }}>
           <div>
             <Label className="text-sm font-semibold text-slate-700 mb-1.5 block">Task Name</Label>
-            <Input
-              placeholder="e.g. HVAC Filter Change"
-              value={form.taskName}
-              onChange={e => setForm(p => ({ ...p, taskName: e.target.value }))}
-              className="h-11 rounded-xl"
-            />
+            <Input placeholder="e.g. HVAC Filter Change" value={form.taskName} onChange={e => setForm(p => ({ ...p, taskName: e.target.value }))} className="h-11 rounded-xl" />
           </div>
 
-          {/* Category */}
           <div>
             <Label className="text-sm font-semibold text-slate-700 mb-1.5 block">Category</Label>
             <div className="grid grid-cols-4 gap-2">
               {MAINTENANCE_CATEGORIES.map(cat => (
-                <button
-                  key={cat.name}
-                  onClick={() => setForm(p => ({ ...p, category: cat.name }))}
-                  className={`p-2 rounded-xl border text-center text-xs font-medium transition-all ${
-                    form.category === cat.name
-                      ? 'bg-slate-900 border-slate-900 text-white'
-                      : 'bg-white border-slate-200 text-slate-600 hover:border-slate-400'
-                  }`}
-                >
-                  <div className="text-lg mb-0.5">{cat.icon}</div>
-                  {cat.name}
+                <button key={cat.name} onClick={() => setForm(p => ({ ...p, category: cat.name }))}
+                  className={`p-2 rounded-xl border text-center text-xs font-medium transition-all ${form.category === cat.name ? 'text-white border-transparent' : 'bg-white border-slate-200 text-slate-600 hover:border-slate-400'}`}
+                  style={form.category === cat.name ? { background: '#1e3a5f' } : {}}>
+                  <div className="text-lg mb-0.5">{cat.icon}</div>{cat.name}
                 </button>
               ))}
             </div>
           </div>
 
-          {/* Cadence */}
           <div>
             <Label className="text-sm font-semibold text-slate-700 mb-1.5 block">Service Cadence</Label>
             <div className="flex flex-wrap gap-2">
               {(selectedCategory?.cadences || ['Annual']).map(c => (
-                <button
-                  key={c}
-                  onClick={() => handleCadenceChange(c)}
-                  className={`px-4 py-2 rounded-xl text-sm font-medium border transition-all ${
-                    form.cadence === c
-                      ? 'bg-blue-600 border-blue-600 text-white'
-                      : 'bg-white border-slate-200 text-slate-600 hover:border-slate-400'
-                  }`}
-                >
+                <button key={c} onClick={() => setForm(p => ({ ...p, cadence: c, nextServiceDate: calcNextDate(p.lastServiceDate, c) }))}
+                  className={`px-4 py-2 rounded-xl text-sm font-medium border transition-all ${form.cadence === c ? 'bg-blue-600 border-blue-600 text-white' : 'bg-white border-slate-200 text-slate-600 hover:border-slate-400'}`}>
                   {c}
                 </button>
               ))}
             </div>
           </div>
 
-          {/* Dates */}
           <div className="grid grid-cols-2 gap-4">
             <div>
               <Label className="text-sm font-semibold text-slate-700 mb-1.5 block">Last Service Date</Label>
-              <Input
-                type="date"
-                value={form.lastServiceDate}
-                onChange={e => handleLastDateChange(e.target.value)}
-                className="h-11 rounded-xl"
-              />
+              <Input type="date" value={form.lastServiceDate}
+                onChange={e => setForm(p => ({ ...p, lastServiceDate: e.target.value, nextServiceDate: calcNextDate(e.target.value, p.cadence) }))}
+                className="h-11 rounded-xl" />
             </div>
             <div>
               <Label className="text-sm font-semibold text-slate-700 mb-1.5 block">Next Due Date</Label>
-              <Input
-                type="date"
-                value={form.nextServiceDate}
-                onChange={e => setForm(p => ({ ...p, nextServiceDate: e.target.value }))}
-                className="h-11 rounded-xl"
-              />
-              {form.lastServiceDate && form.nextServiceDate && (
-                <p className="text-xs text-blue-500 mt-1">Auto-calculated from cadence</p>
-              )}
+              <Input type="date" value={form.nextServiceDate} onChange={e => setForm(p => ({ ...p, nextServiceDate: e.target.value }))} className="h-11 rounded-xl" />
+              {form.lastServiceDate && <p className="text-xs text-blue-500 mt-1">Auto-calculated from cadence</p>}
             </div>
           </div>
 
-          {/* Vendor Section */}
-          <div className="bg-slate-50 rounded-2xl p-5 space-y-4">
-            <p className="text-sm font-bold text-slate-700 flex items-center gap-2">
+          <div className="bg-slate-50 rounded-xl" style={{ padding: '16px' }}>
+            <p className="text-sm font-semibold text-slate-700 flex items-center gap-2 mb-12px">
               <User className="w-4 h-4" /> Vendor Information
             </p>
-
-            {/* Suggested Vendors */}
             {suggestedVendors.length > 0 && (
-              <div>
-                <p className="text-xs text-slate-400 mb-2">Suggested vendors for {form.category}:</p>
+              <div style={{ marginBottom: '12px', marginTop: '12px' }}>
+                <p className="text-xs text-slate-400 mb-2">Suggested for {form.category}:</p>
                 <div className="flex flex-wrap gap-2">
                   {suggestedVendors.map(v => (
-                    <button
-                      key={v}
-                      onClick={() => setForm(p => ({ ...p, vendorName: v }))}
-                      className={`px-3 py-1.5 rounded-lg text-xs font-medium border transition-all ${
-                        form.vendorName === v
-                          ? 'bg-blue-600 border-blue-600 text-white'
-                          : 'bg-white border-slate-200 text-slate-600 hover:border-blue-300'
-                      }`}
-                    >
+                    <button key={v} onClick={() => setForm(p => ({ ...p, vendorName: v }))}
+                      className={`px-3 py-1.5 rounded-lg text-xs font-medium border transition-all ${form.vendorName === v ? 'bg-blue-600 border-blue-600 text-white' : 'bg-white border-slate-200 text-slate-600 hover:border-blue-300'}`}>
                       {v}
                     </button>
                   ))}
                 </div>
               </div>
             )}
-
-            <div className="grid grid-cols-1 gap-3">
-              <Input
-                placeholder="Vendor name"
-                value={form.vendorName}
-                onChange={e => setForm(p => ({ ...p, vendorName: e.target.value }))}
-                className="h-10 rounded-xl bg-white"
-              />
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', marginTop: '12px' }}>
+              <Input placeholder="Vendor name" value={form.vendorName} onChange={e => setForm(p => ({ ...p, vendorName: e.target.value }))} className="h-10 rounded-xl bg-white" />
               <div className="grid grid-cols-2 gap-3">
-                <Input
-                  placeholder="Phone number"
-                  value={form.vendorPhone}
-                  onChange={e => setForm(p => ({ ...p, vendorPhone: e.target.value }))}
-                  className="h-10 rounded-xl bg-white"
-                />
-                <Input
-                  placeholder="Email"
-                  value={form.vendorEmail}
-                  onChange={e => setForm(p => ({ ...p, vendorEmail: e.target.value }))}
-                  className="h-10 rounded-xl bg-white"
-                />
+                <Input placeholder="Phone number" value={form.vendorPhone} onChange={e => setForm(p => ({ ...p, vendorPhone: e.target.value }))} className="h-10 rounded-xl bg-white" />
+                <Input placeholder="Email" value={form.vendorEmail} onChange={e => setForm(p => ({ ...p, vendorEmail: e.target.value }))} className="h-10 rounded-xl bg-white" />
               </div>
             </div>
           </div>
 
-          {/* Cost & Notes */}
           <div className="grid grid-cols-2 gap-4">
             <div>
               <Label className="text-sm font-semibold text-slate-700 mb-1.5 block">Est. Cost</Label>
               <div className="relative">
-                <span className="absolute left-3 top-3 text-slate-400">$</span>
-                <Input
-                  type="number"
-                  placeholder="150"
-                  value={form.estimatedCost}
-                  onChange={e => setForm(p => ({ ...p, estimatedCost: e.target.value }))}
-                  className="h-11 rounded-xl pl-7"
-                />
+                <span className="absolute left-3 top-3 text-slate-400 text-sm">$</span>
+                <Input type="number" placeholder="150" value={form.estimatedCost} onChange={e => setForm(p => ({ ...p, estimatedCost: e.target.value }))} className="h-11 rounded-xl pl-7" />
               </div>
             </div>
             <div>
               <Label className="text-sm font-semibold text-slate-700 mb-1.5 block">Notes</Label>
-              <Input
-                placeholder="Any notes..."
-                value={form.notes}
-                onChange={e => setForm(p => ({ ...p, notes: e.target.value }))}
-                className="h-11 rounded-xl"
-              />
+              <Input placeholder="Any notes..." value={form.notes} onChange={e => setForm(p => ({ ...p, notes: e.target.value }))} className="h-11 rounded-xl" />
             </div>
           </div>
 
-          <div className="flex gap-3 pt-2">
+          <div className="flex gap-3">
             <Button variant="outline" onClick={onClose} className="flex-1 h-12 rounded-xl">Cancel</Button>
-            <Button
-              onClick={() => onSave(form)}
-              disabled={!form.taskName}
-              className="flex-1 h-12 rounded-xl bg-slate-900 hover:bg-slate-800 text-white font-bold"
-            >
+            <Button onClick={() => onSave(form)} disabled={!form.taskName} className="flex-1 h-12 rounded-xl text-white font-bold" style={{ background: '#1e3a5f' }}>
               {task ? 'Save Changes' : 'Add Task'}
             </Button>
           </div>
@@ -277,76 +207,54 @@ const TaskModal = ({ task, onSave, onClose }) => {
   );
 };
 
-// ─── Service Log Modal ────────────────────────────────────────────────
+// ═══════════════════════════════════════════════════════════════════════
+// SERVICE LOG MODAL
+// ═══════════════════════════════════════════════════════════════════════
+
 const ServiceLogModal = ({ task, logs, onAddLog, onClose }) => {
   const [form, setForm] = useState({
     serviceDate: new Date().toISOString().split('T')[0],
-    vendorName: task?.vendorName || '',
-    cost: '',
-    notes: '',
+    vendorName: task?.vendorName || '', cost: '', notes: '',
   });
 
   return (
     <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-      <div className="bg-white rounded-3xl shadow-2xl w-full max-w-lg">
-        <div className="bg-green-600 rounded-t-3xl px-8 py-6 flex items-center justify-between">
+      <div className="bg-white w-full max-w-lg" style={{ borderRadius: '16px', boxShadow: '0 25px 50px rgba(0,0,0,0.2)' }}>
+        <div className="flex items-center justify-between" style={{ background: '#059669', borderRadius: '16px 16px 0 0', padding: '20px 24px' }}>
           <div>
-            <h2 className="text-xl font-bold text-white">Log Service</h2>
-            <p className="text-green-100 text-sm">{task?.taskName}</p>
+            <h2 className="font-semibold text-white" style={{ fontSize: '18px' }}>Log Service</h2>
+            <p className="text-green-100" style={{ fontSize: '13px' }}>{task?.taskName}</p>
           </div>
-          <button onClick={onClose} className="w-8 h-8 bg-white/10 rounded-lg flex items-center justify-center text-white hover:bg-white/20">
-            <X className="w-4 h-4" />
+          <button onClick={onClose} className="flex items-center justify-center rounded-full hover:bg-white/10 transition-colors" style={{ width: '32px', height: '32px' }}>
+            <X style={{ width: '16px', height: '16px', color: 'rgba(255,255,255,0.7)' }} />
           </button>
         </div>
-
-        <div className="p-8 space-y-4">
+        <div style={{ padding: '24px', display: 'flex', flexDirection: 'column', gap: '16px' }}>
           <div className="grid grid-cols-2 gap-4">
             <div>
               <Label className="text-sm font-semibold text-slate-700 mb-1.5 block">Service Date</Label>
-              <Input
-                type="date"
-                value={form.serviceDate}
-                onChange={e => setForm(p => ({ ...p, serviceDate: e.target.value }))}
-                className="h-11 rounded-xl"
-              />
+              <Input type="date" value={form.serviceDate} onChange={e => setForm(p => ({ ...p, serviceDate: e.target.value }))} className="h-11 rounded-xl" />
             </div>
             <div>
               <Label className="text-sm font-semibold text-slate-700 mb-1.5 block">Cost Paid</Label>
               <div className="relative">
-                <span className="absolute left-3 top-3 text-slate-400">$</span>
-                <Input
-                  type="number"
-                  placeholder="150"
-                  value={form.cost}
-                  onChange={e => setForm(p => ({ ...p, cost: e.target.value }))}
-                  className="h-11 rounded-xl pl-7"
-                />
+                <span className="absolute left-3 top-3 text-slate-400 text-sm">$</span>
+                <Input type="number" placeholder="150" value={form.cost} onChange={e => setForm(p => ({ ...p, cost: e.target.value }))} className="h-11 rounded-xl pl-7" />
               </div>
             </div>
           </div>
           <div>
             <Label className="text-sm font-semibold text-slate-700 mb-1.5 block">Vendor</Label>
-            <Input
-              placeholder="Who did the work?"
-              value={form.vendorName}
-              onChange={e => setForm(p => ({ ...p, vendorName: e.target.value }))}
-              className="h-11 rounded-xl"
-            />
+            <Input placeholder="Who did the work?" value={form.vendorName} onChange={e => setForm(p => ({ ...p, vendorName: e.target.value }))} className="h-11 rounded-xl" />
           </div>
           <div>
             <Label className="text-sm font-semibold text-slate-700 mb-1.5 block">Notes</Label>
-            <textarea
-              placeholder="What was done? Any issues found?"
-              value={form.notes}
-              onChange={e => setForm(p => ({ ...p, notes: e.target.value }))}
-              className="w-full h-24 px-3 py-2 rounded-xl border border-slate-200 text-sm resize-none focus:outline-none focus:ring-2 focus:ring-slate-900"
-            />
+            <textarea placeholder="What was done? Any issues found?" value={form.notes} onChange={e => setForm(p => ({ ...p, notes: e.target.value }))}
+              className="w-full h-24 px-3 py-2 rounded-xl border border-slate-200 text-sm resize-none focus:outline-none focus:ring-2 focus:ring-slate-900" />
           </div>
-
-          {/* Past Logs */}
           {logs && logs.length > 0 && (
             <div>
-              <p className="text-sm font-bold text-slate-700 mb-3">Past Service History</p>
+              <p className="text-sm font-semibold text-slate-700 mb-3">Past Service History</p>
               <div className="space-y-2 max-h-32 overflow-y-auto">
                 {logs.map((log, i) => (
                   <div key={i} className="bg-slate-50 rounded-xl p-3 flex items-center justify-between">
@@ -360,13 +268,9 @@ const ServiceLogModal = ({ task, logs, onAddLog, onClose }) => {
               </div>
             </div>
           )}
-
-          <div className="flex gap-3 pt-2">
+          <div className="flex gap-3">
             <Button variant="outline" onClick={onClose} className="flex-1 h-12 rounded-xl">Cancel</Button>
-            <Button
-              onClick={() => onAddLog(form)}
-              className="flex-1 h-12 rounded-xl bg-green-600 hover:bg-green-700 text-white font-bold"
-            >
+            <Button onClick={() => onAddLog(form)} className="flex-1 h-12 rounded-xl text-white font-bold bg-green-600 hover:bg-green-700">
               <Check className="w-4 h-4 mr-2" /> Log Service
             </Button>
           </div>
@@ -376,94 +280,78 @@ const ServiceLogModal = ({ task, logs, onAddLog, onClose }) => {
   );
 };
 
-// ─── Task Card ────────────────────────────────────────────────────────
+// ═══════════════════════════════════════════════════════════════════════
+// TASK CARD
+// ═══════════════════════════════════════════════════════════════════════
+
 const TaskCard = ({ task, onEdit, onDelete, onLogService }) => {
-  const today = new Date();
-  const nextDate = task.nextServiceDate ? new Date(task.nextServiceDate) : null;
-  const daysUntil = nextDate ? Math.ceil((nextDate - today) / (1000 * 60 * 60 * 24)) : null;
+  const status = getTaskStatus(task);
   const cat = MAINTENANCE_CATEGORIES.find(c => c.name === task.category);
 
-  const getStatus = () => {
-    if (!daysUntil) return { label: 'No date set', color: 'bg-slate-100 text-slate-500', urgent: false };
-    if (daysUntil < 0) return { label: `${Math.abs(daysUntil)}d overdue`, color: 'bg-red-100 text-red-600', urgent: true };
-    if (daysUntil <= 14) return { label: `Due in ${daysUntil}d`, color: 'bg-orange-100 text-orange-600', urgent: true };
-    if (daysUntil <= 30) return { label: `Due in ${daysUntil}d`, color: 'bg-yellow-100 text-yellow-600', urgent: false };
-    return { label: `Due in ${daysUntil}d`, color: 'bg-green-100 text-green-600', urgent: false };
-  };
-
-  const status = getStatus();
-
   return (
-    <div className={`bg-white rounded-2xl border shadow-sm hover:shadow-md transition-all ${status.urgent ? 'border-red-200' : 'border-slate-200'}`}>
-      {status.urgent && <div className="h-1 w-full bg-red-400 rounded-t-2xl"></div>}
-      <div className="p-5">
-        <div className="flex items-start justify-between mb-3">
+    <div className="bg-white hover:shadow-md transition-all" style={{
+      borderRadius: '12px',
+      border: `1px solid ${status.urgent ? '#fecaca' : '#e2e8f0'}`,
+      boxShadow: '0 1px 3px rgba(0,0,0,0.06)',
+      overflow: 'hidden',
+    }}>
+      {status.urgent && <div style={{ height: '3px', background: '#ef4444' }} />}
+      <div style={{ padding: '20px' }}>
+        <div className="flex items-start justify-between" style={{ marginBottom: '12px' }}>
           <div className="flex items-center gap-3">
-            <span className="text-2xl">{cat?.icon || '🔨'}</span>
+            <span style={{ fontSize: '24px' }}>{cat?.icon || '🔨'}</span>
             <div>
-              <h3 className="font-bold text-slate-900">{task.taskName}</h3>
-              <p className="text-slate-400 text-xs">{task.category} · {task.cadence}</p>
+              <p className="font-semibold text-slate-900" style={{ fontSize: '15px' }}>{task.taskName}</p>
+              <p className="text-slate-400" style={{ fontSize: '12px', marginTop: '2px' }}>{task.category} · {task.cadence}</p>
             </div>
           </div>
-          <span className={`text-xs font-bold px-2.5 py-1 rounded-full ${status.color}`}>
-            {status.label}
-          </span>
+          <span className={`font-medium rounded-full px-2 py-0.5 ${status.color}`} style={{ fontSize: '12px', flexShrink: 0 }}>{status.label}</span>
         </div>
 
-        {/* Vendor */}
         {task.vendorName && (
-          <div className="bg-slate-50 rounded-xl p-3 mb-3 flex items-center gap-2">
-            <User className="w-4 h-4 text-slate-400 flex-shrink-0" />
+          <div className="flex items-center gap-2 bg-slate-50 rounded-xl" style={{ padding: '10px 12px', marginBottom: '12px' }}>
+            <User style={{ width: '14px', height: '14px', color: '#94a3b8', flexShrink: 0 }} />
             <div className="min-w-0">
-              <p className="text-sm font-semibold text-slate-700 truncate">{task.vendorName}</p>
-              {task.vendorPhone && <p className="text-xs text-slate-400">{task.vendorPhone}</p>}
+              <p className="font-semibold text-slate-700 truncate" style={{ fontSize: '13px' }}>{task.vendorName}</p>
+              {task.vendorPhone && <p className="text-slate-400" style={{ fontSize: '12px' }}>{task.vendorPhone}</p>}
             </div>
           </div>
         )}
 
-        {/* Dates */}
-        <div className="grid grid-cols-2 gap-2 mb-4">
+        <div className="grid grid-cols-2 gap-2" style={{ marginBottom: '12px' }}>
           {task.lastServiceDate && (
-            <div className="bg-slate-50 rounded-lg p-2 text-center">
-              <p className="text-xs text-slate-400">Last Service</p>
-              <p className="text-xs font-bold text-slate-700">{new Date(task.lastServiceDate).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}</p>
+            <div className="bg-slate-50 rounded-lg text-center" style={{ padding: '8px' }}>
+              <p className="text-slate-400" style={{ fontSize: '11px' }}>Last Service</p>
+              <p className="font-semibold text-slate-700" style={{ fontSize: '12px', marginTop: '2px' }}>
+                {new Date(task.lastServiceDate).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
+              </p>
             </div>
           )}
           {task.nextServiceDate && (
-            <div className={`rounded-lg p-2 text-center ${status.urgent ? 'bg-red-50' : 'bg-blue-50'}`}>
-              <p className="text-xs text-slate-400">Next Due</p>
-              <p className={`text-xs font-bold ${status.urgent ? 'text-red-600' : 'text-blue-600'}`}>{new Date(task.nextServiceDate).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}</p>
+            <div className={`rounded-lg text-center ${status.urgent ? 'bg-red-50' : 'bg-blue-50'}`} style={{ padding: '8px' }}>
+              <p className="text-slate-400" style={{ fontSize: '11px' }}>Next Due</p>
+              <p className={`font-semibold ${status.urgent ? 'text-red-600' : 'text-blue-600'}`} style={{ fontSize: '12px', marginTop: '2px' }}>
+                {new Date(task.nextServiceDate).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
+              </p>
             </div>
           )}
         </div>
 
         {task.estimatedCost && (
-          <p className="text-xs text-slate-400 mb-3">
-            <DollarSign className="w-3 h-3 inline mr-0.5" />
-            Est. ${parseFloat(task.estimatedCost).toFixed(0)}
+          <p className="text-slate-400 flex items-center gap-1" style={{ fontSize: '12px', marginBottom: '12px' }}>
+            <DollarSign style={{ width: '12px', height: '12px' }} /> Est. ${parseFloat(task.estimatedCost).toFixed(0)}
           </p>
         )}
 
-        {/* Actions */}
         <div className="flex gap-2">
-          <Button
-            size="sm"
-            onClick={() => onLogService(task)}
-            className="flex-1 rounded-xl bg-green-600 hover:bg-green-700 text-white text-xs h-9"
-          >
-            <Check className="w-3.5 h-3.5 mr-1" /> Log Service
-          </Button>
-          <button
-            onClick={() => onEdit(task)}
-            className="w-9 h-9 bg-slate-100 rounded-xl flex items-center justify-center text-slate-500 hover:bg-slate-200 flex-shrink-0"
-          >
-            <Edit2 className="w-3.5 h-3.5" />
+          <button onClick={() => onLogService(task)} className="flex-1 flex items-center justify-center gap-1.5 font-semibold text-white rounded-xl hover:opacity-90 transition-all" style={{ background: '#059669', padding: '8px', fontSize: '13px' }}>
+            <Check style={{ width: '14px', height: '14px' }} /> Log Service
           </button>
-          <button
-            onClick={() => onDelete(task.id)}
-            className="w-9 h-9 bg-red-50 rounded-xl flex items-center justify-center text-red-400 hover:bg-red-100 flex-shrink-0"
-          >
-            <Trash2 className="w-3.5 h-3.5" />
+          <button onClick={() => onEdit(task)} className="flex items-center justify-center rounded-xl bg-slate-100 hover:bg-slate-200 transition-colors" style={{ width: '36px', height: '36px' }}>
+            <Edit2 style={{ width: '14px', height: '14px', color: '#64748b' }} />
+          </button>
+          <button onClick={() => onDelete(task.id)} className="flex items-center justify-center rounded-xl hover:bg-red-100 transition-colors" style={{ width: '36px', height: '36px', background: '#fef2f2' }}>
+            <Trash2 style={{ width: '14px', height: '14px', color: '#f87171' }} />
           </button>
         </div>
       </div>
@@ -471,66 +359,105 @@ const TaskCard = ({ task, onEdit, onDelete, onLogService }) => {
   );
 };
 
-// ─── Quick Stats ──────────────────────────────────────────────────────
-const QuickStats = ({ tasks, onFilter }) => {
+// ═══════════════════════════════════════════════════════════════════════
+// SUMMARY STATS
+// ═══════════════════════════════════════════════════════════════════════
+
+const SummaryStats = ({ tasks, onFilter }) => {
   const today = new Date();
   const overdue = tasks.filter(t => t.nextServiceDate && new Date(t.nextServiceDate) < today).length;
   const dueSoon = tasks.filter(t => {
     if (!t.nextServiceDate) return false;
-    const d = new Date(t.nextServiceDate);
-    const diff = Math.ceil((d - today) / (1000 * 60 * 60 * 24));
-    return diff >= 0 && diff <= 30;
+    const d = Math.ceil((new Date(t.nextServiceDate) - today) / 86400000);
+    return d >= 0 && d <= 30;
   }).length;
-  const upToDate = tasks.filter(t => {
-    if (!t.nextServiceDate) return false;
-    return new Date(t.nextServiceDate) > today;
-  }).length;
+  const upToDate = tasks.filter(t => t.nextServiceDate && new Date(t.nextServiceDate) > today).length;
+  const totalCost = tasks.reduce((sum, t) => sum + (parseFloat(t.estimatedCost) || 0), 0);
   const total = tasks.length;
-  const completionRate = total > 0 ? Math.round((upToDate / total) * 100) : 0;
+  const health = total > 0 ? Math.round((upToDate / total) * 100) : 0;
 
   return (
-    <div className="mb-8">
-      <div className="grid grid-cols-3 gap-4 mb-4">
+    <div style={{ marginBottom: '32px' }}>
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-4" style={{ marginBottom: '16px' }}>
         {[
-          { label: overdue === 0 ? 'All Clear ✓' : 'Overdue', value: overdue, icon: <AlertCircle className="w-5 h-5 text-red-500" />, color: 'bg-red-50 border-red-100', filter: 'Overdue', hover: 'hover:bg-red-100' },
-          { label: 'Upcoming This Month', value: dueSoon, icon: <Clock className="w-5 h-5 text-orange-500" />, color: 'bg-orange-50 border-orange-100', filter: 'Due Soon', hover: 'hover:bg-orange-100', hint: 'Plan ahead to stay proactive' },
-          { label: 'All Systems Go', value: upToDate, icon: <CheckCircle2 className="w-5 h-5 text-green-500" />, color: 'bg-green-50 border-green-100', filter: 'Up To Date', hover: 'hover:bg-green-100' },
-        ].map((s, i) => (
-          <button
-            key={i}
-            onClick={() => onFilter && onFilter(s.filter)}
-            className={`${s.color} ${s.hover} border rounded-2xl p-4 flex flex-col items-center text-center transition-all hover:-translate-y-0.5 cursor-pointer w-full`}
-            title={`Click to filter by ${s.label}`}
-          >
-            <div className="mb-2">{s.icon}</div>
-            <p className="text-2xl font-extrabold text-slate-900">{s.value}</p>
-            <p className="text-xs text-slate-500 font-medium mt-0.5">{s.label}</p>
-          </button>
-        ))}
+          { label: 'Overdue', value: overdue, icon: AlertCircle, color: '#dc2626', bg: '#fef2f2', border: '#fecaca', filter: 'Overdue' },
+          { label: 'Due This Month', value: dueSoon, icon: Clock, color: '#d97706', bg: '#fffbeb', border: '#fde68a', filter: 'Upcoming' },
+          { label: 'Up to Date', value: upToDate, icon: CheckCircle2, color: '#059669', bg: '#ecfdf5', border: '#a7f3d0', filter: 'Up To Date' },
+          { label: 'Annual Est. Cost', value: `$${totalCost.toLocaleString()}`, icon: DollarSign, color: '#1e3a5f', bg: '#eef2f8', border: '#c7d7eb', filter: null },
+        ].map((s, i) => {
+          const Icon = s.icon;
+          return (
+            <button key={i} onClick={() => s.filter && onFilter(s.filter)}
+              className={`text-left hover:shadow-md transition-all ${s.filter ? 'cursor-pointer' : 'cursor-default'}`}
+              style={{ background: 'white', borderRadius: '12px', padding: '16px', border: `1px solid ${s.border}`, boxShadow: '0 1px 3px rgba(0,0,0,0.06)' }}>
+              <div className="flex items-center gap-2" style={{ marginBottom: '8px' }}>
+                <div className="flex items-center justify-center" style={{ width: '32px', height: '32px', borderRadius: '8px', background: s.bg }}>
+                  <Icon style={{ width: '16px', height: '16px', color: s.color }} />
+                </div>
+              </div>
+              <p className="font-extrabold text-slate-900" style={{ fontSize: '24px', lineHeight: 1 }}>{s.value}</p>
+              <p className="text-slate-400 font-medium" style={{ fontSize: '12px', marginTop: '4px' }}>{s.label}</p>
+            </button>
+          );
+        })}
       </div>
+
       {total > 0 && (
-        <div className="bg-white border border-slate-100 rounded-2xl p-4 shadow-sm">
-          <div className="flex items-center justify-between mb-2">
-            <p className="text-xs font-semibold text-slate-600">CasaOS Operations Health</p>
-            <p className="text-xs font-bold text-slate-900">{completionRate}% up to date</p>
+        <div className="bg-white" style={{ borderRadius: '12px', padding: '16px', border: '1px solid #e2e8f0', boxShadow: '0 1px 3px rgba(0,0,0,0.06)' }}>
+          <div className="flex items-center justify-between" style={{ marginBottom: '8px' }}>
+            <p className="font-semibold text-slate-700" style={{ fontSize: '13px' }}>Maintenance Health</p>
+            <p className="font-bold text-slate-900" style={{ fontSize: '13px' }}>{health}% up to date</p>
           </div>
-          <div className="h-2.5 bg-slate-100 rounded-full overflow-hidden">
-            <div
-              className="h-full rounded-full transition-all duration-700"
-              style={{
-                width: `${completionRate}%`,
-                background: completionRate >= 80 ? '#059669' : completionRate >= 50 ? '#d97706' : '#dc2626'
-              }}
-            ></div>
+          <div className="bg-slate-100 rounded-full overflow-hidden" style={{ height: '8px' }}>
+            <div className="h-full rounded-full transition-all duration-700" style={{
+              width: `${health}%`,
+              background: health >= 80 ? '#059669' : health >= 50 ? '#d97706' : '#dc2626'
+            }} />
           </div>
-          <p className="text-xs text-slate-400 mt-1.5">{upToDate} of {total} service records up to date</p>
+          <p className="text-slate-400" style={{ fontSize: '12px', marginTop: '6px' }}>{upToDate} of {total} tasks current · {overdue} overdue</p>
         </div>
       )}
     </div>
   );
 };
 
-// ─── Main Page ────────────────────────────────────────────────────────
+// ═══════════════════════════════════════════════════════════════════════
+// SEASONAL GUIDE
+// ═══════════════════════════════════════════════════════════════════════
+
+const SeasonalGuide = () => (
+  <div style={{ marginBottom: '32px' }}>
+    <h2 className="font-semibold text-slate-900" style={{ fontSize: '18px', marginBottom: '16px' }}>Seasonal Task Guide</h2>
+    <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+      {Object.entries(SEASONAL_TASKS).map(([season, data]) => {
+        const Icon = data.icon;
+        return (
+          <div key={season} className="bg-white" style={{ borderRadius: '12px', padding: '16px', border: '1px solid #e2e8f0' }}>
+            <div className="flex items-center gap-2" style={{ marginBottom: '12px' }}>
+              <div className="flex items-center justify-center" style={{ width: '32px', height: '32px', borderRadius: '8px', background: data.bg }}>
+                <Icon style={{ width: '15px', height: '15px', color: data.color }} />
+              </div>
+              <p className="font-semibold text-slate-900" style={{ fontSize: '14px' }}>{season}</p>
+            </div>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+              {data.tasks.map((task, i) => (
+                <div key={i} className="flex items-center gap-2">
+                  <CheckCircle2 style={{ width: '12px', height: '12px', color: data.color, flexShrink: 0 }} />
+                  <p className="text-slate-600" style={{ fontSize: '12px' }}>{task}</p>
+                </div>
+              ))}
+            </div>
+          </div>
+        );
+      })}
+    </div>
+  </div>
+);
+
+// ═══════════════════════════════════════════════════════════════════════
+// MAIN PAGE
+// ═══════════════════════════════════════════════════════════════════════
+
 const MaintenanceManagementPage = () => {
   const { selectedHome, currentHome } = useHome();
   const home = selectedHome || currentHome;
@@ -549,18 +476,14 @@ const MaintenanceManagementPage = () => {
   const [activeTab, setActiveTab] = useState('schedule');
 
   useEffect(() => {
-    if (home && currentUser) {
-      loadTasks();
-    }
+    if (home && currentUser) loadTasks();
   }, [home, currentUser]);
 
   const loadTasks = async () => {
     setLoading(true);
     try {
       const records = await pb.collection('maintenance_systems').getFullList({
-        filter: `homeId="${home.id}"`,
-        sort: 'nextServiceDate',
-        $autoCancel: false
+        filter: `homeId="${home.id}"`, sort: 'nextServiceDate', $autoCancel: false
       });
       setTasks(records);
     } catch (error) {
@@ -573,15 +496,11 @@ const MaintenanceManagementPage = () => {
   const loadLogsForTask = async (taskId) => {
     try {
       const records = await pb.collection('service_logs').getFullList({
-        filter: `taskId="${taskId}"`,
-        sort: '-serviceDate',
-        $autoCancel: false
+        filter: `taskId="${taskId}"`, sort: '-serviceDate', $autoCancel: false
       });
       setLogs(prev => ({ ...prev, [taskId]: records }));
       return records;
-    } catch {
-      return [];
-    }
+    } catch { return []; }
   };
 
   const handleSaveTask = async (form) => {
@@ -590,65 +509,33 @@ const MaintenanceManagementPage = () => {
         await pb.collection('maintenance_systems').update(editingTask.id, form, { $autoCancel: false });
         toast({ title: '✅ Task updated' });
       } else {
-        await pb.collection('maintenance_systems').create({
-          ...form,
-          homeId: home.id,
-          ownerId: currentUser.id
-        }, { $autoCancel: false });
+        await pb.collection('maintenance_systems').create({ ...form, homeId: home.id, ownerId: currentUser.id }, { $autoCancel: false });
         toast({ title: '✅ Task added' });
       }
-      setShowTaskModal(false);
-      setEditingTask(null);
-      loadTasks();
-    } catch (error) {
-      toast({ title: 'Error saving task', variant: 'destructive' });
-    }
+      setShowTaskModal(false); setEditingTask(null); loadTasks();
+    } catch { toast({ title: 'Error saving task', variant: 'destructive' }); }
   };
 
   const handleDelete = async (id) => {
     if (!window.confirm('Delete this maintenance task?')) return;
     try {
       await pb.collection('maintenance_systems').delete(id, { $autoCancel: false });
-      toast({ title: '✅ Task deleted' });
-      loadTasks();
-    } catch {
-      toast({ title: 'Error deleting task', variant: 'destructive' });
-    }
+      toast({ title: '✅ Task deleted' }); loadTasks();
+    } catch { toast({ title: 'Error deleting task', variant: 'destructive' }); }
   };
 
   const handleLogService = async (form) => {
     try {
-      // Save to service log
-      await pb.collection('service_logs').create({
-        taskId: loggingTask.id,
-        homeId: home.id,
-        ownerId: currentUser.id,
-        ...form
-      }, { $autoCancel: false }).catch(() => {}); // Graceful if collection doesn't exist yet
-
-      // Update last service date and calculate next
-      const cat = MAINTENANCE_CATEGORIES.find(c => c.name === loggingTask.category);
-      const map = {
-        'Weekly': 7, 'Bi-Weekly': 14, 'Monthly': 30,
-        'Quarterly': 90, 'Semi-Annual': 180, 'Annual': 365,
-        'Every 3 Years': 365 * 3, 'Every 5 Years': 365 * 5,
-        'Every 10 Years': 365 * 10, 'Seasonal': 90
-      };
+      await pb.collection('service_logs').create({ taskId: loggingTask.id, homeId: home.id, ownerId: currentUser.id, ...form }, { $autoCancel: false }).catch(() => {});
       const d = new Date(form.serviceDate);
-      d.setDate(d.getDate() + (map[loggingTask.cadence] || 365));
-
+      d.setDate(d.getDate() + (CADENCE_DAYS[loggingTask.cadence] || 365));
       await pb.collection('maintenance_systems').update(loggingTask.id, {
         lastServiceDate: form.serviceDate,
         nextServiceDate: d.toISOString().split('T')[0],
         vendorName: form.vendorName || loggingTask.vendorName,
       }, { $autoCancel: false });
-
-      toast({ title: '✅ Service logged successfully!' });
-      setLoggingTask(null);
-      loadTasks();
-    } catch (error) {
-      toast({ title: 'Error logging service', variant: 'destructive' });
-    }
+      toast({ title: '✅ Service logged!' }); setLoggingTask(null); loadTasks();
+    } catch { toast({ title: 'Error logging service', variant: 'destructive' }); }
   };
 
   const handleOpenLog = async (task) => {
@@ -656,110 +543,117 @@ const MaintenanceManagementPage = () => {
     setLoggingTask({ ...task, logs: taskLogs });
   };
 
+  const today = new Date();
+  const overdueTasks = tasks.filter(t => t.nextServiceDate && new Date(t.nextServiceDate) < today);
+  const upcomingTasks = tasks.filter(t => {
+    if (!t.nextServiceDate) return false;
+    const d = Math.ceil((new Date(t.nextServiceDate) - today) / 86400000);
+    return d >= 0 && d <= 60;
+  });
+  const scheduledTasks = tasks.filter(t => {
+    if (!t.nextServiceDate) return true;
+    return Math.ceil((new Date(t.nextServiceDate) - today) / 86400000) > 60;
+  });
+
   const filteredTasks = tasks.filter(t => {
-    const matchesSearch = t.taskName?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      t.vendorName?.toLowerCase().includes(searchQuery.toLowerCase());
-    const matchesCategory = filterCategory === 'All' || t.category === filterCategory;
-    const today = new Date();
+    const matchSearch = t.taskName?.toLowerCase().includes(searchQuery.toLowerCase()) || t.vendorName?.toLowerCase().includes(searchQuery.toLowerCase());
+    const matchCat = filterCategory === 'All' || t.category === filterCategory;
     const nextDate = t.nextServiceDate ? new Date(t.nextServiceDate) : null;
-    const daysUntil = nextDate ? Math.ceil((nextDate - today) / (1000 * 60 * 60 * 24)) : null;
-    const matchesStatus =
+    const daysUntil = nextDate ? Math.ceil((nextDate - today) / 86400000) : null;
+    const matchStatus =
       filterStatus === 'All' ||
       (filterStatus === 'Overdue' && daysUntil !== null && daysUntil < 0) ||
       (filterStatus === 'Upcoming' && daysUntil !== null && daysUntil >= 0 && daysUntil <= 30) ||
       (filterStatus === 'Up To Date' && daysUntil !== null && daysUntil > 30);
-    return matchesSearch && matchesCategory && matchesStatus;
+    return matchSearch && matchCat && matchStatus;
   });
 
   if (!home) {
     return (
-      <div className="p-8 text-center">
-        <p className="text-slate-500 text-sm mb-4">Select a property from the top menu to get started.</p>
-        <div className="inline-flex items-center gap-2 bg-amber-50 border border-amber-100 rounded-xl px-4 py-2.5"><span className="text-amber-600 text-xs font-medium">👆 Use the property selector in the top right</span></div>
+      <div className="text-center" style={{ padding: '48px 20px' }}>
+        <div className="flex items-center justify-center mx-auto" style={{ width: '64px', height: '64px', borderRadius: '16px', background: '#fff7ed', marginBottom: '16px' }}>
+          <Wrench style={{ width: '28px', height: '28px', color: '#f97316' }} />
+        </div>
+        <p className="font-semibold text-slate-900" style={{ fontSize: '18px', marginBottom: '8px' }}>No property selected.</p>
+        <p className="text-slate-400" style={{ fontSize: '14px' }}>Select a property from the top menu to view maintenance tasks.</p>
       </div>
     );
   }
 
   return (
     <>
-      <Helmet>
-        <title>Maintenance — CasaCEO</title>
-      </Helmet>
-
+      <Helmet><title>Maintenance — CasaCEO</title></Helmet>
       <div className="max-w-7xl mx-auto">
 
-        {/* Header */}
-        <div className="bg-white border-b border-slate-200 -mx-4 sm:-mx-6 lg:-mx-8 px-4 sm:px-6 lg:px-8 py-8 mb-8">
-          <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+        {/* ── Page Header ── */}
+        <div className="bg-white border-b border-slate-200 -mx-4 sm:-mx-6 lg:-mx-8 px-4 sm:px-6 lg:px-8" style={{ padding: '24px 32px', marginBottom: '32px' }}>
+          <div className="flex items-center gap-2 text-slate-400" style={{ fontSize: '13px', marginBottom: '12px' }}>
+            <Link to="/home-profile" className="hover:text-slate-600 transition-colors">Home Profile</Link>
+            <ChevronRight style={{ width: '14px', height: '14px' }} />
+            <span className="text-slate-700 font-medium">Maintenance</span>
+          </div>
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
             <div className="flex items-center gap-4">
-              <div className="w-12 h-12 bg-orange-50 rounded-xl flex items-center justify-center">
-                <Wrench className="w-6 h-6 text-orange-500" />
+              <div className="flex items-center justify-center" style={{ width: '48px', height: '48px', borderRadius: '12px', background: '#fff7ed' }}>
+                <Wrench style={{ width: '24px', height: '24px', color: '#f97316' }} />
               </div>
               <div>
-                <h1 className="text-2xl font-extrabold text-slate-900">Maintenance</h1>
-                <p className="text-slate-400 text-sm">{home.name} · {tasks.length} tasks tracked{tasks.length > 0 ? ` · Click a status card to filter` : ''}</p>
+                <h1 className="font-semibold text-slate-900" style={{ fontSize: '28px', lineHeight: '1.2' }}>Maintenance</h1>
+                <p className="text-slate-400" style={{ fontSize: '14px', marginTop: '2px' }}>{home.name} · {tasks.length} tasks tracked</p>
               </div>
             </div>
-            <Button
-              onClick={() => { setEditingTask(null); setShowTaskModal(true); }}
-              className="rounded-xl h-12 px-6 bg-slate-900 hover:bg-slate-800 text-white font-bold shadow-md"
-            >
-              <Plus className="w-5 h-5 mr-2" /> Add Task
-            </Button>
+            <div className="flex gap-3">
+              <button className="flex items-center gap-2 font-semibold text-slate-600 border border-slate-200 hover:bg-slate-50 transition-all rounded-xl" style={{ padding: '10px 16px', fontSize: '13px' }}>
+                <Download style={{ width: '15px', height: '15px' }} /> Export
+              </button>
+              <button onClick={() => { setEditingTask(null); setShowTaskModal(true); }}
+                className="flex items-center gap-2 font-semibold text-white hover:opacity-90 transition-all rounded-xl"
+                style={{ background: '#1e3a5f', padding: '10px 20px', fontSize: '14px' }}>
+                <Plus style={{ width: '16px', height: '16px' }} /> Add Task
+              </button>
+            </div>
           </div>
         </div>
 
-        {/* Tabs */}
-        <div className="flex gap-2 mb-8 bg-white border border-slate-200 rounded-2xl p-1.5 w-fit shadow-sm">
+        {/* ── Tabs ── */}
+        <div className="flex gap-1 bg-white border border-slate-200 rounded-2xl w-fit shadow-sm" style={{ padding: '6px', marginBottom: '32px' }}>
           {[
-            { key: 'schedule', label: 'Schedule', icon: <Calendar className="w-4 h-4" /> },
-            { key: 'log', label: 'Service Log', icon: <ClipboardList className="w-4 h-4" /> },
-            { key: 'vendors', label: 'Vendors', icon: <User className="w-4 h-4" /> },
-          ].map(tab => (
-            <button
-              key={tab.key}
-              onClick={() => setActiveTab(tab.key)}
-              className={`flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-semibold transition-all ${
-                activeTab === tab.key
-                  ? 'bg-slate-900 text-white shadow-md'
-                  : 'text-slate-500 hover:text-slate-900'
-              }`}
-            >
-              {tab.icon} {tab.label}
-            </button>
-          ))}
+            { key: 'schedule', label: 'Schedule', icon: Calendar },
+            { key: 'log', label: 'Service Log', icon: ClipboardList },
+            { key: 'seasonal', label: 'Seasonal Guide', icon: TreePine },
+            { key: 'vendors', label: 'Vendors', icon: User },
+          ].map(tab => {
+            const Icon = tab.icon;
+            return (
+              <button key={tab.key} onClick={() => setActiveTab(tab.key)}
+                className="flex items-center gap-2 rounded-xl transition-all font-medium"
+                style={{
+                  padding: '8px 16px', fontSize: '13px',
+                  background: activeTab === tab.key ? '#1e3a5f' : 'transparent',
+                  color: activeTab === tab.key ? 'white' : '#64748b',
+                }}>
+                <Icon style={{ width: '14px', height: '14px' }} /> {tab.label}
+              </button>
+            );
+          })}
         </div>
 
+        {/* ── Schedule Tab ── */}
         {activeTab === 'schedule' && (
           <>
-            <QuickStats tasks={tasks} onFilter={setFilterStatus} />
+            <SummaryStats tasks={tasks} onFilter={setFilterStatus} />
 
             {/* Filters */}
-            <div className="flex flex-col sm:flex-row gap-3 mb-6">
+            <div className="flex flex-col sm:flex-row gap-3" style={{ marginBottom: '24px' }}>
               <div className="relative flex-1">
-                <Search className="absolute left-3 top-3 w-4 h-4 text-slate-400" />
-                <Input
-                  placeholder="Search tasks or vendors..."
-                  value={searchQuery}
-                  onChange={e => setSearchQuery(e.target.value)}
-                  className="pl-9 h-11 rounded-xl border-slate-200"
-                />
+                <Search style={{ width: '16px', height: '16px', color: '#94a3b8', position: 'absolute', left: '12px', top: '50%', transform: 'translateY(-50%)' }} />
+                <Input placeholder="Search tasks or vendors…" value={searchQuery} onChange={e => setSearchQuery(e.target.value)} className="pl-9 h-11 rounded-xl border-slate-200" />
               </div>
-              <select
-                value={filterCategory}
-                onChange={e => setFilterCategory(e.target.value)}
-                className="h-11 px-4 rounded-xl border border-slate-200 text-sm font-medium text-slate-700 bg-white"
-              >
+              <select value={filterCategory} onChange={e => setFilterCategory(e.target.value)} className="h-11 px-4 rounded-xl border border-slate-200 text-sm font-medium text-slate-700 bg-white">
                 <option value="All">All Categories</option>
-                {MAINTENANCE_CATEGORIES.map(c => (
-                  <option key={c.name} value={c.name}>{c.icon} {c.name}</option>
-                ))}
+                {MAINTENANCE_CATEGORIES.map(c => <option key={c.name} value={c.name}>{c.icon} {c.name}</option>)}
               </select>
-              <select
-                value={filterStatus}
-                onChange={e => setFilterStatus(e.target.value)}
-                className="h-11 px-4 rounded-xl border border-slate-200 text-sm font-medium text-slate-700 bg-white"
-              >
+              <select value={filterStatus} onChange={e => setFilterStatus(e.target.value)} className="h-11 px-4 rounded-xl border border-slate-200 text-sm font-medium text-slate-700 bg-white">
                 <option value="All">All Statuses</option>
                 <option value="Overdue">Overdue</option>
                 <option value="Upcoming">Due Soon</option>
@@ -768,68 +662,101 @@ const MaintenanceManagementPage = () => {
             </div>
 
             {loading ? (
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
-                {[1,2,3,4,5,6].map(i => (
-                  <div key={i} className="h-56 rounded-2xl bg-slate-100 animate-pulse"></div>
-                ))}
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                {[1,2,3,4,5,6].map(i => <div key={i} className="h-56 rounded-xl bg-slate-100 animate-pulse" />)}
               </div>
             ) : filteredTasks.length === 0 ? (
-              <div className="bg-white rounded-3xl border-2 border-dashed border-slate-200 p-16 text-center">
-                <div className="w-16 h-16 bg-slate-100 rounded-2xl flex items-center justify-center mx-auto mb-4">
-                  <Wrench className="w-8 h-8 text-slate-400" />
+              <div className="bg-white text-center" style={{ borderRadius: '12px', padding: '48px 20px', border: '2px dashed #e2e8f0' }}>
+                <div className="flex items-center justify-center mx-auto" style={{ width: '64px', height: '64px', borderRadius: '16px', background: '#fff7ed', marginBottom: '16px' }}>
+                  <Wrench style={{ width: '28px', height: '28px', color: '#f97316' }} />
                 </div>
-                <h3 className="text-xl font-bold text-slate-900 mb-2">No maintenance tasks yet 🔧</h3>
-                <p className="text-slate-500 mb-2">Stay ahead of costly repairs — start building your home's maintenance memory today.</p><p className="text-slate-400 text-xs mb-6">Track HVAC filters, pest control, roof inspections, and more across all your properties.</p>
-                <Button
-                  onClick={() => { setEditingTask(null); setShowTaskModal(true); }}
-                  className="rounded-xl bg-slate-900 text-white px-8"
-                >
-                  <Plus className="w-4 h-4 mr-2" /> Add First Task
-                </Button>
+                <p className="font-semibold text-slate-900" style={{ fontSize: '18px', marginBottom: '8px' }}>No maintenance tasks yet.</p>
+                <p className="text-slate-400" style={{ fontSize: '14px', marginBottom: '24px' }}>Stay ahead of costly repairs — start building your home's maintenance history today.</p>
+                <button onClick={() => { setEditingTask(null); setShowTaskModal(true); }}
+                  className="font-semibold text-white rounded-xl hover:opacity-90 transition-all"
+                  style={{ background: '#1e3a5f', padding: '12px 24px', fontSize: '14px' }}>
+                  <Plus className="w-4 h-4 inline mr-2" /> Add First Task
+                </button>
               </div>
             ) : (
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
-                {filteredTasks.map(task => (
-                  <TaskCard
-                    key={task.id}
-                    task={task}
-                    onEdit={t => { setEditingTask(t); setShowTaskModal(true); }}
-                    onDelete={handleDelete}
-                    onLogService={handleOpenLog}
-                  />
-                ))}
-              </div>
+              <>
+                {/* Overdue section */}
+                {overdueTasks.length > 0 && filterStatus === 'All' && (
+                  <div style={{ marginBottom: '24px' }}>
+                    <div className="flex items-center gap-2" style={{ marginBottom: '12px' }}>
+                      <AlertCircle style={{ width: '16px', height: '16px', color: '#dc2626' }} />
+                      <h2 className="font-semibold text-slate-900" style={{ fontSize: '16px' }}>Overdue <span className="text-red-500">({overdueTasks.length})</span></h2>
+                    </div>
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                      {overdueTasks.map(task => <TaskCard key={task.id} task={task} onEdit={t => { setEditingTask(t); setShowTaskModal(true); }} onDelete={handleDelete} onLogService={handleOpenLog} />)}
+                    </div>
+                  </div>
+                )}
+
+                {/* Upcoming section */}
+                {upcomingTasks.length > 0 && filterStatus === 'All' && (
+                  <div style={{ marginBottom: '24px' }}>
+                    <div className="flex items-center gap-2" style={{ marginBottom: '12px' }}>
+                      <Clock style={{ width: '16px', height: '16px', color: '#d97706' }} />
+                      <h2 className="font-semibold text-slate-900" style={{ fontSize: '16px' }}>Due in the Next 60 Days <span className="text-amber-500">({upcomingTasks.length})</span></h2>
+                    </div>
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                      {upcomingTasks.map(task => <TaskCard key={task.id} task={task} onEdit={t => { setEditingTask(t); setShowTaskModal(true); }} onDelete={handleDelete} onLogService={handleOpenLog} />)}
+                    </div>
+                  </div>
+                )}
+
+                {/* All / Scheduled section */}
+                {(filterStatus !== 'All' || scheduledTasks.length > 0) && (
+                  <div>
+                    {filterStatus === 'All' && (
+                      <div className="flex items-center gap-2" style={{ marginBottom: '12px' }}>
+                        <CheckCircle2 style={{ width: '16px', height: '16px', color: '#059669' }} />
+                        <h2 className="font-semibold text-slate-900" style={{ fontSize: '16px' }}>Scheduled <span className="text-green-600">({scheduledTasks.length})</span></h2>
+                      </div>
+                    )}
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                      {(filterStatus === 'All' ? scheduledTasks : filteredTasks).map(task => (
+                        <TaskCard key={task.id} task={task} onEdit={t => { setEditingTask(t); setShowTaskModal(true); }} onDelete={handleDelete} onLogService={handleOpenLog} />
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </>
             )}
           </>
         )}
 
+        {/* ── Service Log Tab ── */}
         {activeTab === 'log' && (
-          <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
-            <div className="px-6 py-5 border-b border-slate-100">
-              <h2 className="text-lg font-bold text-slate-900">Service History</h2>
-              <p className="text-slate-400 text-sm">Complete log of all maintenance performed</p>
+          <div className="bg-white" style={{ borderRadius: '12px', border: '1px solid #e2e8f0', overflow: 'hidden' }}>
+            <div className="border-b border-slate-100" style={{ padding: '20px 24px' }}>
+              <h2 className="font-semibold text-slate-900" style={{ fontSize: '18px' }}>Service History</h2>
+              <p className="text-slate-400" style={{ fontSize: '14px', marginTop: '4px' }}>Complete log of all maintenance performed on this home.</p>
             </div>
-            <div className="p-6">
-              {tasks.length === 0 ? (
-                <p className="text-slate-400 text-center py-8">No service history yet. Log your first service from the Schedule tab.</p>
+            <div style={{ padding: '24px' }}>
+              {tasks.filter(t => t.lastServiceDate).length === 0 ? (
+                <div className="text-center" style={{ padding: '32px 0' }}>
+                  <ClipboardList className="w-10 h-10 text-slate-300 mx-auto" style={{ marginBottom: '12px' }} />
+                  <p className="font-semibold text-slate-900" style={{ fontSize: '16px' }}>No service history yet.</p>
+                  <p className="text-slate-400" style={{ fontSize: '14px', marginTop: '4px' }}>Log your first service from the Schedule tab.</p>
+                </div>
               ) : (
-                <div className="space-y-3">
-                  {tasks.filter(t => t.lastServiceDate).sort((a, b) =>
-                    new Date(b.lastServiceDate) - new Date(a.lastServiceDate)
-                  ).map(task => (
-                    <div key={task.id} className="flex items-center justify-between p-4 bg-slate-50 rounded-xl">
-                      <div className="flex items-center gap-3">
-                        <span className="text-xl">{MAINTENANCE_CATEGORIES.find(c => c.name === task.category)?.icon || '🔨'}</span>
-                        <div>
-                          <p className="font-semibold text-slate-900">{task.taskName}</p>
-                          <p className="text-xs text-slate-400">{task.vendorName && `${task.vendorName} · `}{task.cadence}</p>
-                        </div>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                  {tasks.filter(t => t.lastServiceDate).sort((a, b) => new Date(b.lastServiceDate) - new Date(a.lastServiceDate)).map(task => (
+                    <div key={task.id} className="flex items-center gap-4 hover:bg-slate-50 rounded-xl transition-colors" style={{ padding: '14px 16px', border: '1px solid #f1f5f9' }}>
+                      <span style={{ fontSize: '20px' }}>{MAINTENANCE_CATEGORIES.find(c => c.name === task.category)?.icon || '🔨'}</span>
+                      <div className="flex-1 min-w-0">
+                        <p className="font-semibold text-slate-900" style={{ fontSize: '15px' }}>{task.taskName}</p>
+                        <p className="text-slate-400" style={{ fontSize: '13px', marginTop: '2px' }}>
+                          {task.vendorName && `${task.vendorName} · `}{task.cadence}
+                        </p>
                       </div>
-                      <div className="text-right">
-                        <p className="text-sm font-bold text-slate-900">
+                      <div className="text-right flex-shrink-0">
+                        <p className="font-semibold text-slate-900" style={{ fontSize: '14px' }}>
                           {new Date(task.lastServiceDate).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
                         </p>
-                        {task.estimatedCost && <p className="text-xs text-slate-400">${parseFloat(task.estimatedCost).toFixed(0)}</p>}
+                        {task.estimatedCost && <p className="text-slate-400" style={{ fontSize: '12px', marginTop: '2px' }}>${parseFloat(task.estimatedCost).toFixed(0)}</p>}
                       </div>
                     </div>
                   ))}
@@ -839,36 +766,43 @@ const MaintenanceManagementPage = () => {
           </div>
         )}
 
+        {/* ── Seasonal Guide Tab ── */}
+        {activeTab === 'seasonal' && <SeasonalGuide />}
+
+        {/* ── Vendors Tab ── */}
         {activeTab === 'vendors' && (
-          <div className="space-y-6">
-            {/* Saved Vendors */}
-            <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
-              <div className="px-6 py-5 border-b border-slate-100">
-                <h2 className="text-lg font-bold text-slate-900">Your Vendors</h2>
-                <p className="text-slate-400 text-sm">Vendors saved from your maintenance tasks</p>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
+            <div className="bg-white" style={{ borderRadius: '12px', border: '1px solid #e2e8f0', overflow: 'hidden' }}>
+              <div className="border-b border-slate-100" style={{ padding: '20px 24px' }}>
+                <h2 className="font-semibold text-slate-900" style={{ fontSize: '18px' }}>Your Vendors</h2>
+                <p className="text-slate-400" style={{ fontSize: '14px', marginTop: '4px' }}>Vendors saved from your maintenance tasks.</p>
               </div>
-              <div className="p-6">
+              <div style={{ padding: '24px' }}>
                 {tasks.filter(t => t.vendorName).length === 0 ? (
-                  <p className="text-slate-400 text-center py-8">No vendors saved yet. Add vendor info when creating tasks.</p>
+                  <div className="text-center" style={{ padding: '32px 0' }}>
+                    <User className="w-10 h-10 text-slate-300 mx-auto" style={{ marginBottom: '12px' }} />
+                    <p className="font-semibold text-slate-900" style={{ fontSize: '16px' }}>No vendors saved yet.</p>
+                    <p className="text-slate-400" style={{ fontSize: '14px', marginTop: '4px' }}>Add vendor info when creating maintenance tasks.</p>
+                  </div>
                 ) : (
                   <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                     {tasks.filter(t => t.vendorName).map(task => (
-                      <div key={task.id} className="bg-slate-50 rounded-xl p-4">
-                        <div className="flex items-center gap-2 mb-3">
-                          <span className="text-xl">{MAINTENANCE_CATEGORIES.find(c => c.name === task.category)?.icon || '🔨'}</span>
+                      <div key={task.id} className="bg-slate-50 rounded-xl" style={{ padding: '16px' }}>
+                        <div className="flex items-center gap-2" style={{ marginBottom: '12px' }}>
+                          <span style={{ fontSize: '20px' }}>{MAINTENANCE_CATEGORIES.find(c => c.name === task.category)?.icon || '🔨'}</span>
                           <div>
-                            <p className="font-bold text-slate-900 text-sm">{task.vendorName}</p>
-                            <p className="text-xs text-slate-400">{task.category}</p>
+                            <p className="font-semibold text-slate-900" style={{ fontSize: '14px' }}>{task.vendorName}</p>
+                            <p className="text-slate-400" style={{ fontSize: '12px' }}>{task.category}</p>
                           </div>
                         </div>
                         {task.vendorPhone && (
-                          <a href={`tel:${task.vendorPhone}`} className="flex items-center gap-2 text-xs text-blue-600 hover:text-blue-700 mb-1">
-                            <Phone className="w-3 h-3" /> {task.vendorPhone}
+                          <a href={`tel:${task.vendorPhone}`} className="flex items-center gap-2 text-blue-600 hover:text-blue-700" style={{ fontSize: '12px', marginBottom: '4px' }}>
+                            <Phone style={{ width: '12px', height: '12px' }} /> {task.vendorPhone}
                           </a>
                         )}
                         {task.vendorEmail && (
-                          <a href={`mailto:${task.vendorEmail}`} className="flex items-center gap-2 text-xs text-blue-600 hover:text-blue-700">
-                            <Mail className="w-3 h-3" /> {task.vendorEmail}
+                          <a href={`mailto:${task.vendorEmail}`} className="flex items-center gap-2 text-blue-600 hover:text-blue-700" style={{ fontSize: '12px' }}>
+                            <Mail style={{ width: '12px', height: '12px' }} /> {task.vendorEmail}
                           </a>
                         )}
                       </div>
@@ -878,25 +812,29 @@ const MaintenanceManagementPage = () => {
               </div>
             </div>
 
-            {/* Recommended Vendors */}
-            <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
-              <div className="px-6 py-5 border-b border-slate-100">
-                <h2 className="text-lg font-bold text-slate-900">Recommended Vendors</h2>
-                <p className="text-slate-400 text-sm">Trusted vendors by category — coming soon with CasaCEO verified contractors</p>
+            <div className="bg-white" style={{ borderRadius: '12px', border: '1px solid #e2e8f0', overflow: 'hidden' }}>
+              <div className="border-b border-slate-100 flex items-center justify-between" style={{ padding: '20px 24px' }}>
+                <div>
+                  <h2 className="font-semibold text-slate-900" style={{ fontSize: '18px' }}>Recommended Vendors</h2>
+                  <p className="text-slate-400" style={{ fontSize: '14px', marginTop: '4px' }}>Trusted vendors by category.</p>
+                </div>
+                <Link to="/vendors" className="flex items-center gap-1 font-semibold hover:opacity-70 transition-opacity" style={{ color: '#1e3a5f', fontSize: '13px' }}>
+                  Full Directory <ArrowRight style={{ width: '13px', height: '13px' }} />
+                </Link>
               </div>
-              <div className="p-6">
+              <div style={{ padding: '24px' }}>
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                   {Object.entries(RECOMMENDED_VENDORS).map(([category, vendors]) => {
                     const cat = MAINTENANCE_CATEGORIES.find(c => c.name === category);
                     return (
-                      <div key={category} className={`rounded-xl border p-4 ${cat?.color || 'bg-slate-50 border-slate-200'}`}>
-                        <p className="font-bold text-slate-900 text-sm mb-2 flex items-center gap-2">
+                      <div key={category} className={`rounded-xl border ${cat?.color || 'bg-slate-50 border-slate-200'}`} style={{ padding: '14px' }}>
+                        <p className="font-semibold text-slate-900 flex items-center gap-2" style={{ fontSize: '13px', marginBottom: '8px' }}>
                           <span>{cat?.icon}</span> {category}
                         </p>
-                        <div className="space-y-1">
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
                           {vendors.map(v => (
-                            <p key={v} className="text-xs text-slate-600 flex items-center gap-1.5">
-                              <Star className="w-3 h-3 text-amber-400" /> {v}
+                            <p key={v} className="text-slate-600 flex items-center gap-1.5" style={{ fontSize: '12px' }}>
+                              <Star style={{ width: '11px', height: '11px', color: '#f59e0b' }} /> {v}
                             </p>
                           ))}
                         </div>
@@ -910,23 +848,8 @@ const MaintenanceManagementPage = () => {
         )}
       </div>
 
-      {/* Modals */}
-      {showTaskModal && (
-        <TaskModal
-          task={editingTask}
-          onSave={handleSaveTask}
-          onClose={() => { setShowTaskModal(false); setEditingTask(null); }}
-        />
-      )}
-
-      {loggingTask && (
-        <ServiceLogModal
-          task={loggingTask}
-          logs={logs[loggingTask.id] || []}
-          onAddLog={handleLogService}
-          onClose={() => setLoggingTask(null)}
-        />
-      )}
+      {showTaskModal && <TaskModal task={editingTask} onSave={handleSaveTask} onClose={() => { setShowTaskModal(false); setEditingTask(null); }} />}
+      {loggingTask && <ServiceLogModal task={loggingTask} logs={logs[loggingTask.id] || []} onAddLog={handleLogService} onClose={() => setLoggingTask(null)} />}
     </>
   );
 };
