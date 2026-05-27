@@ -69,6 +69,13 @@ import SecurityPrivacyPage from '@/pages/SecurityPrivacyPage.jsx';
 import AboutPage from '@/pages/AboutPage.jsx';
 import ContactPage from '@/pages/ContactPage.jsx';
 
+// ── Tier-5 Legal & System Pages (public, no auth) ───────────────────
+import PrivacyPolicyPage from '@/pages/PrivacyPolicyPage.jsx';
+import TermsOfServicePage from '@/pages/TermsOfServicePage.jsx';
+import CookiePolicyPage from '@/pages/CookiePolicyPage.jsx';
+import StatusPage from '@/pages/StatusPage.jsx';
+import ChangelogPage from '@/pages/ChangelogPage.jsx';
+
 // ═══════════════════════════════════════════════════════════════════════
 
 const AppContent = () => {
@@ -112,6 +119,13 @@ const AppContent = () => {
           <Route path="/security" element={<SecurityPrivacyPage />} />
           <Route path="/about" element={<AboutPage />} />
           <Route path="/contact" element={<ContactPage />} />
+
+          {/* ── Tier-5 Legal & System Pages (public, no Layout) ───── */}
+          <Route path="/privacy" element={<PrivacyPolicyPage />} />
+          <Route path="/terms" element={<TermsOfServicePage />} />
+          <Route path="/cookies" element={<CookiePolicyPage />} />
+          <Route path="/status" element={<StatusPage />} />
+          <Route path="/changelog" element={<ChangelogPage />} />
 
           {/* ── Core (protected, no Layout wrapper) ───────────────── */}
           <Route path="/dashboard" element={<ProtectedRoute><DashboardPage /></ProtectedRoute>} />
