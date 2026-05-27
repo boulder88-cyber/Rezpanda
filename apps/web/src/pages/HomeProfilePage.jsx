@@ -3,117 +3,106 @@ import { Helmet } from 'react-helmet';
 import { Link } from 'react-router-dom';
 import {
   Home, Bed, Bath, Square, Calendar, Edit3, Camera, Share2,
-  TrendingUp, TrendingDown, DollarSign, AlertTriangle, AlertCircle,
-  CheckCircle2, Clock, Wrench, FileText, CreditCard, FolderOpen,
-  Building2, TreePine, ShieldCheck, BookOpen, Key, LineChart,
-  ArrowRight, ChevronRight, Zap, Droplets, Wind, Flame,
-  BarChart2, Activity, Info, Star
+  TrendingUp, DollarSign, Clock, Wrench, FileText, CreditCard,
+  FolderOpen, Building2, TreePine, ShieldCheck, BookOpen, Key,
+  LineChart, ArrowRight, Zap, Droplets, Wind, Flame, Activity,
+  Star, Bell, ChevronDown, Filter, Download, BarChart2, AlertTriangle,
+  CheckCircle2, User, LayoutGrid
 } from 'lucide-react';
 
 // ─── Mock Data ────────────────────────────────────────────────────────
 const HOME = {
-  address: '2847 Peachtree Road NE',
-  city: 'Atlanta, GA 30305',
+  address: '123 Oakwood Lane',
+  city: 'St. Simons Island, GA 31522',
   photo: 'https://images.unsplash.com/photo-1568605114967-8130f3a36994?w=1200&q=80',
-  beds: 4, baths: 3, sqft: '3,240', lot: '0.42 ac',
-  yearBuilt: 2003, type: 'Single Family', lastUpdated: 'Today',
-  purchasePrice: 685000, purchaseDate: 'Mar 2019',
-  estimatedValue: 924000, valueConfidence: 'High',
-  mortgageBalance: 521000, interestRate: 3.25,
-  lender: 'Wells Fargo', monthlyPayment: 2847,
-  equity: 403000, equityPct: 44,
-  valueTrend: [
-    { label: 'Purchase', value: 685 }, { label: '2020', value: 710 },
-    { label: '2021', value: 780 }, { label: '2022', value: 870 },
-    { label: '2023', value: 895 }, { label: 'Now', value: 924 },
+  beds: 4, baths: 3.5, sqft: '2,850', lot: '0.35 acres',
+  yearBuilt: 2008, type: 'Single-family', lastUpdated: 'Synced 2 days ago',
+  purchasePrice: 850000, purchaseDate: 'Jun 2018',
+  estimatedValue: 1245000, valueConfidence: 'High',
+  mortgageBalance: 630000, interestRate: 3.10,
+  lender: 'First Coastal Bank', monthlyPayment: 3250,
+  loanType: '30-year fixed',
+  equity: 615000, equityPct: 49,
+  valueTrend1Y: [
+    { label: 'Jun', value: 1180 }, { label: 'Aug', value: 1195 },
+    { label: 'Oct', value: 1210 }, { label: 'Dec', value: 1220 },
+    { label: 'Feb', value: 1235 }, { label: 'Now', value: 1245 },
+  ],
+  valueTrend5Y: [
+    { label: '2021', value: 980 }, { label: '2022', value: 1050 },
+    { label: '2023', value: 1120 }, { label: '2024', value: 1190 },
+    { label: '2025', value: 1225 }, { label: 'Now', value: 1245 },
+  ],
+  valueTrendAll: [
+    { label: '2018', value: 850 }, { label: '2019', value: 890 },
+    { label: '2020', value: 930 }, { label: '2022', value: 1050 },
+    { label: '2024', value: 1190 }, { label: 'Now', value: 1245 },
   ],
 };
 
 const SYSTEMS = [
-  { name: 'Roof', icon: Home, age: 8, lifespan: 25, condition: 'Good', cost: '$12,000–18,000', color: '#059669', bg: '#ecfdf5' },
-  { name: 'HVAC', icon: Wind, age: 11, lifespan: 15, condition: 'Fair', cost: '$6,000–10,000', color: '#d97706', bg: '#fffbeb' },
-  { name: 'Water Heater', icon: Flame, age: 13, lifespan: 12, condition: 'Needs Attention', cost: '$1,200–2,000', color: '#dc2626', bg: '#fef2f2' },
-  { name: 'Plumbing', icon: Droplets, age: 21, lifespan: 50, condition: 'Good', color: '#059669', bg: '#ecfdf5', cost: 'Varies' },
-  { name: 'Electrical', icon: Zap, age: 21, lifespan: 40, condition: 'Good', cost: 'Varies', color: '#059669', bg: '#ecfdf5' },
-  { name: 'Foundation', icon: Square, age: 21, lifespan: 100, condition: 'Good', cost: '$5,000–30,000', color: '#059669', bg: '#ecfdf5' },
-  { name: 'Windows', icon: Building2, age: 21, lifespan: 30, condition: 'Fair', cost: '$8,000–15,000', color: '#d97706', bg: '#fffbeb' },
-  { name: 'Appliances', icon: Zap, age: 4, lifespan: 15, condition: 'Good', cost: 'Varies', color: '#059669', bg: '#ecfdf5' },
+  { name: 'Roof', icon: Home, age: 17, lifespan: 20, condition: 'Fair', cost: '$18,000', color: '#d97706', bg: '#fffbeb' },
+  { name: 'HVAC', icon: Wind, age: 11, lifespan: 15, condition: 'Fair', cost: '$8,000', color: '#d97706', bg: '#fffbeb' },
+  { name: 'Water Heater', icon: Flame, age: 13, lifespan: 12, condition: 'Needs Attention', cost: '$1,500', color: '#dc2626', bg: '#fef2f2' },
+  { name: 'Plumbing', icon: Droplets, age: 16, lifespan: 50, condition: 'Good', cost: 'Varies', color: '#059669', bg: '#ecfdf5' },
+  { name: 'Electrical', icon: Zap, age: 16, lifespan: 40, condition: 'Good', cost: 'Varies', color: '#059669', bg: '#ecfdf5' },
+  { name: 'Appliances', icon: Zap, age: 5, lifespan: 15, condition: 'Good', cost: 'Varies', color: '#059669', bg: '#ecfdf5' },
+  { name: 'Foundation', icon: Square, age: 16, lifespan: 100, condition: 'Good', cost: '$5,000+', color: '#059669', bg: '#ecfdf5' },
+  { name: 'Windows', icon: Building2, age: 16, lifespan: 30, condition: 'Good', cost: '$10,000', color: '#059669', bg: '#ecfdf5' },
+  { name: 'Exterior', icon: Home, age: 16, lifespan: 20, condition: 'Fair', cost: '$6,000', color: '#d97706', bg: '#fffbeb' },
+  { name: 'Septic/Sewer', icon: Droplets, age: 16, lifespan: 30, condition: 'Good', cost: '$8,000', color: '#059669', bg: '#ecfdf5' },
 ];
 
 const ALERTS = [
-  { severity: 'High', message: 'Water heater is past typical lifespan', action: 'Schedule Replacement', module: '/maintenance-management', icon: Flame },
-  { severity: 'Medium', message: 'HVAC filter overdue by 30 days', action: 'Log Service', module: '/maintenance-management', icon: Wind },
-  { severity: 'Medium', message: 'Homeowner insurance renews in 45 days', action: 'Review Policy', module: '/documents', icon: ShieldCheck },
-  { severity: 'Low', message: 'Property tax payment due next month', action: 'View Details', module: '/property-tax', icon: FileText },
-  { severity: 'Low', message: 'Roof enters final third of expected lifespan in 2 years', action: 'Plan Ahead', module: '/maintenance-management', icon: Home },
+  { severity: 'High', title: 'Roof nearing end of expected lifespan', sub: 'Installed 2008 · Typical lifespan 20 years · Est. replacement: $18,000', due: 'Within 12 months', action: 'Schedule Vendor', module: '/maintenance-management', icon: Home },
+  { severity: 'High', title: 'Water heater past typical lifespan', sub: 'Age: 13 years · Expected: 12 years · Est. replacement: $1,500', due: 'Immediate', action: 'Schedule Replacement', module: '/maintenance-management', icon: Flame },
+  { severity: 'Medium', title: 'HVAC filter overdue by 30 days', sub: 'Last serviced: Feb 2026 · Filter replacement recommended', due: 'This week', action: 'Log Service', module: '/maintenance-management', icon: Wind },
+  { severity: 'Medium', title: 'Homeowner insurance renews in 45 days', sub: 'Policy expires Jul 10, 2026 · Review for coverage gaps', due: 'Jul 10, 2026', action: 'Review Policy', module: '/documents', icon: ShieldCheck },
+  { severity: 'Low', title: 'Property tax payment due next month', sub: 'Glynn County · Est. $6,200 due Q3 2026', due: 'Jun 30, 2026', action: 'View Details', module: '/property-tax', icon: FileText },
 ];
 
 const ACTIVITY = [
-  { date: 'May 22', type: 'Maintenance', description: 'Annual HVAC inspection completed', icon: Wrench, color: '#f97316' },
-  { date: 'May 18', type: 'Document', description: 'Homeowner insurance policy uploaded', icon: FileText, color: '#7c3aed' },
-  { date: 'May 10', type: 'Bill', description: 'Mortgage payment logged — $2,847', icon: CreditCard, color: '#2563eb' },
-  { date: 'Apr 30', type: 'Valuation', description: 'Home value updated to $924,000', icon: TrendingUp, color: '#059669' },
-  { date: 'Apr 15', type: 'Expense', description: 'Landscaping service — $320', icon: TreePine, color: '#16a34a' },
-  { date: 'Apr 2', type: 'Maintenance', description: 'Exterior paint touch-up completed', icon: Wrench, color: '#f97316' },
+  { date: 'May 22', type: 'Maintenance', description: 'Annual HVAC inspection completed', sub: 'Completed by Coastal Cooling · Logged 3 days ago', icon: Wrench, color: '#f97316' },
+  { date: 'May 18', type: 'Document', description: 'Homeowner insurance policy uploaded', sub: 'Policy #HO-2847 · Expires Jul 2026', icon: FileText, color: '#7c3aed' },
+  { date: 'May 10', type: 'Bill', description: 'Mortgage payment logged — $3,250', sub: 'First Coastal Bank · Auto-pay confirmed', icon: CreditCard, color: '#2563eb' },
+  { date: 'Apr 30', type: 'Valuation', description: 'Home value updated to $1,245,000', sub: 'Automated valuation · High confidence', icon: TrendingUp, color: '#059669' },
+  { date: 'Apr 15', type: 'Expense', description: 'Landscaping service — $320', sub: 'Island Lawn & Garden · Recurring monthly', icon: TreePine, color: '#16a34a' },
+  { date: 'Apr 2', type: 'Maintenance', description: 'Exterior paint touch-up completed', sub: 'Golden Isles Painting · Receipt uploaded', icon: Wrench, color: '#f97316' },
 ];
 
 const MODULES = [
-  { title: 'Maintenance', icon: Wrench, link: '/maintenance-management', color: '#f97316', bg: '#fff7ed' },
-  { title: 'Bill Pay', icon: CreditCard, link: '/bill-pay', color: '#2563eb', bg: '#eff6ff' },
-  { title: 'Expenses', icon: DollarSign, link: '/expenses', color: '#059669', bg: '#ecfdf5' },
-  { title: 'Documents', icon: FolderOpen, link: '/documents', color: '#7c3aed', bg: '#f5f3ff' },
-  { title: 'Utilities', icon: Building2, link: '/utilities', color: '#0891b2', bg: '#ecfeff' },
-  { title: 'Home Value', icon: TrendingUp, link: '/home-valuation', color: '#1e3a5f', bg: '#eef2f8' },
-  { title: 'Rentals', icon: Key, link: '/rental-properties', color: '#db2777', bg: '#fdf2f8' },
-  { title: 'Landscaping', icon: TreePine, link: '/plants', color: '#16a34a', bg: '#f0fdf4' },
-  { title: 'Warranty', icon: ShieldCheck, link: '/warranty-tracker', color: '#059669', bg: '#ecfdf5' },
-  { title: 'Property Tax', icon: FileText, link: '/property-tax', color: '#dc2626', bg: '#fef2f2' },
-  { title: 'Learning Hub', icon: BookOpen, link: '/learn', color: '#7c3aed', bg: '#f5f3ff' },
-  { title: 'Reports', icon: LineChart, link: '/expenses', color: '#7c3aed', bg: '#faf5ff' },
+  { title: 'Maintenance', desc: 'Track past and upcoming work', icon: Wrench, link: '/maintenance-management', color: '#f97316', bg: '#fff7ed' },
+  { title: 'Bills & Utilities', desc: 'See recurring costs and due dates', icon: CreditCard, link: '/bill-pay', color: '#2563eb', bg: '#eff6ff' },
+  { title: 'Expenses', desc: 'Categorize and export home spending', icon: DollarSign, link: '/expenses', color: '#059669', bg: '#ecfdf5' },
+  { title: 'Documents', desc: 'Store deeds, policies, inspections', icon: FolderOpen, link: '/documents', color: '#7c3aed', bg: '#f5f3ff' },
+  { title: 'Valuation', desc: 'Compare estimates and scenarios', icon: TrendingUp, link: '/home-valuation', color: '#1e3a5f', bg: '#eef2f8' },
+  { title: 'Rentals', desc: 'Track rental income & tax items', icon: Key, link: '/rental-properties', color: '#db2777', bg: '#fdf2f8' },
+  { title: 'Warranty', desc: 'Never miss a coverage window', icon: ShieldCheck, link: '/warranty-tracker', color: '#059669', bg: '#ecfdf5' },
+  { title: 'Landscaping', desc: 'Log recurring outdoor services', icon: TreePine, link: '/plants', color: '#16a34a', bg: '#f0fdf4' },
+  { title: 'Property Tax', desc: 'Track assessments and payments', icon: FileText, link: '/property-tax', color: '#dc2626', bg: '#fef2f2' },
+  { title: 'Learning Hub', desc: 'Guides for smarter home ownership', icon: BookOpen, link: '/learn', color: '#7c3aed', bg: '#f5f3ff' },
+  { title: 'Ready to Sell', desc: 'Prepare this home for market', icon: Star, link: '/ready-to-sell', color: '#1A1A1A', bg: '#f1f5f9' },
+  { title: 'Reports', desc: 'Export data-ready home reports', icon: LineChart, link: '/expenses', color: '#7c3aed', bg: '#faf5ff' },
 ];
 
-// ─── Condition Badge ──────────────────────────────────────────────────
+// ─── Helpers ──────────────────────────────────────────────────────────
 const ConditionBadge = ({ condition }) => {
-  const styles = {
-    'Good': 'bg-green-100 text-green-700',
-    'Fair': 'bg-amber-100 text-amber-700',
-    'Needs Attention': 'bg-red-100 text-red-600',
-  };
-  return (
-    <span className={`text-xs font-bold px-2 py-0.5 rounded-full ${styles[condition]}`}>
-      {condition}
-    </span>
-  );
+  const s = { 'Good': 'bg-green-100 text-green-700', 'Fair': 'bg-amber-100 text-amber-700', 'Needs Attention': 'bg-red-100 text-red-600' };
+  return <span className={`text-xs font-bold px-2 py-0.5 rounded-full ${s[condition]}`}>{condition}</span>;
 };
 
-// ─── Severity Badge ───────────────────────────────────────────────────
-const SeverityBadge = ({ severity }) => {
-  const styles = {
-    'High': 'bg-red-100 text-red-600',
-    'Medium': 'bg-amber-100 text-amber-700',
-    'Low': 'bg-blue-100 text-blue-600',
-  };
-  return (
-    <span className={`text-xs font-bold px-2 py-0.5 rounded-full ${styles[severity]}`}>
-      {severity}
-    </span>
-  );
+const SeverityPill = ({ severity }) => {
+  const s = { 'High': 'bg-red-100 text-red-600', 'Medium': 'bg-amber-100 text-amber-700', 'Low': 'bg-blue-100 text-blue-600' };
+  return <span className={`text-xs font-bold px-2 py-0.5 rounded-full ${s[severity]}`}>{severity}</span>;
 };
 
-// ─── Mini Bar Chart ───────────────────────────────────────────────────
 const ValueChart = ({ data }) => {
   const max = Math.max(...data.map(d => d.value));
   return (
-    <div className="flex items-end gap-1.5 h-16 mt-3">
+    <div className="flex items-end gap-1.5 h-14">
       {data.map((d, i) => (
         <div key={i} className="flex-1 flex flex-col items-center gap-1">
-          <div
-            className="w-full rounded-t-md transition-all"
-            style={{
-              height: `${(d.value / max) * 52}px`,
-              background: i === data.length - 1 ? '#1e3a5f' : '#cbd5e1',
-            }}
-          />
+          <div className="w-full rounded-t-sm" style={{ height: `${(d.value / max) * 46}px`, background: i === data.length - 1 ? '#1e3a5f' : '#cbd5e1' }} />
           <span className="text-slate-400 text-[9px] font-medium">{d.label}</span>
         </div>
       ))}
@@ -121,294 +110,396 @@ const ValueChart = ({ data }) => {
   );
 };
 
-// ─── System Health Bar ────────────────────────────────────────────────
 const HealthBar = ({ age, lifespan }) => {
   const pct = Math.min((age / lifespan) * 100, 100);
   const color = pct > 90 ? '#dc2626' : pct > 65 ? '#d97706' : '#059669';
   return (
-    <div className="w-full bg-slate-100 rounded-full h-1.5 mt-1.5">
-      <div className="h-1.5 rounded-full transition-all" style={{ width: `${pct}%`, background: color }} />
+    <div className="w-full bg-slate-100 rounded-full h-1.5 mt-1">
+      <div className="h-1.5 rounded-full" style={{ width: `${pct}%`, background: color }} />
     </div>
   );
 };
 
 // ─── Main Page ────────────────────────────────────────────────────────
 const HomeProfilePage = () => {
-  const [activeTab, setActiveTab] = useState('overview');
-  const equity = HOME.estimatedValue - HOME.mortgageBalance;
+  const [chartTab, setChartTab] = useState('1Y');
+  const [alertFilter, setAlertFilter] = useState('All');
+
+  const chartData = chartTab === '1Y' ? HOME.valueTrend1Y : chartTab === '5Y' ? HOME.valueTrend5Y : HOME.valueTrendAll;
+  const filteredAlerts = alertFilter === 'All' ? ALERTS : ALERTS.filter(a => a.severity === alertFilter);
   const gain = HOME.estimatedValue - HOME.purchasePrice;
   const gainPct = ((gain / HOME.purchasePrice) * 100).toFixed(1);
 
   return (
     <>
       <Helmet><title>Home Profile — CasaCEO</title></Helmet>
-
       <div className="min-h-screen bg-slate-50">
 
         {/* ── Nav ── */}
         <header className="sticky top-0 z-30 bg-white border-b border-slate-200 px-4 sm:px-6 lg:px-8 py-3 flex items-center justify-between shadow-sm">
-          <Link to="/dashboard" className="flex items-center gap-2">
+          <Link to="/dashboard" className="flex items-center gap-2 flex-shrink-0">
             <div className="w-9 h-9 rounded-xl flex items-center justify-center" style={{ background: '#1e3a5f' }}>
               <Home className="w-5 h-5 text-white" />
             </div>
-            <span className="font-extrabold text-lg hidden sm:block" style={{ color: '#1e3a5f' }}>
-              Casa<span style={{ color: '#c9a96e' }}>CEO</span>
-            </span>
+            <span className="font-extrabold text-lg hidden sm:block" style={{ color: '#1e3a5f' }}>Casa<span style={{ color: '#c9a96e' }}>CEO</span></span>
           </Link>
-          <div className="flex items-center gap-2">
-            <button className="flex items-center gap-1.5 px-3 py-2 rounded-xl border border-slate-200 text-sm font-medium text-slate-600 hover:bg-slate-50 transition-colors">
-              <Edit3 className="w-3.5 h-3.5" /> Edit
-            </button>
-            <button className="flex items-center gap-1.5 px-3 py-2 rounded-xl border border-slate-200 text-sm font-medium text-slate-600 hover:bg-slate-50 transition-colors">
-              <Share2 className="w-3.5 h-3.5" /> Share
-            </button>
-            <Link to="/ready-to-sell" className="flex items-center gap-1.5 px-4 py-2 rounded-xl text-sm font-bold text-white hover:opacity-90 transition-all" style={{ background: '#1A1A1A' }}>
-              <Star className="w-3.5 h-3.5" /> Ready to Sell
+
+          {/* Center: Home selector */}
+          <button className="flex items-center gap-2 bg-slate-50 border border-slate-200 rounded-2xl px-4 py-2 hover:shadow-sm transition-all">
+            <MapPinIcon />
+            <div className="text-left hidden sm:block">
+              <p className="font-bold text-slate-900 text-sm leading-none">{HOME.address}</p>
+              <p className="text-slate-400 text-xs mt-0.5">{HOME.city}</p>
+            </div>
+            <ChevronDown className="w-4 h-4 text-slate-400" />
+          </button>
+
+          <div className="flex items-center gap-3">
+            <Link to="/dashboard" className="hidden sm:flex items-center gap-1.5 text-xs font-semibold text-slate-500 hover:text-slate-700 transition-colors">
+              <LayoutGrid className="w-3.5 h-3.5" /> Portfolio View
             </Link>
+            <button className="w-9 h-9 rounded-xl border border-slate-200 flex items-center justify-center hover:bg-slate-50 transition-colors relative">
+              <Bell className="w-4 h-4 text-slate-500" />
+              <span className="absolute top-1.5 right-1.5 w-2 h-2 bg-red-500 rounded-full" />
+            </button>
+            <div className="w-9 h-9 rounded-xl flex items-center justify-center text-white font-bold text-sm" style={{ background: '#1e3a5f' }}>D</div>
           </div>
         </header>
 
         {/* ── Hero ── */}
-        <div className="relative h-64 sm:h-80 overflow-hidden">
-          <img src={HOME.photo} alt="Home" className="w-full h-full object-cover" />
-          <div className="absolute inset-0" style={{ background: 'linear-gradient(to top, rgba(15,23,42,0.85) 0%, rgba(15,23,42,0.2) 60%, transparent 100%)' }} />
-          <div className="absolute bottom-0 left-0 right-0 p-6 sm:p-8">
-            <p className="text-blue-200 text-xs font-semibold uppercase tracking-widest mb-1">System of Record</p>
-            <h1 className="text-white font-extrabold text-2xl sm:text-3xl leading-tight">{HOME.address}</h1>
-            <p className="text-blue-200 text-sm mt-0.5">{HOME.city}</p>
-          </div>
-          <button className="absolute top-4 right-4 flex items-center gap-1.5 bg-white/20 backdrop-blur-sm text-white text-xs font-semibold px-3 py-2 rounded-xl hover:bg-white/30 transition-colors">
-            <Camera className="w-3.5 h-3.5" /> Add Photo
-          </button>
-        </div>
+        <div className="bg-white border-b border-slate-200">
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
+            <div className="flex flex-col lg:flex-row gap-6">
 
-        {/* ── Vitals Strip ── */}
-        <div className="bg-white border-b border-slate-200 px-4 sm:px-8">
-          <div className="max-w-7xl mx-auto">
-            <div className="flex items-center gap-6 sm:gap-10 py-4 overflow-x-auto scrollbar-hide">
+              {/* Photo 70% */}
+              <div className="lg:w-[70%] relative rounded-2xl overflow-hidden h-56 sm:h-72">
+                <img src={HOME.photo} alt="Home" className="w-full h-full object-cover" />
+                <div className="absolute inset-0" style={{ background: 'linear-gradient(to top, rgba(15,23,42,0.8) 0%, transparent 60%)' }} />
+                <div className="absolute bottom-0 left-0 p-6">
+                  <span className="text-blue-200 text-xs font-semibold uppercase tracking-widest block mb-1">System of Record for This Home</span>
+                  <h1 className="text-white font-extrabold text-2xl sm:text-3xl leading-tight">{HOME.address}</h1>
+                  <p className="text-blue-200 text-sm mt-1">{HOME.city}</p>
+                </div>
+              </div>
+
+              {/* Actions 30% */}
+              <div className="lg:w-[30%] flex flex-col justify-center gap-3">
+                <button className="flex items-center justify-center gap-2 w-full py-3 rounded-2xl font-bold text-white text-sm hover:opacity-90 transition-all" style={{ background: '#1e3a5f' }}>
+                  <Share2 className="w-4 h-4" /> Share Home Profile
+                </button>
+                <button className="flex items-center justify-center gap-2 w-full py-3 rounded-2xl font-semibold text-slate-700 text-sm border border-slate-200 hover:bg-slate-50 transition-all">
+                  <Edit3 className="w-4 h-4" /> Edit Home Details
+                </button>
+                <button className="text-sm font-medium text-slate-400 hover:text-slate-600 transition-colors text-center">
+                  <Camera className="w-3.5 h-3.5 inline mr-1" /> Add / Change Photo
+                </button>
+              </div>
+            </div>
+
+            {/* Vitals Strip */}
+            <div className="flex items-center gap-0 mt-5 bg-slate-50 rounded-2xl border border-slate-100 overflow-x-auto">
               {[
-                { icon: <Bed className="w-4 h-4" />, value: HOME.beds, label: 'Beds' },
-                { icon: <Bath className="w-4 h-4" />, value: HOME.baths, label: 'Baths' },
-                { icon: <Square className="w-4 h-4" />, value: HOME.sqft, label: 'Sq Ft' },
-                { icon: <TreePine className="w-4 h-4" />, value: HOME.lot, label: 'Lot' },
-                { icon: <Calendar className="w-4 h-4" />, value: HOME.yearBuilt, label: 'Built' },
-                { icon: <Home className="w-4 h-4" />, value: HOME.type, label: 'Type' },
-                { icon: <Clock className="w-4 h-4" />, value: HOME.lastUpdated, label: 'Updated' },
-              ].map((v, i) => (
-                <div key={i} className="flex items-center gap-2 flex-shrink-0">
-                  <span className="text-slate-400">{v.icon}</span>
-                  <div>
-                    <p className="font-bold text-slate-900 text-sm leading-none">{v.value}</p>
-                    <p className="text-slate-400 text-xs mt-0.5">{v.label}</p>
-                  </div>
-                  {i < 6 && <div className="w-px h-6 bg-slate-200 ml-4" />}
+                { label: 'Beds', value: `${HOME.beds} bd` },
+                { label: 'Baths', value: `${HOME.baths} ba` },
+                { label: 'Size', value: `${HOME.sqft} sqft` },
+                { label: 'Lot', value: HOME.lot },
+                { label: 'Year Built', value: HOME.yearBuilt },
+                { label: 'Home Type', value: HOME.type },
+                { label: 'Last Updated', value: HOME.lastUpdated },
+              ].map((v, i, arr) => (
+                <div key={i} className={`flex-1 min-w-0 px-4 py-3 text-center flex-shrink-0 ${i < arr.length - 1 ? 'border-r border-slate-200' : ''}`}>
+                  <p className="font-bold text-slate-900 text-sm whitespace-nowrap">{v.value}</p>
+                  <p className="text-slate-400 text-xs mt-0.5">{v.label}</p>
                 </div>
               ))}
             </div>
           </div>
         </div>
 
-        <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-8">
+        {/* ── Two Column Body ── */}
+        <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+          <div className="flex flex-col lg:flex-row gap-6">
 
-          {/* ── Row 1: Value + Equity LEFT | Systems RIGHT ── */}
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            {/* ── LEFT COLUMN 60% ── */}
+            <div className="lg:w-[60%] space-y-6">
 
-            {/* Value + Equity */}
-            <div className="bg-white rounded-3xl border border-slate-100 p-7 shadow-sm space-y-6">
-              <div className="flex items-center justify-between">
-                <h2 className="font-extrabold text-slate-900 text-base">Value & Equity</h2>
-                <span className="text-xs font-semibold bg-green-100 text-green-700 px-2.5 py-1 rounded-full">{HOME.valueConfidence} Confidence</span>
-              </div>
+              {/* Value & Equity */}
+              <div className="bg-white rounded-3xl border border-slate-100 p-7 shadow-sm">
+                <h2 className="font-extrabold text-slate-900 text-base mb-5">Home Value & Equity</h2>
 
-              {/* Big value number */}
-              <div>
-                <p className="text-slate-400 text-xs font-medium uppercase tracking-wide mb-1">Estimated Value</p>
-                <p className="text-4xl font-extrabold text-slate-900">${HOME.estimatedValue.toLocaleString()}</p>
-                <p className="text-green-600 text-sm font-semibold mt-1 flex items-center gap-1">
-                  <TrendingUp className="w-3.5 h-3.5" />
-                  +${gain.toLocaleString()} ({gainPct}%) since purchase
-                </p>
-              </div>
-
-              {/* Value trend chart */}
-              <div>
-                <p className="text-slate-400 text-xs font-medium uppercase tracking-wide mb-1">Value History</p>
-                <ValueChart data={HOME.valueTrend} />
-              </div>
-
-              {/* Equity + mortgage grid */}
-              <div className="grid grid-cols-2 gap-4 pt-2 border-t border-slate-100">
-                <div>
-                  <p className="text-slate-400 text-xs font-medium uppercase tracking-wide mb-1">Equity</p>
-                  <p className="text-2xl font-extrabold" style={{ color: '#1e3a5f' }}>${equity.toLocaleString()}</p>
-                  <p className="text-slate-400 text-xs mt-0.5">{HOME.equityPct}% of value</p>
+                <div className="grid grid-cols-2 gap-6 mb-5">
+                  <div>
+                    <p className="text-slate-400 text-xs font-medium uppercase tracking-wide mb-1">Estimated Value</p>
+                    <p className="text-3xl font-extrabold text-slate-900">${HOME.estimatedValue.toLocaleString()}</p>
+                    <p className="text-slate-400 text-xs mt-1">Source: Automated valuation · Confidence: <span className="text-green-600 font-semibold">High</span></p>
+                  </div>
+                  <div>
+                    <p className="text-slate-400 text-xs font-medium uppercase tracking-wide mb-1">Owner Equity</p>
+                    <p className="text-3xl font-extrabold" style={{ color: '#1e3a5f' }}>${HOME.equity.toLocaleString()}</p>
+                    <p className="text-slate-400 text-xs mt-1">Mortgage balance: ${HOME.mortgageBalance.toLocaleString()} at {HOME.interestRate}%</p>
+                  </div>
                 </div>
-                <div>
-                  <p className="text-slate-400 text-xs font-medium uppercase tracking-wide mb-1">Mortgage</p>
-                  <p className="text-2xl font-extrabold text-slate-900">${HOME.mortgageBalance.toLocaleString()}</p>
-                  <p className="text-slate-400 text-xs mt-0.5">{HOME.interestRate}% · {HOME.lender}</p>
-                </div>
-                <div>
-                  <p className="text-slate-400 text-xs font-medium uppercase tracking-wide mb-1">Monthly Payment</p>
-                  <p className="text-lg font-bold text-slate-900">${HOME.monthlyPayment.toLocaleString()}</p>
-                </div>
-                <div>
-                  <p className="text-slate-400 text-xs font-medium uppercase tracking-wide mb-1">Purchase Price</p>
-                  <p className="text-lg font-bold text-slate-900">${HOME.purchasePrice.toLocaleString()}</p>
-                  <p className="text-slate-400 text-xs mt-0.5">{HOME.purchaseDate}</p>
-                </div>
-              </div>
-            </div>
 
-            {/* Systems Health */}
-            <div className="bg-white rounded-3xl border border-slate-100 p-7 shadow-sm">
-              <div className="flex items-center justify-between mb-6">
-                <h2 className="font-extrabold text-slate-900 text-base">Systems & Structure</h2>
-                <span className="text-xs text-slate-400 font-medium">Digital Twin</span>
+                {/* Chart with tabs */}
+                <div className="mb-5">
+                  <div className="flex items-center justify-between mb-3">
+                    <p className="text-slate-400 text-xs font-medium uppercase tracking-wide">Value Trend</p>
+                    <div className="flex bg-slate-100 rounded-xl p-0.5 gap-0.5">
+                      {['1Y', '5Y', 'Since Purchase'].map(tab => (
+                        <button key={tab} onClick={() => setChartTab(tab)}
+                          className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-all ${chartTab === tab ? 'bg-white text-slate-900 shadow-sm' : 'text-slate-500 hover:text-slate-700'}`}>
+                          {tab}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                  <ValueChart data={chartData} />
+                </div>
+
+                {/* Mortgage details */}
+                <div className="border-t border-slate-100 pt-5 grid grid-cols-3 gap-4">
+                  <div>
+                    <p className="text-slate-400 text-xs font-medium uppercase tracking-wide mb-1">Lender</p>
+                    <p className="font-bold text-slate-900 text-sm">{HOME.lender}</p>
+                  </div>
+                  <div>
+                    <p className="text-slate-400 text-xs font-medium uppercase tracking-wide mb-1">Monthly</p>
+                    <p className="font-bold text-slate-900 text-sm">${HOME.monthlyPayment.toLocaleString()}</p>
+                  </div>
+                  <div>
+                    <p className="text-slate-400 text-xs font-medium uppercase tracking-wide mb-1">Loan Type</p>
+                    <p className="font-bold text-slate-900 text-sm">{HOME.loanType}</p>
+                  </div>
+                </div>
+                <button className="mt-3 text-xs font-semibold flex items-center gap-1 hover:opacity-70 transition-opacity" style={{ color: '#1e3a5f' }}>
+                  View full mortgage details <ArrowRight className="w-3 h-3" />
+                </button>
               </div>
-              <div className="space-y-4">
-                {SYSTEMS.map((sys, i) => {
-                  const Icon = sys.icon;
-                  return (
-                    <div key={i} className="flex items-start gap-3">
-                      <div className="w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0" style={{ background: sys.bg }}>
-                        <Icon className="w-4 h-4" style={{ color: sys.color }} />
-                      </div>
-                      <div className="flex-1 min-w-0">
-                        <div className="flex items-center justify-between">
-                          <p className="font-semibold text-slate-900 text-sm">{sys.name}</p>
-                          <ConditionBadge condition={sys.condition} />
+
+              {/* Alerts & Risks */}
+              <div className="bg-white rounded-3xl border border-slate-100 p-7 shadow-sm">
+                <div className="flex items-center justify-between mb-5">
+                  <div className="flex items-center gap-2">
+                    <Activity className="w-4 h-4" style={{ color: '#e8604c' }} />
+                    <h2 className="font-extrabold text-slate-900 text-base">Alerts & Risks</h2>
+                  </div>
+                  <div className="flex bg-slate-100 rounded-xl p-0.5 gap-0.5">
+                    {['All', 'High', 'Medium', 'Low'].map(f => (
+                      <button key={f} onClick={() => setAlertFilter(f)}
+                        className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-all ${alertFilter === f ? 'bg-white text-slate-900 shadow-sm' : 'text-slate-500 hover:text-slate-700'}`}>
+                        {f}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+                <div className="space-y-3">
+                  {filteredAlerts.map((alert, i) => {
+                    const Icon = alert.icon;
+                    return (
+                      <div key={i} className={`flex items-start gap-4 p-4 rounded-2xl border ${alert.severity === 'High' ? 'bg-red-50 border-red-100' : alert.severity === 'Medium' ? 'bg-amber-50 border-amber-100' : 'bg-blue-50 border-blue-100'}`}>
+                        <div className={`w-9 h-9 rounded-xl flex items-center justify-center flex-shrink-0 mt-0.5 ${alert.severity === 'High' ? 'bg-red-100' : alert.severity === 'Medium' ? 'bg-amber-100' : 'bg-blue-100'}`}>
+                          <Icon className={`w-4 h-4 ${alert.severity === 'High' ? 'text-red-500' : alert.severity === 'Medium' ? 'text-amber-500' : 'text-blue-500'}`} />
                         </div>
-                        <p className="text-slate-400 text-xs mt-0.5">Age: {sys.age} yrs · Lifespan: {sys.lifespan} yrs · Est. replacement: {sys.cost}</p>
-                        <HealthBar age={sys.age} lifespan={sys.lifespan} />
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center gap-2 mb-1">
+                            <SeverityPill severity={alert.severity} />
+                          </div>
+                          <p className="text-slate-800 font-semibold text-sm">{alert.title}</p>
+                          <p className="text-slate-500 text-xs mt-0.5">{alert.sub}</p>
+                          <p className="text-slate-400 text-xs mt-1">Due: {alert.due}</p>
+                        </div>
+                        <Link to={alert.module} className={`flex-shrink-0 text-xs font-bold px-3 py-2 rounded-xl text-white hover:opacity-90 transition-all whitespace-nowrap ${alert.severity === 'High' ? 'bg-red-500' : alert.severity === 'Medium' ? 'bg-amber-500' : 'bg-blue-500'}`}>
+                          {alert.action}
+                        </Link>
                       </div>
-                    </div>
-                  );
-                })}
+                    );
+                  })}
+                </div>
+                <button className="mt-4 text-xs font-semibold flex items-center gap-1 hover:opacity-70 transition-opacity" style={{ color: '#1e3a5f' }}>
+                  View all alerts & history <ArrowRight className="w-3 h-3" />
+                </button>
               </div>
-            </div>
-          </div>
 
-          {/* ── Alerts & Risks ── */}
-          <div className="bg-white rounded-3xl border border-slate-100 p-7 shadow-sm">
-            <div className="flex items-center justify-between mb-6">
-              <div className="flex items-center gap-2">
-                <Activity className="w-5 h-5" style={{ color: '#e8604c' }} />
-                <h2 className="font-extrabold text-slate-900 text-base">Alerts & Risks</h2>
-              </div>
-              <span className="text-xs font-bold bg-red-100 text-red-600 px-2.5 py-1 rounded-full">
-                {ALERTS.filter(a => a.severity === 'High').length} High Priority
-              </span>
-            </div>
-            <div className="space-y-3">
-              {ALERTS.map((alert, i) => {
-                const Icon = alert.icon;
-                return (
-                  <div key={i} className={`flex items-center gap-4 p-4 rounded-2xl border ${
-                    alert.severity === 'High' ? 'bg-red-50 border-red-100' :
-                    alert.severity === 'Medium' ? 'bg-amber-50 border-amber-100' :
-                    'bg-blue-50 border-blue-100'
-                  }`}>
-                    <div className={`w-9 h-9 rounded-xl flex items-center justify-center flex-shrink-0 ${
-                      alert.severity === 'High' ? 'bg-red-100' :
-                      alert.severity === 'Medium' ? 'bg-amber-100' : 'bg-blue-100'
-                    }`}>
-                      <Icon className={`w-4 h-4 ${
-                        alert.severity === 'High' ? 'text-red-500' :
-                        alert.severity === 'Medium' ? 'text-amber-500' : 'text-blue-500'
-                      }`} />
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-center gap-2 mb-0.5">
-                        <SeverityBadge severity={alert.severity} />
+              {/* Recent Activity */}
+              <div className="bg-white rounded-3xl border border-slate-100 p-7 shadow-sm">
+                <h2 className="font-extrabold text-slate-900 text-base mb-5">Recent Activity</h2>
+                <div className="space-y-1">
+                  {ACTIVITY.map((item, i) => {
+                    const Icon = item.icon;
+                    return (
+                      <div key={i} className="flex items-start gap-4 p-3 rounded-xl hover:bg-slate-50 transition-colors group">
+                        <div className="w-9 h-9 rounded-xl flex items-center justify-center flex-shrink-0" style={{ background: `${item.color}15` }}>
+                          <Icon className="w-4 h-4" style={{ color: item.color }} />
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <p className="text-slate-800 text-sm font-semibold">{item.description}</p>
+                          <p className="text-slate-400 text-xs mt-0.5">{item.sub}</p>
+                        </div>
+                        <div className="text-right flex-shrink-0">
+                          <p className="text-slate-400 text-xs">{item.date}</p>
+                          <button className="text-xs font-semibold mt-1 opacity-0 group-hover:opacity-100 transition-opacity" style={{ color: '#1e3a5f' }}>View →</button>
+                        </div>
                       </div>
-                      <p className="text-slate-700 font-medium text-sm">{alert.message}</p>
-                    </div>
-                    <Link to={alert.module} className={`flex-shrink-0 text-xs font-bold px-3 py-2 rounded-xl text-white transition-all hover:opacity-90 ${
-                      alert.severity === 'High' ? 'bg-red-500' :
-                      alert.severity === 'Medium' ? 'bg-amber-500' : 'bg-blue-500'
-                    }`}>
-                      {alert.action}
-                    </Link>
-                  </div>
-                );
-              })}
-            </div>
-          </div>
-
-          {/* ── Recent Activity ── */}
-          <div className="bg-white rounded-3xl border border-slate-100 p-7 shadow-sm">
-            <div className="flex items-center justify-between mb-6">
-              <h2 className="font-extrabold text-slate-900 text-base">Recent Activity</h2>
-              <span className="text-xs text-slate-400 font-medium">Home Memory</span>
-            </div>
-            <div className="space-y-1">
-              {ACTIVITY.map((item, i) => {
-                const Icon = item.icon;
-                return (
-                  <div key={i} className="flex items-center gap-4 p-3 rounded-xl hover:bg-slate-50 transition-colors group">
-                    <div className="w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0" style={{ background: `${item.color}15` }}>
-                      <Icon className="w-4 h-4" style={{ color: item.color }} />
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <p className="text-slate-700 text-sm font-medium">{item.description}</p>
-                      <p className="text-slate-400 text-xs mt-0.5">{item.type}</p>
-                    </div>
-                    <span className="text-slate-400 text-xs flex-shrink-0">{item.date}</span>
-                  </div>
-                );
-              })}
-            </div>
-          </div>
-
-          {/* ── Module Grid ── */}
-          <div>
-            <h2 className="font-extrabold text-slate-900 text-base mb-5">All Modules</h2>
-            <div className="grid grid-cols-3 sm:grid-cols-4 lg:grid-cols-6 gap-3">
-              {MODULES.map((mod, i) => {
-                const Icon = mod.icon;
-                return (
-                  <Link key={i} to={mod.link} className="bg-white rounded-2xl border border-slate-100 p-4 flex flex-col items-center gap-2 hover:shadow-md hover:-translate-y-0.5 transition-all group text-center">
-                    <div className="w-10 h-10 rounded-xl flex items-center justify-center group-hover:scale-110 transition-transform" style={{ background: mod.bg }}>
-                      <Icon className="w-5 h-5" style={{ color: mod.color }} />
-                    </div>
-                    <p className="text-slate-700 text-xs font-semibold leading-tight">{mod.title}</p>
-                  </Link>
-                );
-              })}
-            </div>
-          </div>
-
-          {/* ── Ready to Sell CTA ── */}
-          <div className="rounded-3xl overflow-hidden relative" style={{ background: '#1e3a5f' }}>
-            <div className="absolute top-0 right-0 w-64 h-64 rounded-full opacity-5" style={{ background: '#c9a96e', transform: 'translate(30%, -30%)' }} />
-            <div className="relative z-10 p-10 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-6">
-              <div>
-                <p className="text-blue-200 text-xs font-semibold uppercase tracking-widest mb-2">Lifecycle Action</p>
-                <h2 className="text-white font-extrabold text-2xl mb-2">Prepare This Home for Market</h2>
-                <p className="text-blue-200 text-sm max-w-md leading-relaxed">
-                  Your home's full history is already organized. One tap generates a complete, agent-ready Home Dossier.
-                </p>
-              </div>
-              <div className="flex flex-col items-start sm:items-end gap-3 flex-shrink-0">
-                <Link
-                  to="/ready-to-sell"
-                  className="flex items-center gap-2.5 px-7 py-4 rounded-2xl font-bold text-white text-sm hover:opacity-90 active:scale-95 transition-all whitespace-nowrap"
-                  style={{ background: '#1A1A1A' }}
-                >
-                  <Star className="w-4 h-4" />
-                  Generate Home Dossier
-                  <ArrowRight className="w-4 h-4" />
+                    );
+                  })}
+                </div>
+                <Link to="/timeline" className="mt-4 text-xs font-semibold flex items-center gap-1 hover:opacity-70 transition-opacity" style={{ color: '#1e3a5f' }}>
+                  View full home timeline <ArrowRight className="w-3 h-3" />
                 </Link>
-                <p className="text-blue-300 text-xs">Selling soon? Your home's story is already written.</p>
+              </div>
+
+              {/* Modules Grid */}
+              <div className="bg-white rounded-3xl border border-slate-100 p-7 shadow-sm">
+                <h2 className="font-extrabold text-slate-900 text-base mb-5">Home Modules</h2>
+                <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+                  {MODULES.map((mod, i) => {
+                    const Icon = mod.icon;
+                    return (
+                      <Link key={i} to={mod.link} className="flex items-start gap-3 p-4 rounded-2xl border border-slate-100 hover:shadow-sm hover:border-slate-200 transition-all group">
+                        <div className="w-9 h-9 rounded-xl flex items-center justify-center flex-shrink-0 group-hover:scale-105 transition-transform" style={{ background: mod.bg }}>
+                          <Icon className="w-4 h-4" style={{ color: mod.color }} />
+                        </div>
+                        <div className="min-w-0">
+                          <p className="font-bold text-slate-900 text-xs">{mod.title}</p>
+                          <p className="text-slate-400 text-xs mt-0.5 leading-tight">{mod.desc}</p>
+                        </div>
+                      </Link>
+                    );
+                  })}
+                </div>
+              </div>
+            </div>
+
+            {/* ── RIGHT COLUMN 40% ── */}
+            <div className="lg:w-[40%] space-y-6">
+
+              {/* Systems & Structure */}
+              <div className="bg-white rounded-3xl border border-slate-100 p-7 shadow-sm">
+                <div className="flex items-center justify-between mb-1">
+                  <h2 className="font-extrabold text-slate-900 text-base">Systems & Structure</h2>
+                </div>
+                <p className="text-slate-400 text-xs mb-5">Digital snapshot of major components</p>
+                <div className="grid grid-cols-1 gap-4">
+                  {SYSTEMS.map((sys, i) => {
+                    const Icon = sys.icon;
+                    return (
+                      <div key={i} className="flex items-start gap-3">
+                        <div className="w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0" style={{ background: sys.bg }}>
+                          <Icon className="w-4 h-4" style={{ color: sys.color }} />
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center justify-between">
+                            <p className="font-semibold text-slate-900 text-sm">{sys.name}</p>
+                            <ConditionBadge condition={sys.condition} />
+                          </div>
+                          <p className="text-slate-400 text-xs mt-0.5">Age: {sys.age} yrs · Lifespan: {sys.lifespan} yrs · Est: {sys.cost}</p>
+                          <HealthBar age={sys.age} lifespan={sys.lifespan} />
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+                <div className="mt-5 pt-4 border-t border-slate-100 flex items-center justify-between">
+                  <button className="text-xs font-semibold px-4 py-2 rounded-xl border border-slate-200 text-slate-600 hover:bg-slate-50 transition-colors">
+                    Update system details
+                  </button>
+                  <button className="text-xs font-semibold flex items-center gap-1 hover:opacity-70 transition-opacity" style={{ color: '#1e3a5f' }}>
+                    Full system report <ArrowRight className="w-3 h-3" />
+                  </button>
+                </div>
+              </div>
+
+              {/* Ready to Sell CTA */}
+              <div className="rounded-3xl p-7 relative overflow-hidden" style={{ background: '#1e3a5f' }}>
+                <div className="absolute top-0 right-0 w-32 h-32 rounded-full opacity-5" style={{ background: '#c9a96e', transform: 'translate(30%, -30%)' }} />
+                <div className="relative z-10">
+                  <p className="text-blue-200 text-xs font-semibold uppercase tracking-widest mb-2">Thinking About Selling?</p>
+                  <h3 className="text-white font-extrabold text-lg mb-2 leading-tight">Turn this profile into a Compass-ready seller packet in seconds.</h3>
+                  <div className="space-y-2 mb-5">
+                    {['Pre-listing checklist', 'Suggested repairs & vendors', 'Exportable valuation & cost summary'].map((item, i) => (
+                      <div key={i} className="flex items-center gap-2">
+                        <CheckCircle2 className="w-3.5 h-3.5 text-blue-300 flex-shrink-0" />
+                        <p className="text-blue-200 text-xs">{item}</p>
+                      </div>
+                    ))}
+                  </div>
+                  <Link to="/ready-to-sell" className="flex items-center justify-center gap-2 w-full py-3 rounded-2xl font-bold text-white text-sm hover:opacity-90 transition-all mb-3" style={{ background: '#1A1A1A' }}>
+                    <Star className="w-4 h-4" /> Prepare This Home for Market
+                  </Link>
+                  <button className="w-full text-xs font-semibold text-blue-300 hover:text-white transition-colors text-center">
+                    Preview sample seller report →
+                  </button>
+                </div>
+              </div>
+
+              {/* Snapshot Widgets */}
+              <div className="space-y-3">
+                {/* Annual Cost */}
+                <Link to="/expenses" className="bg-white rounded-2xl border border-slate-100 p-5 shadow-sm hover:shadow-md transition-all flex items-start gap-4 block">
+                  <div className="w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0" style={{ background: '#ecfdf5' }}>
+                    <DollarSign className="w-5 h-5 text-green-600" />
+                  </div>
+                  <div className="flex-1">
+                    <p className="text-slate-400 text-xs font-medium uppercase tracking-wide mb-0.5">Annual Cost Snapshot</p>
+                    <p className="text-2xl font-extrabold text-slate-900">$32,400</p>
+                    <p className="text-slate-400 text-xs mt-0.5">Taxes · Insurance · Utilities · Maintenance</p>
+                  </div>
+                  <ArrowRight className="w-4 h-4 text-slate-300 flex-shrink-0 mt-1" />
+                </Link>
+
+                {/* Risk Snapshot */}
+                <Link to="/maintenance-management" className="bg-white rounded-2xl border border-slate-100 p-5 shadow-sm hover:shadow-md transition-all flex items-start gap-4 block">
+                  <div className="w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0" style={{ background: '#fef2f2' }}>
+                    <AlertTriangle className="w-5 h-5 text-red-500" />
+                  </div>
+                  <div className="flex-1">
+                    <p className="text-slate-400 text-xs font-medium uppercase tracking-wide mb-0.5">Risk Snapshot</p>
+                    <p className="text-2xl font-extrabold text-slate-900">3 High</p>
+                    <p className="text-slate-400 text-xs mt-0.5">2 medium · 4 low priority items</p>
+                  </div>
+                  <ArrowRight className="w-4 h-4 text-slate-300 flex-shrink-0 mt-1" />
+                </Link>
+
+                {/* Next 30 Days */}
+                <Link to="/bill-pay" className="bg-white rounded-2xl border border-slate-100 p-5 shadow-sm hover:shadow-md transition-all flex items-start gap-4 block">
+                  <div className="w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0" style={{ background: '#eff6ff' }}>
+                    <Clock className="w-5 h-5 text-blue-600" />
+                  </div>
+                  <div className="flex-1">
+                    <p className="text-slate-400 text-xs font-medium uppercase tracking-wide mb-0.5">Next 30 Days</p>
+                    <p className="text-2xl font-extrabold text-slate-900">3 Items</p>
+                    <p className="text-slate-400 text-xs mt-0.5">2 upcoming bills · 1 scheduled service</p>
+                    <p className="text-red-500 text-xs font-semibold mt-1">Property tax due in 18 days</p>
+                  </div>
+                  <ArrowRight className="w-4 h-4 text-slate-300 flex-shrink-0 mt-1" />
+                </Link>
               </div>
             </div>
           </div>
 
+          {/* ── Footer ── */}
+          <div className="mt-10 pt-6 border-t border-slate-200 flex items-center justify-between">
+            <div className="flex items-center gap-6">
+              {['Home Profile', 'Timeline', 'Reports', 'Settings'].map((item, i) => (
+                <button key={i} className="text-sm font-medium text-slate-500 hover:text-slate-800 transition-colors">{item}</button>
+              ))}
+            </div>
+            <button className="flex items-center gap-2 px-4 py-2 rounded-xl border border-slate-200 text-sm font-semibold text-slate-600 hover:bg-slate-50 transition-colors">
+              <Download className="w-4 h-4" /> Export Home Profile as PDF
+            </button>
+          </div>
         </main>
       </div>
     </>
   );
 };
+
+// tiny inline icon to avoid import issues
+const MapPinIcon = () => (
+  <svg className="w-4 h-4 text-slate-400 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
+    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
+  </svg>
+);
 
 export default HomeProfilePage;
