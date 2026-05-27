@@ -37,6 +37,7 @@ import HomeProfilePage from '@/pages/HomeProfilePage.jsx';
 import NotificationsCenterPage from '@/pages/NotificationsCenterPage.jsx';
 import VendorDirectoryPage from '@/pages/VendorDirectoryPage.jsx';
 import ReportsPage from '@/pages/ReportsPage.jsx';
+import PortfolioOverviewPage from '@/pages/PortfolioOverviewPage.jsx';
 
 const AppContent = () => {
   const { isAuthenticated } = usePasswordAuth();
@@ -57,36 +58,52 @@ const AppContent = () => {
     <AuthProvider>
       <HomeProvider>
         <Routes>
+          {/* ── Auth & Public ── */}
           <Route path="/password-reset" element={<PasswordResetPage />} />
           <Route path="/password-confirm" element={<PasswordConfirmPage />} />
           <Route path="/" element={<LandingPage />} />
           <Route path="/login" element={<LoginPage />} />
           <Route path="/signup" element={<SignupPage />} />
           <Route path="/gallery" element={<ImageGalleryPage />} />
+
+          {/* ── Core (no Layout wrapper) ── */}
           <Route path="/dashboard" element={<ProtectedRoute><DashboardPage /></ProtectedRoute>} />
-          <Route path="/properties" element={<ProtectedRoute><Layout><HomePage /></Layout></ProtectedRoute>} />
-          <Route path="/property-management" element={<ProtectedRoute><Layout><PropertyManagementDashboard /></Layout></ProtectedRoute>} />
-          <Route path="/bill-pay" element={<ProtectedRoute><Layout><BillPayPage /></Layout></ProtectedRoute>} />
-          <Route path="/maintenance-management" element={<ProtectedRoute><Layout><MaintenanceManagementPage /></Layout></ProtectedRoute>} />
-          <Route path="/expenses" element={<ProtectedRoute><Layout><ExpensesPage /></Layout></ProtectedRoute>} />
-          <Route path="/maintenance" element={<ProtectedRoute><Layout><MaintenanceSystemsPage /></Layout></ProtectedRoute>} />
-          <Route path="/plants" element={<ProtectedRoute><Layout><PlantsPage /></Layout></ProtectedRoute>} />
-          <Route path="/utilities" element={<ProtectedRoute><Layout><UtilitiesPage /></Layout></ProtectedRoute>} />
-          <Route path="/documents" element={<ProtectedRoute><Layout><DocumentsPage /></Layout></ProtectedRoute>} />
-          <Route path="/rental-properties" element={<ProtectedRoute><Layout><RentalPropertiesPage /></Layout></ProtectedRoute>} />
-          <Route path="/bills" element={<ProtectedRoute><Layout><BillsPage /></Layout></ProtectedRoute>} />
-          <Route path="/home-valuation" element={<ProtectedRoute><Layout><HomeValuationPage /></Layout></ProtectedRoute>} />
-          <Route path="/rental-tax-guide" element={<ProtectedRoute><Layout><RentalTaxGuidePage /></Layout></ProtectedRoute>} />
-          <Route path="/insurance" element={<ProtectedRoute><Layout><InsuranceAnalyzerPage /></Layout></ProtectedRoute>} />
-          <Route path="/learn" element={<ProtectedRoute><Layout><HomeLearnPage /></Layout></ProtectedRoute>} />
-          <Route path="/warranty-tracker" element={<ProtectedRoute><Layout><WarrantyTrackerPage /></Layout></ProtectedRoute>} />
-          <Route path="/property-tax" element={<ProtectedRoute><Layout><PropertyTaxPage /></Layout></ProtectedRoute>} />
-          <Route path="/timeline" element={<ProtectedRoute><Layout><HomeTimelinePage /></Layout></ProtectedRoute>} />
-          <Route path="/ready-to-sell" element={<ProtectedRoute><Layout><ReadyToSellPage /></Layout></ProtectedRoute>} />
           <Route path="/home-profile" element={<ProtectedRoute><HomeProfilePage /></ProtectedRoute>} />
           <Route path="/notifications" element={<ProtectedRoute><NotificationsCenterPage /></ProtectedRoute>} />
           <Route path="/vendors" element={<ProtectedRoute><VendorDirectoryPage /></ProtectedRoute>} />
           <Route path="/reports" element={<ProtectedRoute><ReportsPage /></ProtectedRoute>} />
+
+          {/* ── Portfolio & Properties ── */}
+          <Route path="/portfolio" element={<ProtectedRoute><Layout><PortfolioOverviewPage /></Layout></ProtectedRoute>} />
+          <Route path="/properties" element={<ProtectedRoute><Layout><HomePage /></Layout></ProtectedRoute>} />
+          <Route path="/property-management" element={<ProtectedRoute><Layout><PropertyManagementDashboard /></Layout></ProtectedRoute>} />
+          <Route path="/rental-properties" element={<ProtectedRoute><Layout><RentalPropertiesPage /></Layout></ProtectedRoute>} />
+          <Route path="/rental-tax-guide" element={<ProtectedRoute><Layout><RentalTaxGuidePage /></Layout></ProtectedRoute>} />
+
+          {/* ── Financial ── */}
+          <Route path="/bill-pay" element={<ProtectedRoute><Layout><BillPayPage /></Layout></ProtectedRoute>} />
+          <Route path="/bills" element={<ProtectedRoute><Layout><BillsPage /></Layout></ProtectedRoute>} />
+          <Route path="/expenses" element={<ProtectedRoute><Layout><ExpensesPage /></Layout></ProtectedRoute>} />
+          <Route path="/home-valuation" element={<ProtectedRoute><Layout><HomeValuationPage /></Layout></ProtectedRoute>} />
+          <Route path="/property-tax" element={<ProtectedRoute><Layout><PropertyTaxPage /></Layout></ProtectedRoute>} />
+
+          {/* ── Maintenance & Home ── */}
+          <Route path="/maintenance-management" element={<ProtectedRoute><Layout><MaintenanceManagementPage /></Layout></ProtectedRoute>} />
+          <Route path="/maintenance" element={<ProtectedRoute><Layout><MaintenanceSystemsPage /></Layout></ProtectedRoute>} />
+          <Route path="/plants" element={<ProtectedRoute><Layout><PlantsPage /></Layout></ProtectedRoute>} />
+          <Route path="/utilities" element={<ProtectedRoute><Layout><UtilitiesPage /></Layout></ProtectedRoute>} />
+          <Route path="/warranty-tracker" element={<ProtectedRoute><Layout><WarrantyTrackerPage /></Layout></ProtectedRoute>} />
+          <Route path="/timeline" element={<ProtectedRoute><Layout><HomeTimelinePage /></Layout></ProtectedRoute>} />
+
+          {/* ── Insurance & Documents ── */}
+          <Route path="/insurance" element={<ProtectedRoute><Layout><InsuranceAnalyzerPage /></Layout></ProtectedRoute>} />
+          <Route path="/insurance-analyzer" element={<ProtectedRoute><Layout><InsuranceAnalyzerPage /></Layout></ProtectedRoute>} />
+          <Route path="/documents" element={<ProtectedRoute><Layout><DocumentsPage /></Layout></ProtectedRoute>} />
+
+          {/* ── Learn & Resources ── */}
+          <Route path="/learn" element={<ProtectedRoute><Layout><HomeLearnPage /></Layout></ProtectedRoute>} />
+          <Route path="/home-learn" element={<ProtectedRoute><Layout><HomeLearnPage /></Layout></ProtectedRoute>} />
+          <Route path="/ready-to-sell" element={<ProtectedRoute><Layout><ReadyToSellPage /></Layout></ProtectedRoute>} />
         </Routes>
         <Toaster />
       </HomeProvider>
