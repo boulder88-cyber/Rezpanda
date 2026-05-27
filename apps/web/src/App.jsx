@@ -17,6 +17,7 @@ import DashboardPage from '@/pages/DashboardPage.jsx';
 import ExpensesPage from '@/pages/ExpensesPage.jsx';
 import MaintenanceSystemsPage from '@/pages/MaintenanceSystemsPage.jsx';
 import MaintenanceManagementPage from '@/pages/MaintenanceManagementPage.jsx';
+import MaintenanceSchedulerPage from '@/pages/MaintenanceSchedulerPage.jsx';
 import PlantsPage from '@/pages/PlantsPage.jsx';
 import UtilitiesPage from '@/pages/UtilitiesPage.jsx';
 import DocumentsPage from '@/pages/DocumentsPage.jsx';
@@ -89,6 +90,7 @@ const AppContent = () => {
 
           {/* ── Maintenance & Home ── */}
           <Route path="/maintenance-management" element={<ProtectedRoute><Layout><MaintenanceManagementPage /></Layout></ProtectedRoute>} />
+          <Route path="/maintenance-scheduler" element={<ProtectedRoute><Layout><MaintenanceSchedulerPage /></Layout></ProtectedRoute>} />
           <Route path="/maintenance" element={<ProtectedRoute><Layout><MaintenanceSystemsPage /></Layout></ProtectedRoute>} />
           <Route path="/plants" element={<ProtectedRoute><Layout><PlantsPage /></Layout></ProtectedRoute>} />
           <Route path="/utilities" element={<ProtectedRoute><Layout><UtilitiesPage /></Layout></ProtectedRoute>} />
