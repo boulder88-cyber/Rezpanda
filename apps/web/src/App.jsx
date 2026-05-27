@@ -40,6 +40,7 @@ import VendorDirectoryPage from '@/pages/VendorDirectoryPage.jsx';
 import ReportsPage from '@/pages/ReportsPage.jsx';
 import PortfolioOverviewPage from '@/pages/PortfolioOverviewPage.jsx';
 import ValuationEquityPage from '@/pages/ValuationEquityPage.jsx';
+import HomeOSOverviewPage from '@/pages/HomeOSOverviewPage.jsx';
 
 const AppContent = () => {
   const { isAuthenticated } = usePasswordAuth();
@@ -67,6 +68,7 @@ const AppContent = () => {
           <Route path="/login" element={<LoginPage />} />
           <Route path="/signup" element={<SignupPage />} />
           <Route path="/gallery" element={<ImageGalleryPage />} />
+          <Route path="/homeos" element={<HomeOSOverviewPage />} />
 
           {/* ── Core (no Layout wrapper) ── */}
           <Route path="/dashboard" element={<ProtectedRoute><DashboardPage /></ProtectedRoute>} />
