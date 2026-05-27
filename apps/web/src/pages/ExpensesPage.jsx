@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { Helmet } from 'react-helmet';
+import { Link } from 'react-router-dom';
 import pb from '@/lib/horizonsBackend.js';
 import { useHome } from '@/contexts/HomeContext.jsx';
 import { useAuth } from '@/contexts/AuthContext.jsx';
@@ -11,208 +12,34 @@ import { useToast } from '@/hooks/use-toast.js';
 import {
   Plus, Trash2, Download, Receipt, DollarSign,
   TrendingUp, TrendingDown, BarChart2, PieChart,
-  Filter, Search, X, ShieldCheck, AlertCircle,
-  CheckCircle2, Calendar, Tag, ArrowUpRight,
-  ArrowDownRight, Minus, FileText, Wrench,
-  Zap, Shield, TreePine, Home, MoreHorizontal
+  Search, X, ShieldCheck, Calendar, Tag,
+  ArrowUpRight, ArrowDownRight, Minus, FileText, Wrench,
+  Zap, Shield, TreePine, Home, MoreHorizontal,
+  ChevronRight, Users, ArrowRight
 } from 'lucide-react';
 
-// ─── Category Config ──────────────────────────────────────────────────
+// ═══════════════════════════════════════════════════════════════════════
+// CONSTANTS
+// ═══════════════════════════════════════════════════════════════════════
+
 const CATEGORIES = [
-  { key: 'maintenance', label: 'Maintenance', icon: <Wrench className="w-4 h-4" />, color: '#f97316', bg: '#fff7ed' },
-  { key: 'utilities', label: 'Utilities', icon: <Zap className="w-4 h-4" />, color: '#2563eb', bg: '#eff6ff' },
-  { key: 'insurance', label: 'Insurance', icon: <Shield className="w-4 h-4" />, color: '#7c3aed', bg: '#f5f3ff' },
-  { key: 'tax', label: 'Property Tax', icon: <FileText className="w-4 h-4" />, color: '#dc2626', bg: '#fef2f2' },
-  { key: 'landscaping', label: 'Landscaping', icon: <TreePine className="w-4 h-4" />, color: '#16a34a', bg: '#f0fdf4' },
-  { key: 'mortgage', label: 'Mortgage', icon: <Home className="w-4 h-4" />, color: '#1e3a5f', bg: '#eef2f8' },
-  { key: 'repairs', label: 'Repairs', icon: <Receipt className="w-4 h-4" />, color: '#d97706', bg: '#fffbeb' },
-  { key: 'other', label: 'Other', icon: <MoreHorizontal className="w-4 h-4" />, color: '#64748b', bg: '#f8fafc' },
+  { key: 'maintenance', label: 'Maintenance', icon: Wrench, color: '#f97316', bg: '#fff7ed' },
+  { key: 'utilities', label: 'Utilities', icon: Zap, color: '#2563eb', bg: '#eff6ff' },
+  { key: 'insurance', label: 'Insurance', icon: Shield, color: '#7c3aed', bg: '#f5f3ff' },
+  { key: 'tax', label: 'Property Tax', icon: FileText, color: '#dc2626', bg: '#fef2f2' },
+  { key: 'landscaping', label: 'Landscaping', icon: TreePine, color: '#16a34a', bg: '#f0fdf4' },
+  { key: 'mortgage', label: 'Mortgage', icon: Home, color: '#1e3a5f', bg: '#eef2f8' },
+  { key: 'repairs', label: 'Repairs', icon: Receipt, color: '#d97706', bg: '#fffbeb' },
+  { key: 'other', label: 'Other', icon: MoreHorizontal, color: '#64748b', bg: '#f8fafc' },
 ];
 
 const getCat = (key) => CATEGORIES.find(c => c.key === key) || CATEGORIES[7];
 
-// ─── Summary Cards ────────────────────────────────────────────────────
-const SummaryCards = ({ expenses }) => {
-  const now = new Date();
-  const thisMonth = expenses.filter(e => {
-    const d = new Date(e.expenseDate);
-    return d.getMonth() === now.getMonth() && d.getFullYear() === now.getFullYear();
-  });
-  const lastMonth = expenses.filter(e => {
-    const d = new Date(e.expenseDate);
-    const lm = new Date(now.getFullYear(), now.getMonth() - 1, 1);
-    return d.getMonth() === lm.getMonth() && d.getFullYear() === lm.getFullYear();
-  });
-
-  const thisTotal = thisMonth.reduce((s, e) => s + parseFloat(e.amount || 0), 0);
-  const lastTotal = lastMonth.reduce((s, e) => s + parseFloat(e.amount || 0), 0);
-  const change = lastTotal > 0 ? ((thisTotal - lastTotal) / lastTotal * 100) : 0;
-  const changePositive = change <= 0;
-
-  // Top category this month
-  const catTotals = {};
-  thisMonth.forEach(e => { catTotals[e.category] = (catTotals[e.category] || 0) + parseFloat(e.amount || 0); });
-  const topCat = Object.entries(catTotals).sort((a, b) => b[1] - a[1])[0];
-  const topCatConfig = topCat ? getCat(topCat[0]) : null;
-
-  const ytdTotal = expenses.filter(e => new Date(e.expenseDate).getFullYear() === now.getFullYear())
-    .reduce((s, e) => s + parseFloat(e.amount || 0), 0);
-
-  return (
-    <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
-      {/* This Month */}
-      <div className="bg-white rounded-2xl border border-slate-100 p-5 shadow-sm">
-        <div className="flex items-center justify-between mb-3">
-          <div className="w-9 h-9 rounded-xl flex items-center justify-center" style={{ background: '#eef2f8' }}>
-            <DollarSign className="w-4 h-4" style={{ color: '#1e3a5f' }} />
-          </div>
-          <span className={`flex items-center gap-1 text-xs font-bold ${changePositive ? 'text-green-600' : 'text-red-500'}`}>
-            {change > 0 ? <ArrowUpRight className="w-3 h-3" /> : change < 0 ? <ArrowDownRight className="w-3 h-3" /> : <Minus className="w-3 h-3" />}
-            {Math.abs(change).toFixed(0)}%
-          </span>
-        </div>
-        <p className="text-2xl font-extrabold text-slate-900">${thisTotal.toLocaleString(undefined, { minimumFractionDigits: 0 })}</p>
-        <p className="text-xs text-slate-500 mt-1">This month</p>
-        <p className="text-xs text-slate-400 mt-0.5">vs ${lastTotal.toLocaleString()} last month</p>
-      </div>
-
-      {/* YTD */}
-      <div className="bg-white rounded-2xl border border-slate-100 p-5 shadow-sm">
-        <div className="flex items-center justify-between mb-3">
-          <div className="w-9 h-9 rounded-xl bg-purple-50 flex items-center justify-center">
-            <BarChart2 className="w-4 h-4 text-purple-600" />
-          </div>
-        </div>
-        <p className="text-2xl font-extrabold text-slate-900">${ytdTotal.toLocaleString(undefined, { minimumFractionDigits: 0 })}</p>
-        <p className="text-xs text-slate-500 mt-1">Year to date</p>
-        <p className="text-xs text-slate-400 mt-0.5">{now.getFullYear()} total</p>
-      </div>
-
-      {/* Top Category */}
-      <div className="bg-white rounded-2xl border border-slate-100 p-5 shadow-sm">
-        <div className="flex items-center justify-between mb-3">
-          <div className="w-9 h-9 rounded-xl flex items-center justify-center" style={{ background: topCatConfig?.bg || '#f8fafc' }}>
-            <span style={{ color: topCatConfig?.color || '#64748b' }}>{topCatConfig?.icon || <Tag className="w-4 h-4" />}</span>
-          </div>
-        </div>
-        <p className="text-2xl font-extrabold text-slate-900 capitalize">{topCat ? topCat[0] : '—'}</p>
-        <p className="text-xs text-slate-500 mt-1">Top category</p>
-        <p className="text-xs text-slate-400 mt-0.5">{topCat ? `$${parseFloat(topCat[1]).toLocaleString(undefined, { minimumFractionDigits: 0 })} this month` : 'No expenses yet'}</p>
-      </div>
-
-      {/* Total Transactions */}
-      <div className="bg-white rounded-2xl border border-slate-100 p-5 shadow-sm">
-        <div className="flex items-center justify-between mb-3">
-          <div className="w-9 h-9 rounded-xl bg-green-50 flex items-center justify-center">
-            <Receipt className="w-4 h-4 text-green-600" />
-          </div>
-        </div>
-        <p className="text-2xl font-extrabold text-slate-900">{expenses.length}</p>
-        <p className="text-xs text-slate-500 mt-1">Total expenses</p>
-        <p className="text-xs text-slate-400 mt-0.5">{thisMonth.length} this month</p>
-      </div>
-    </div>
-  );
-};
-
-// ─── Category Breakdown Chart ─────────────────────────────────────────
-const CategoryBreakdown = ({ expenses }) => {
-  const totals = {};
-  expenses.forEach(e => {
-    totals[e.category] = (totals[e.category] || 0) + parseFloat(e.amount || 0);
-  });
-  const sorted = Object.entries(totals).sort((a, b) => b[1] - a[1]);
-  const grandTotal = sorted.reduce((s, [, v]) => s + v, 0);
-
-  if (sorted.length === 0) return null;
-
-  return (
-    <div className="bg-white rounded-2xl border border-slate-100 shadow-sm p-6 mb-6">
-      <h3 className="font-bold text-slate-900 mb-5 flex items-center gap-2">
-        <PieChart className="w-4 h-4 text-slate-400" /> Spending by Category
-      </h3>
-      <div className="space-y-3">
-        {sorted.map(([cat, total]) => {
-          const cfg = getCat(cat);
-          const pct = grandTotal > 0 ? (total / grandTotal * 100) : 0;
-          return (
-            <div key={cat}>
-              <div className="flex items-center justify-between mb-1.5">
-                <div className="flex items-center gap-2">
-                  <div className="w-7 h-7 rounded-lg flex items-center justify-center" style={{ background: cfg.bg, color: cfg.color }}>
-                    {cfg.icon}
-                  </div>
-                  <span className="text-sm font-medium text-slate-700 capitalize">{cfg.label}</span>
-                </div>
-                <div className="text-right">
-                  <span className="text-sm font-bold text-slate-900">${total.toLocaleString(undefined, { minimumFractionDigits: 0 })}</span>
-                  <span className="text-xs text-slate-400 ml-2">{pct.toFixed(0)}%</span>
-                </div>
-              </div>
-              <div className="h-2 bg-slate-100 rounded-full overflow-hidden">
-                <div
-                  className="h-full rounded-full transition-all duration-700"
-                  style={{ width: `${pct}%`, background: cfg.color }}
-                ></div>
-              </div>
-            </div>
-          );
-        })}
-      </div>
-    </div>
-  );
-};
-
-// ─── Monthly Trend ────────────────────────────────────────────────────
-const MonthlyTrend = ({ expenses }) => {
-  const months = [];
-  const now = new Date();
-  for (let i = 5; i >= 0; i--) {
-    const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
-    const label = d.toLocaleString('default', { month: 'short' });
-    const total = expenses.filter(e => {
-      const ed = new Date(e.expenseDate);
-      return ed.getMonth() === d.getMonth() && ed.getFullYear() === d.getFullYear();
-    }).reduce((s, e) => s + parseFloat(e.amount || 0), 0);
-    months.push({ label, total });
-  }
-
-  const max = Math.max(...months.map(m => m.total), 1);
-
-  if (months.every(m => m.total === 0)) return null;
-
-  return (
-    <div className="bg-white rounded-2xl border border-slate-100 shadow-sm p-6 mb-6">
-      <h3 className="font-bold text-slate-900 mb-5 flex items-center gap-2">
-        <BarChart2 className="w-4 h-4 text-slate-400" /> 6-Month Trend
-      </h3>
-      <div className="flex items-end gap-3 h-32">
-        {months.map((m, i) => (
-          <div key={i} className="flex-1 flex flex-col items-center gap-2">
-            <span className="text-xs text-slate-500 font-medium">
-              {m.total > 0 ? `$${m.total >= 1000 ? (m.total/1000).toFixed(1)+'k' : m.total.toFixed(0)}` : ''}
-            </span>
-            <div className="w-full rounded-t-lg transition-all duration-700" style={{
-              height: `${Math.max((m.total / max) * 80, m.total > 0 ? 4 : 0)}px`,
-              background: i === months.length - 1 ? '#1e3a5f' : '#c7d5e8',
-              minHeight: m.total > 0 ? '4px' : '0'
-            }}></div>
-            <span className="text-xs text-slate-400">{m.label}</span>
-          </div>
-        ))}
-      </div>
-    </div>
-  );
-};
-
-// ─── Export CSV ───────────────────────────────────────────────────────
 const exportToCSV = (expenses, propertyName) => {
   const headers = ['Date', 'Category', 'Vendor', 'Description', 'Amount'];
   const rows = expenses.map(e => [
     new Date(e.expenseDate).toLocaleDateString(),
-    e.category,
-    e.vendor || '',
-    e.description || '',
+    e.category, e.vendor || '', e.description || '',
     `$${parseFloat(e.amount).toFixed(2)}`
   ]);
   const csv = [headers, ...rows].map(r => r.join(',')).join('\n');
@@ -225,7 +52,206 @@ const exportToCSV = (expenses, propertyName) => {
   URL.revokeObjectURL(url);
 };
 
-// ─── Add Expense Modal ────────────────────────────────────────────────
+// ═══════════════════════════════════════════════════════════════════════
+// SUMMARY CARDS
+// ═══════════════════════════════════════════════════════════════════════
+
+const SummaryCards = ({ expenses }) => {
+  const now = new Date();
+  const thisMonth = expenses.filter(e => {
+    const d = new Date(e.expenseDate);
+    return d.getMonth() === now.getMonth() && d.getFullYear() === now.getFullYear();
+  });
+  const lastMonth = expenses.filter(e => {
+    const d = new Date(e.expenseDate);
+    const lm = new Date(now.getFullYear(), now.getMonth() - 1, 1);
+    return d.getMonth() === lm.getMonth() && d.getFullYear() === lm.getFullYear();
+  });
+  const thisTotal = thisMonth.reduce((s, e) => s + parseFloat(e.amount || 0), 0);
+  const lastTotal = lastMonth.reduce((s, e) => s + parseFloat(e.amount || 0), 0);
+  const change = lastTotal > 0 ? ((thisTotal - lastTotal) / lastTotal * 100) : 0;
+  const catTotals = {};
+  thisMonth.forEach(e => { catTotals[e.category] = (catTotals[e.category] || 0) + parseFloat(e.amount || 0); });
+  const topCat = Object.entries(catTotals).sort((a, b) => b[1] - a[1])[0];
+  const topCatConfig = topCat ? getCat(topCat[0]) : null;
+  const TopIcon = topCatConfig?.icon || Tag;
+  const ytdTotal = expenses.filter(e => new Date(e.expenseDate).getFullYear() === now.getFullYear())
+    .reduce((s, e) => s + parseFloat(e.amount || 0), 0);
+
+  return (
+    <div className="grid grid-cols-2 lg:grid-cols-4 gap-4" style={{ marginBottom: '24px' }}>
+      {[
+        {
+          label: 'This Month', value: `$${thisTotal.toLocaleString(undefined, { minimumFractionDigits: 0 })}`,
+          sub: `vs $${lastTotal.toLocaleString()} last month`,
+          icon: DollarSign, color: '#1e3a5f', bg: '#eef2f8', border: '#c7d7eb',
+          trend: change, trendLabel: `${Math.abs(change).toFixed(0)}%`,
+        },
+        {
+          label: 'Year to Date', value: `$${ytdTotal.toLocaleString(undefined, { minimumFractionDigits: 0 })}`,
+          sub: `${now.getFullYear()} total`,
+          icon: BarChart2, color: '#7c3aed', bg: '#f5f3ff', border: '#ddd6fe',
+        },
+        {
+          label: 'Top Category', value: topCatConfig?.label || '—',
+          sub: topCat ? `$${parseFloat(topCat[1]).toLocaleString(undefined, { minimumFractionDigits: 0 })} this month` : 'No expenses yet',
+          iconComponent: topCatConfig ? <TopIcon style={{ width: '16px', height: '16px', color: topCatConfig.color }} /> : null,
+          customBg: topCatConfig?.bg, customColor: topCatConfig?.color,
+          border: '#e2e8f0',
+        },
+        {
+          label: 'Total Expenses', value: expenses.length,
+          sub: `${thisMonth.length} this month`,
+          icon: Receipt, color: '#059669', bg: '#ecfdf5', border: '#a7f3d0',
+        },
+      ].map((stat, i) => {
+        const Icon = stat.icon;
+        return (
+          <div key={i} className="bg-white" style={{ borderRadius: '12px', border: `1px solid ${stat.border}`, padding: '16px', boxShadow: '0 1px 3px rgba(0,0,0,0.06)' }}>
+            <div className="flex items-center justify-between" style={{ marginBottom: '8px' }}>
+              <div className="flex items-center justify-center" style={{ width: '32px', height: '32px', borderRadius: '8px', background: stat.customBg || stat.bg }}>
+                {stat.iconComponent || (Icon && <Icon style={{ width: '16px', height: '16px', color: stat.customColor || stat.color }} />)}
+              </div>
+              {stat.trend !== undefined && (
+                <span className="flex items-center gap-0.5 font-bold" style={{ fontSize: '12px', color: stat.trend <= 0 ? '#059669' : '#dc2626' }}>
+                  {stat.trend > 0 ? <ArrowUpRight style={{ width: '12px', height: '12px' }} /> : stat.trend < 0 ? <ArrowDownRight style={{ width: '12px', height: '12px' }} /> : <Minus style={{ width: '12px', height: '12px' }} />}
+                  {stat.trendLabel}
+                </span>
+              )}
+            </div>
+            <p className="font-extrabold text-slate-900" style={{ fontSize: '22px', lineHeight: 1 }}>{stat.value}</p>
+            <p className="font-medium text-slate-600" style={{ fontSize: '12px', marginTop: '4px' }}>{stat.label}</p>
+            <p className="text-slate-400" style={{ fontSize: '11px', marginTop: '2px' }}>{stat.sub}</p>
+          </div>
+        );
+      })}
+    </div>
+  );
+};
+
+// ═══════════════════════════════════════════════════════════════════════
+// CATEGORY BREAKDOWN
+// ═══════════════════════════════════════════════════════════════════════
+
+const CategoryBreakdown = ({ expenses }) => {
+  const totals = {};
+  expenses.forEach(e => { totals[e.category] = (totals[e.category] || 0) + parseFloat(e.amount || 0); });
+  const sorted = Object.entries(totals).sort((a, b) => b[1] - a[1]);
+  const grandTotal = sorted.reduce((s, [, v]) => s + v, 0);
+  if (sorted.length === 0) return null;
+
+  return (
+    <div className="bg-white" style={{ borderRadius: '12px', border: '1px solid #e2e8f0', padding: '20px', boxShadow: '0 1px 3px rgba(0,0,0,0.06)' }}>
+      <h3 className="font-semibold text-slate-900 flex items-center gap-2" style={{ fontSize: '16px', marginBottom: '20px' }}>
+        <PieChart style={{ width: '16px', height: '16px', color: '#94a3b8' }} /> Spending by Category
+      </h3>
+      <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+        {sorted.map(([cat, total]) => {
+          const cfg = getCat(cat);
+          const Icon = cfg.icon;
+          const pct = grandTotal > 0 ? (total / grandTotal * 100) : 0;
+          return (
+            <div key={cat}>
+              <div className="flex items-center justify-between" style={{ marginBottom: '6px' }}>
+                <div className="flex items-center gap-2">
+                  <div className="flex items-center justify-center" style={{ width: '28px', height: '28px', borderRadius: '6px', background: cfg.bg }}>
+                    <Icon style={{ width: '13px', height: '13px', color: cfg.color }} />
+                  </div>
+                  <span className="font-medium text-slate-700" style={{ fontSize: '13px' }}>{cfg.label}</span>
+                </div>
+                <div className="text-right">
+                  <span className="font-bold text-slate-900" style={{ fontSize: '13px' }}>${total.toLocaleString(undefined, { minimumFractionDigits: 0 })}</span>
+                  <span className="text-slate-400" style={{ fontSize: '11px', marginLeft: '6px' }}>{pct.toFixed(0)}%</span>
+                </div>
+              </div>
+              <div className="bg-slate-100 rounded-full overflow-hidden" style={{ height: '6px' }}>
+                <div className="h-full rounded-full transition-all duration-700" style={{ width: `${pct}%`, background: cfg.color }} />
+              </div>
+            </div>
+          );
+        })}
+      </div>
+    </div>
+  );
+};
+
+// ═══════════════════════════════════════════════════════════════════════
+// MONTHLY TREND
+// ═══════════════════════════════════════════════════════════════════════
+
+const MonthlyTrend = ({ expenses }) => {
+  const now = new Date();
+  const months = Array.from({ length: 6 }, (_, i) => {
+    const d = new Date(now.getFullYear(), now.getMonth() - (5 - i), 1);
+    const total = expenses.filter(e => {
+      const ed = new Date(e.expenseDate);
+      return ed.getMonth() === d.getMonth() && ed.getFullYear() === d.getFullYear();
+    }).reduce((s, e) => s + parseFloat(e.amount || 0), 0);
+    return { label: d.toLocaleString('default', { month: 'short' }), total };
+  });
+
+  const max = Math.max(...months.map(m => m.total), 1);
+  if (months.every(m => m.total === 0)) return null;
+
+  return (
+    <div className="bg-white" style={{ borderRadius: '12px', border: '1px solid #e2e8f0', padding: '20px', boxShadow: '0 1px 3px rgba(0,0,0,0.06)' }}>
+      <h3 className="font-semibold text-slate-900 flex items-center gap-2" style={{ fontSize: '16px', marginBottom: '20px' }}>
+        <BarChart2 style={{ width: '16px', height: '16px', color: '#94a3b8' }} /> 6-Month Trend
+      </h3>
+      <div className="flex items-end gap-3" style={{ height: '120px' }}>
+        {months.map((m, i) => (
+          <div key={i} className="flex-1 flex flex-col items-center gap-2">
+            <span className="text-slate-500 font-medium" style={{ fontSize: '11px' }}>
+              {m.total > 0 ? `$${m.total >= 1000 ? (m.total / 1000).toFixed(1) + 'k' : m.total.toFixed(0)}` : ''}
+            </span>
+            <div className="w-full rounded-t-md transition-all duration-700" style={{
+              height: `${Math.max((m.total / max) * 80, m.total > 0 ? 4 : 0)}px`,
+              background: i === months.length - 1 ? '#1e3a5f' : '#c7d7eb',
+              minHeight: m.total > 0 ? '4px' : '0',
+            }} />
+            <span className="text-slate-400" style={{ fontSize: '11px' }}>{m.label}</span>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+};
+
+// ═══════════════════════════════════════════════════════════════════════
+// ANNUAL SUMMARY
+// ═══════════════════════════════════════════════════════════════════════
+
+const AnnualSummary = ({ expenses }) => {
+  const now = new Date();
+  const ytd = expenses.filter(e => new Date(e.expenseDate).getFullYear() === now.getFullYear());
+  const ytdTotal = ytd.reduce((s, e) => s + parseFloat(e.amount || 0), 0);
+  const projected = ytdTotal > 0 ? (ytdTotal / (now.getMonth() + 1)) * 12 : 0;
+
+  return (
+    <div className="bg-white" style={{ borderRadius: '12px', border: '1px solid #e2e8f0', padding: '20px', boxShadow: '0 1px 3px rgba(0,0,0,0.06)' }}>
+      <h3 className="font-semibold text-slate-900" style={{ fontSize: '16px', marginBottom: '16px' }}>Annual Snapshot</h3>
+      <div className="grid grid-cols-2 gap-4">
+        {[
+          { label: 'YTD Total', value: `$${ytdTotal.toLocaleString(undefined, { minimumFractionDigits: 0 })}`, sub: `${now.getFullYear()} so far`, color: '#1e3a5f' },
+          { label: 'Projected Annual', value: `$${projected.toLocaleString(undefined, { minimumFractionDigits: 0 })}`, sub: 'at current rate', color: '#059669' },
+          { label: 'Monthly Average', value: `$${(ytdTotal / Math.max(now.getMonth() + 1, 1)).toLocaleString(undefined, { minimumFractionDigits: 0 })}`, sub: 'this year', color: '#7c3aed' },
+          { label: 'Transactions', value: ytd.length, sub: 'this year', color: '#d97706' },
+        ].map((s, i) => (
+          <div key={i} className="bg-slate-50 rounded-xl" style={{ padding: '12px' }}>
+            <p className="text-slate-400 font-medium" style={{ fontSize: '11px', marginBottom: '4px' }}>{s.label}</p>
+            <p className="font-extrabold" style={{ fontSize: '20px', lineHeight: 1, color: s.color }}>{s.value}</p>
+            <p className="text-slate-400" style={{ fontSize: '11px', marginTop: '2px' }}>{s.sub}</p>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+};
+
+// ═══════════════════════════════════════════════════════════════════════
+// ADD EXPENSE MODAL
+// ═══════════════════════════════════════════════════════════════════════
+
 const AddExpenseModal = ({ open, onClose, onSave }) => {
   const [form, setForm] = useState({
     category: 'maintenance', vendor: '', amount: '',
@@ -245,29 +271,28 @@ const AddExpenseModal = ({ open, onClose, onSave }) => {
           <DialogTitle className="text-xl font-bold">Add Expense</DialogTitle>
           <p className="text-slate-500 text-sm">Log utilities, maintenance, or any property-related cost.</p>
         </DialogHeader>
-        <form onSubmit={handleSubmit} className="space-y-4 pt-2">
-          {/* Quick category buttons */}
+        <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '16px', paddingTop: '8px' }}>
           <div>
             <Label className="text-xs font-semibold text-slate-600 mb-2 block">Category</Label>
             <div className="grid grid-cols-4 gap-2">
-              {CATEGORIES.map(cat => (
-                <button
-                  key={cat.key}
-                  type="button"
-                  onClick={() => setForm(f => ({ ...f, category: cat.key }))}
-                  className="p-2 rounded-xl border text-center transition-all text-xs font-medium"
-                  style={form.category === cat.key
-                    ? { background: cat.color, borderColor: cat.color, color: '#fff' }
-                    : { background: cat.bg, borderColor: '#e2e8f0', color: cat.color }
-                  }
-                >
-                  <div className="flex justify-center mb-1">{cat.icon}</div>
-                  {cat.label.split(' ')[0]}
-                </button>
-              ))}
+              {CATEGORIES.map(cat => {
+                const Icon = cat.icon;
+                return (
+                  <button key={cat.key} type="button" onClick={() => setForm(f => ({ ...f, category: cat.key }))}
+                    className="p-2 rounded-xl border text-center transition-all"
+                    style={form.category === cat.key
+                      ? { background: cat.color, borderColor: cat.color, color: 'white' }
+                      : { background: cat.bg, borderColor: '#e2e8f0', color: cat.color }
+                    }>
+                    <div className="flex justify-center" style={{ marginBottom: '4px' }}>
+                      <Icon style={{ width: '16px', height: '16px' }} />
+                    </div>
+                    <p style={{ fontSize: '11px', fontWeight: 500 }}>{cat.label.split(' ')[0]}</p>
+                  </button>
+                );
+              })}
             </div>
           </div>
-
           <div className="grid grid-cols-2 gap-4">
             <div>
               <Label className="text-xs font-semibold text-slate-600 mb-1 block">Date</Label>
@@ -281,18 +306,15 @@ const AddExpenseModal = ({ open, onClose, onSave }) => {
               </div>
             </div>
           </div>
-
           <div>
             <Label className="text-xs font-semibold text-slate-600 mb-1 block">Vendor / Payee</Label>
-            <Input placeholder="e.g. Home Depot, Georgia Power, Plumber Bob" value={form.vendor} onChange={e => setForm(f => ({ ...f, vendor: e.target.value }))} className="h-11 rounded-xl" />
+            <Input placeholder="e.g. Home Depot, Georgia Power" value={form.vendor} onChange={e => setForm(f => ({ ...f, vendor: e.target.value }))} className="h-11 rounded-xl" />
           </div>
-
           <div>
             <Label className="text-xs font-semibold text-slate-600 mb-1 block">Description (optional)</Label>
             <Input placeholder="What was this for?" value={form.description} onChange={e => setForm(f => ({ ...f, description: e.target.value }))} className="h-11 rounded-xl" />
           </div>
-
-          <div className="flex gap-3 pt-2">
+          <div className="flex gap-3">
             <Button type="button" variant="outline" onClick={onClose} className="flex-1 h-12 rounded-xl">Cancel</Button>
             <Button type="submit" disabled={!form.amount} className="flex-1 h-12 rounded-xl font-bold text-white" style={{ background: '#1e3a5f' }}>
               Save Expense
@@ -304,7 +326,10 @@ const AddExpenseModal = ({ open, onClose, onSave }) => {
   );
 };
 
-// ─── Main Page ────────────────────────────────────────────────────────
+// ═══════════════════════════════════════════════════════════════════════
+// MAIN PAGE
+// ═══════════════════════════════════════════════════════════════════════
+
 const ExpensesPage = () => {
   const { selectedHome } = useHome();
   const { currentUser } = useAuth();
@@ -318,50 +343,34 @@ const ExpensesPage = () => {
   const [filterDateRange, setFilterDateRange] = useState('all');
   const [activeView, setActiveView] = useState('dashboard');
 
-  useEffect(() => {
-    if (selectedHome) loadExpenses();
-  }, [selectedHome]);
+  useEffect(() => { if (selectedHome) loadExpenses(); }, [selectedHome]);
 
   const loadExpenses = async () => {
     setLoading(true);
     try {
       const records = await pb.collection('expenses').getFullList({
-        filter: `propertyId = "${selectedHome.id}"`,
-        sort: '-expenseDate',
-        $autoCancel: false
+        filter: `propertyId = "${selectedHome.id}"`, sort: '-expenseDate', $autoCancel: false
       });
       setExpenses(records);
-    } catch (error) {
+    } catch {
       toast({ title: 'Error', description: 'Failed to load expenses', variant: 'destructive' });
-    } finally {
-      setLoading(false);
-    }
+    } finally { setLoading(false); }
   };
 
   const handleAdd = async (form) => {
     try {
-      await pb.collection('expenses').create({
-        ...form,
-        propertyId: selectedHome.id,
-        ownerId: currentUser.id
-      }, { $autoCancel: false });
-      toast({ title: '✅ Expense added successfully!' });
-      setIsAddOpen(false);
-      loadExpenses();
-    } catch (error) {
-      toast({ title: 'Error', description: 'Failed to add expense', variant: 'destructive' });
-    }
+      await pb.collection('expenses').create({ ...form, propertyId: selectedHome.id, ownerId: currentUser.id }, { $autoCancel: false });
+      toast({ title: '✅ Expense added!' });
+      setIsAddOpen(false); loadExpenses();
+    } catch { toast({ title: 'Error', description: 'Failed to add expense', variant: 'destructive' }); }
   };
 
   const handleDelete = async (id) => {
     if (!window.confirm('Delete this expense?')) return;
     try {
       await pb.collection('expenses').delete(id, { $autoCancel: false });
-      toast({ title: 'Expense deleted' });
-      loadExpenses();
-    } catch (error) {
-      toast({ title: 'Error', variant: 'destructive' });
-    }
+      toast({ title: 'Expense deleted' }); loadExpenses();
+    } catch { toast({ title: 'Error', variant: 'destructive' }); }
   };
 
   const filtered = useMemo(() => {
@@ -373,30 +382,22 @@ const ExpensesPage = () => {
         (e.category || '').toLowerCase().includes(searchQuery.toLowerCase());
       const matchCat = filterCategory === 'all' || e.category === filterCategory;
       let matchDate = true;
-      if (filterDateRange === 'month') {
-        const d = new Date(e.expenseDate);
-        matchDate = d.getMonth() === now.getMonth() && d.getFullYear() === now.getFullYear();
-      } else if (filterDateRange === 'quarter') {
-        const d = new Date(e.expenseDate);
-        const q = Math.floor(now.getMonth() / 3);
-        matchDate = Math.floor(d.getMonth() / 3) === q && d.getFullYear() === now.getFullYear();
-      } else if (filterDateRange === 'year') {
-        matchDate = new Date(e.expenseDate).getFullYear() === now.getFullYear();
-      }
+      if (filterDateRange === 'month') { const d = new Date(e.expenseDate); matchDate = d.getMonth() === now.getMonth() && d.getFullYear() === now.getFullYear(); }
+      else if (filterDateRange === 'quarter') { const d = new Date(e.expenseDate); const q = Math.floor(now.getMonth() / 3); matchDate = Math.floor(d.getMonth() / 3) === q && d.getFullYear() === now.getFullYear(); }
+      else if (filterDateRange === 'year') { matchDate = new Date(e.expenseDate).getFullYear() === now.getFullYear(); }
       return matchSearch && matchCat && matchDate;
     });
   }, [expenses, searchQuery, filterCategory, filterDateRange]);
 
   if (!selectedHome) {
     return (
-      <div className="bg-white rounded-3xl border-2 border-dashed border-slate-200 p-16 text-center max-w-lg mx-auto mt-8">
-        <div className="w-14 h-14 rounded-2xl flex items-center justify-center mx-auto mb-4" style={{ background: '#eef2f8' }}>
-          <span className="text-2xl">🏠</span>
-        </div>
-        <h3 className="text-lg font-bold text-slate-900 mb-2">No property selected</h3>
-        <p className="text-slate-500 text-sm mb-4">Select a property from the top menu to get started.</p>
-        <div className="inline-flex items-center gap-2 bg-amber-50 border border-amber-100 rounded-xl px-4 py-2.5">
-          <span className="text-amber-600 text-xs font-medium">👆 Use the property selector in the top right</span>
+      <div className="max-w-6xl mx-auto">
+        <div className="bg-white text-center" style={{ borderRadius: '12px', border: '2px dashed #e2e8f0', padding: '48px 20px', marginTop: '32px' }}>
+          <div className="flex items-center justify-center mx-auto" style={{ width: '64px', height: '64px', borderRadius: '16px', background: '#eef2f8', marginBottom: '16px' }}>
+            <Receipt style={{ width: '28px', height: '28px', color: '#1e3a5f' }} />
+          </div>
+          <p className="font-semibold text-slate-900" style={{ fontSize: '18px', marginBottom: '8px' }}>No property selected.</p>
+          <p className="text-slate-400" style={{ fontSize: '14px' }}>Select a property from the top menu to view expenses.</p>
         </div>
       </div>
     );
@@ -405,123 +406,138 @@ const ExpensesPage = () => {
   return (
     <>
       <Helmet><title>Expenses — CasaCEO</title></Helmet>
-
       <div className="max-w-6xl mx-auto pb-20">
 
-        {/* Header */}
-        <div className="rounded-3xl p-8 mb-8 text-white relative overflow-hidden" style={{ background: '#1e3a5f' }}>
-          <div className="absolute top-0 right-0 w-64 h-64 rounded-full opacity-10" style={{ background: '#e8604c', transform: 'translate(30%,-30%)' }}></div>
-          <div className="relative z-10 flex flex-col md:flex-row md:items-center justify-between gap-6">
-            <div>
-              <h1 className="text-3xl font-extrabold text-white mb-2">Expenses</h1>
-              <p className="text-blue-200 text-base leading-relaxed max-w-xl">
-                Track spending across all your properties — utilities, maintenance, insurance, and more.
-              </p>
-              <div className="flex items-center gap-2 mt-3">
-                <ShieldCheck className="w-4 h-4 text-green-300" />
-                <span className="text-blue-200 text-xs">Your financial data is encrypted and securely stored.</span>
+        {/* ── Page Header ── */}
+        <div className="bg-white border-b border-slate-200 -mx-4 sm:-mx-6 lg:-mx-8 px-4 sm:px-6 lg:px-8" style={{ padding: '24px 32px', marginBottom: '32px' }}>
+          <div className="flex items-center gap-2 text-slate-400" style={{ fontSize: '13px', marginBottom: '12px' }}>
+            <Link to="/home-profile" className="hover:text-slate-600 transition-colors">Home Profile</Link>
+            <ChevronRight style={{ width: '14px', height: '14px' }} />
+            <span className="text-slate-700 font-medium">Expenses</span>
+          </div>
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+            <div className="flex items-center gap-4">
+              <div className="flex items-center justify-center" style={{ width: '48px', height: '48px', borderRadius: '12px', background: '#ecfdf5' }}>
+                <Receipt style={{ width: '24px', height: '24px', color: '#059669' }} />
+              </div>
+              <div>
+                <h1 className="font-semibold text-slate-900" style={{ fontSize: '28px', lineHeight: '1.2' }}>Expenses</h1>
+                <p className="text-slate-400" style={{ fontSize: '14px', marginTop: '2px' }}>
+                  {selectedHome.name} · {expenses.length} expenses tracked
+                </p>
               </div>
             </div>
             <div className="flex gap-3">
-              <Button
-                variant="outline"
-                onClick={() => exportToCSV(filtered, selectedHome.name)}
-                className="border-white/20 text-white hover:bg-white/10 rounded-xl font-semibold"
-              >
-                <Download className="w-4 h-4 mr-2" /> Export CSV
-              </Button>
-              <Button
-                onClick={() => setIsAddOpen(true)}
-                className="bg-[#e8604c] hover:bg-[#d4503c] text-white rounded-xl font-bold shadow-lg"
-              >
-                <Plus className="w-4 h-4 mr-2" /> Add Expense
-              </Button>
+              <button onClick={() => exportToCSV(filtered, selectedHome.name)}
+                className="flex items-center gap-2 font-semibold text-slate-600 border border-slate-200 hover:bg-slate-50 transition-all rounded-xl"
+                style={{ padding: '10px 16px', fontSize: '13px' }}>
+                <Download style={{ width: '15px', height: '15px' }} /> Export CSV
+              </button>
+              <button onClick={() => setIsAddOpen(true)}
+                className="flex items-center gap-2 font-semibold text-white hover:opacity-90 transition-all rounded-xl"
+                style={{ background: '#1e3a5f', padding: '10px 20px', fontSize: '14px' }}>
+                <Plus style={{ width: '16px', height: '16px' }} /> Add Expense
+              </button>
             </div>
           </div>
         </div>
 
-        {expenses.length === 0 && !loading ? (
-          /* Empty State */
-          <div className="bg-white rounded-3xl border-2 border-dashed border-slate-200 p-16 text-center">
-            <div className="w-16 h-16 rounded-2xl flex items-center justify-center mx-auto mb-5" style={{ background: '#eef2f8' }}>
-              <Receipt className="w-8 h-8" style={{ color: '#1e3a5f' }} />
-            </div>
-            <h3 className="text-xl font-bold text-slate-900 mb-2">No expenses yet</h3>
-            <p className="text-slate-500 max-w-md mx-auto mb-2">
-              Stay on top of your property finances — add your first expense and see where your money goes.
-            </p>
-            <p className="text-slate-400 text-sm mb-8">Log utilities, maintenance, insurance, and any property-related cost.</p>
-            <Button onClick={() => setIsAddOpen(true)} className="font-bold text-white px-8 h-12 rounded-xl" style={{ background: '#1e3a5f' }}>
-              <Plus className="w-4 h-4 mr-2" /> Add Your First Expense
-            </Button>
+        {loading ? (
+          <div className="grid grid-cols-2 lg:grid-cols-4 gap-4" style={{ marginBottom: '24px' }}>
+            {[1,2,3,4].map(i => <div key={i} className="h-28 bg-slate-100 animate-pulse rounded-xl" />)}
           </div>
-        ) : loading ? (
-          <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
-            {[1,2,3,4].map(i => <div key={i} className="h-28 bg-slate-100 animate-pulse rounded-2xl"></div>)}
+        ) : expenses.length === 0 ? (
+          <div className="bg-white text-center" style={{ borderRadius: '12px', border: '2px dashed #e2e8f0', padding: '48px 20px' }}>
+            <div className="flex items-center justify-center mx-auto" style={{ width: '64px', height: '64px', borderRadius: '16px', background: '#ecfdf5', marginBottom: '16px' }}>
+              <Receipt style={{ width: '28px', height: '28px', color: '#059669' }} />
+            </div>
+            <p className="font-semibold text-slate-900" style={{ fontSize: '20px', marginBottom: '8px' }}>No expenses yet.</p>
+            <p className="text-slate-400" style={{ fontSize: '14px', marginBottom: '24px', maxWidth: '400px', margin: '0 auto 24px' }}>
+              Stay on top of your property finances — log utilities, maintenance, insurance, and more.
+            </p>
+            <button onClick={() => setIsAddOpen(true)} className="font-semibold text-white rounded-xl hover:opacity-90 transition-all"
+              style={{ background: '#1e3a5f', padding: '12px 28px', fontSize: '14px' }}>
+              <Plus className="w-4 h-4 inline mr-2" /> Add First Expense
+            </button>
           </div>
         ) : (
           <>
             {/* View Toggle */}
-            <div className="flex items-center gap-3 mb-6">
-              <div className="flex bg-white border border-slate-200 rounded-xl p-1 shadow-sm">
-                {[
-                  { key: 'dashboard', label: '📊 Overview' },
-                  { key: 'list', label: '📋 All Expenses' },
-                ].map(v => (
-                  <button
-                    key={v.key}
-                    onClick={() => setActiveView(v.key)}
-                    className="px-4 py-2 rounded-lg text-sm font-semibold transition-all"
-                    style={activeView === v.key ? { background: '#1e3a5f', color: '#fff' } : { color: '#64748b' }}
-                  >
+            <div className="flex items-center gap-3" style={{ marginBottom: '24px' }}>
+              <div className="flex gap-1 bg-white border border-slate-200 rounded-2xl shadow-sm" style={{ padding: '6px' }}>
+                {[{ key: 'dashboard', label: '📊 Overview' }, { key: 'list', label: '📋 All Expenses' }].map(v => (
+                  <button key={v.key} onClick={() => setActiveView(v.key)}
+                    className="font-medium rounded-xl transition-all"
+                    style={{ padding: '8px 16px', fontSize: '13px', background: activeView === v.key ? '#1e3a5f' : 'transparent', color: activeView === v.key ? 'white' : '#64748b' }}>
                     {v.label}
                   </button>
                 ))}
               </div>
-              <span className="text-xs text-slate-400 ml-auto">{filtered.length} expenses · ${filtered.reduce((s,e) => s + parseFloat(e.amount||0), 0).toLocaleString(undefined,{minimumFractionDigits:0})} total</span>
+              <span className="text-slate-400 ml-auto" style={{ fontSize: '12px' }}>
+                {filtered.length} expenses · ${filtered.reduce((s, e) => s + parseFloat(e.amount || 0), 0).toLocaleString(undefined, { minimumFractionDigits: 0 })} total
+              </span>
             </div>
 
             {activeView === 'dashboard' ? (
               <>
                 <SummaryCards expenses={expenses} />
-                <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-6" style={{ marginBottom: '24px' }}>
                   <CategoryBreakdown expenses={expenses} />
-                  <MonthlyTrend expenses={expenses} />
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+                    <MonthlyTrend expenses={expenses} />
+                    <AnnualSummary expenses={expenses} />
+                  </div>
                 </div>
 
                 {/* Recent Expenses */}
-                <div className="bg-white rounded-2xl border border-slate-100 shadow-sm p-6">
-                  <div className="flex items-center justify-between mb-4">
-                    <h3 className="font-bold text-slate-900">Recent Expenses</h3>
-                    <button onClick={() => setActiveView('list')} className="text-xs font-semibold hover:opacity-70" style={{ color: '#1e3a5f' }}>View all →</button>
+                <div className="bg-white" style={{ borderRadius: '12px', border: '1px solid #e2e8f0', padding: '20px', boxShadow: '0 1px 3px rgba(0,0,0,0.06)' }}>
+                  <div className="flex items-center justify-between" style={{ marginBottom: '16px' }}>
+                    <h3 className="font-semibold text-slate-900" style={{ fontSize: '18px' }}>Recent Expenses</h3>
+                    <button onClick={() => setActiveView('list')} className="flex items-center gap-1 font-semibold hover:opacity-70 transition-opacity" style={{ color: '#1e3a5f', fontSize: '13px' }}>
+                      View all <ArrowRight style={{ width: '13px', height: '13px' }} />
+                    </button>
                   </div>
-                  <div className="space-y-2">
-                    {expenses.slice(0, 5).map(exp => {
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                    {expenses.slice(0, 6).map(exp => {
                       const cfg = getCat(exp.category);
+                      const Icon = cfg.icon;
                       return (
-                        <div key={exp.id} className="flex items-center gap-3 p-3 rounded-xl hover:bg-slate-50 transition-colors">
-                          <div className="w-9 h-9 rounded-xl flex items-center justify-center flex-shrink-0" style={{ background: cfg.bg, color: cfg.color }}>
-                            {cfg.icon}
+                        <div key={exp.id} className="flex items-center gap-3 hover:bg-slate-50 rounded-xl transition-colors" style={{ padding: '10px 12px' }}>
+                          <div className="flex items-center justify-center flex-shrink-0" style={{ width: '36px', height: '36px', borderRadius: '8px', background: cfg.bg }}>
+                            <Icon style={{ width: '16px', height: '16px', color: cfg.color }} />
                           </div>
                           <div className="flex-1 min-w-0">
-                            <p className="text-sm font-semibold text-slate-900 truncate">{exp.vendor || cfg.label}</p>
-                            <p className="text-xs text-slate-400">{new Date(exp.expenseDate).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}</p>
+                            <p className="font-semibold text-slate-900 truncate" style={{ fontSize: '14px' }}>{exp.vendor || cfg.label}</p>
+                            <p className="text-slate-400" style={{ fontSize: '12px' }}>
+                              {new Date(exp.expenseDate).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })} · {cfg.label}
+                            </p>
                           </div>
-                          <span className="font-bold text-slate-900 text-sm">${parseFloat(exp.amount).toLocaleString(undefined, { minimumFractionDigits: 2 })}</span>
+                          <span className="font-bold text-slate-900 flex-shrink-0" style={{ fontSize: '14px' }}>
+                            ${parseFloat(exp.amount).toLocaleString(undefined, { minimumFractionDigits: 2 })}
+                          </span>
                         </div>
                       );
                     })}
                   </div>
                 </div>
+
+                {/* Vendor Directory Link */}
+                <div className="flex items-center gap-4 rounded-2xl" style={{ background: '#eef2f8', border: '1px solid #c7d7eb', padding: '14px 20px', marginTop: '16px' }}>
+                  <Users style={{ width: '18px', height: '18px', color: '#1e3a5f', flexShrink: 0 }} />
+                  <p className="text-slate-700 font-medium" style={{ fontSize: '14px' }}>Need a vendor for a repair or service?</p>
+                  <Link to="/vendors" className="flex items-center gap-1 font-semibold hover:opacity-70 transition-opacity ml-auto whitespace-nowrap" style={{ color: '#1e3a5f', fontSize: '13px' }}>
+                    Vendor Directory <ArrowRight style={{ width: '13px', height: '13px' }} />
+                  </Link>
+                </div>
               </>
             ) : (
               <>
                 {/* Filters */}
-                <div className="flex flex-col sm:flex-row gap-3 mb-6">
+                <div className="flex flex-col sm:flex-row gap-3" style={{ marginBottom: '20px' }}>
                   <div className="relative flex-1">
-                    <Search className="absolute left-3 top-3 w-4 h-4 text-slate-400" />
-                    <Input placeholder="Search vendor, description..." value={searchQuery} onChange={e => setSearchQuery(e.target.value)} className="pl-9 h-11 rounded-xl" />
-                    {searchQuery && <button onClick={() => setSearchQuery('')} className="absolute right-3 top-3 text-slate-400"><X className="w-4 h-4" /></button>}
+                    <Search style={{ width: '15px', height: '15px', color: '#94a3b8', position: 'absolute', left: '12px', top: '50%', transform: 'translateY(-50%)' }} />
+                    <Input placeholder="Search vendor, description…" value={searchQuery} onChange={e => setSearchQuery(e.target.value)} className="pl-9 h-11 rounded-xl" />
+                    {searchQuery && <button onClick={() => setSearchQuery('')} className="absolute right-3 top-3 text-slate-400"><X style={{ width: '15px', height: '15px' }} /></button>}
                   </div>
                   <select value={filterCategory} onChange={e => setFilterCategory(e.target.value)} className="h-11 px-4 rounded-xl border border-slate-200 text-sm bg-white font-medium text-slate-700">
                     <option value="all">All Categories</option>
@@ -535,50 +551,50 @@ const ExpensesPage = () => {
                   </select>
                 </div>
 
-                {/* Expense Table */}
-                <div className="bg-white rounded-2xl border border-slate-100 shadow-sm overflow-hidden">
+                {/* Table */}
+                <div className="bg-white overflow-hidden" style={{ borderRadius: '12px', border: '1px solid #e2e8f0', boxShadow: '0 1px 3px rgba(0,0,0,0.06)' }}>
                   {filtered.length === 0 ? (
-                    <div className="p-12 text-center">
-                      <p className="text-slate-400 font-medium">No expenses match your filters</p>
-                      <button onClick={() => { setSearchQuery(''); setFilterCategory('all'); setFilterDateRange('all'); }} className="mt-2 text-xs text-blue-500">Clear filters</button>
+                    <div className="text-center" style={{ padding: '48px 20px' }}>
+                      <p className="font-medium text-slate-400" style={{ fontSize: '15px' }}>No expenses match your filters.</p>
+                      <button onClick={() => { setSearchQuery(''); setFilterCategory('all'); setFilterDateRange('all'); }} className="text-blue-500 hover:text-blue-700 transition-colors" style={{ fontSize: '13px', marginTop: '8px' }}>
+                        Clear filters
+                      </button>
                     </div>
                   ) : (
                     <div className="overflow-x-auto">
                       <table className="w-full text-sm">
                         <thead>
                           <tr className="bg-slate-50 border-b border-slate-100">
-                            <th className="px-5 py-3.5 text-left text-xs font-semibold text-slate-500 uppercase tracking-wide">Date</th>
-                            <th className="px-5 py-3.5 text-left text-xs font-semibold text-slate-500 uppercase tracking-wide">Category</th>
-                            <th className="px-5 py-3.5 text-left text-xs font-semibold text-slate-500 uppercase tracking-wide">Vendor</th>
-                            <th className="px-5 py-3.5 text-left text-xs font-semibold text-slate-500 uppercase tracking-wide">Description</th>
-                            <th className="px-5 py-3.5 text-right text-xs font-semibold text-slate-500 uppercase tracking-wide">Amount</th>
-                            <th className="px-5 py-3.5"></th>
+                            {['Date', 'Category', 'Vendor', 'Description', 'Amount', ''].map((h, i) => (
+                              <th key={i} className={`px-5 py-3.5 text-xs font-semibold text-slate-500 uppercase tracking-wide ${i >= 4 ? 'text-right' : 'text-left'}`}>{h}</th>
+                            ))}
                           </tr>
                         </thead>
                         <tbody className="divide-y divide-slate-50">
                           {filtered.map(exp => {
                             const cfg = getCat(exp.category);
+                            const Icon = cfg.icon;
                             return (
                               <tr key={exp.id} className="hover:bg-slate-50/50 transition-colors">
-                                <td className="px-5 py-4 text-slate-500 text-xs whitespace-nowrap">
+                                <td className="px-5 py-4 text-slate-500 whitespace-nowrap" style={{ fontSize: '13px' }}>
                                   {new Date(exp.expenseDate).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
                                 </td>
                                 <td className="px-5 py-4 whitespace-nowrap">
                                   <div className="flex items-center gap-2">
-                                    <div className="w-6 h-6 rounded-md flex items-center justify-center" style={{ background: cfg.bg, color: cfg.color }}>
-                                      {cfg.icon}
+                                    <div className="flex items-center justify-center" style={{ width: '24px', height: '24px', borderRadius: '6px', background: cfg.bg }}>
+                                      <Icon style={{ width: '12px', height: '12px', color: cfg.color }} />
                                     </div>
-                                    <span className="text-xs font-semibold capitalize" style={{ color: cfg.color }}>{cfg.label}</span>
+                                    <span className="font-semibold" style={{ fontSize: '12px', color: cfg.color }}>{cfg.label}</span>
                                   </div>
                                 </td>
-                                <td className="px-5 py-4 text-slate-900 font-medium">{exp.vendor || '—'}</td>
-                                <td className="px-5 py-4 text-slate-400 truncate max-w-[180px]">{exp.description || '—'}</td>
-                                <td className="px-5 py-4 text-right font-bold text-slate-900 whitespace-nowrap">
+                                <td className="px-5 py-4 font-medium text-slate-900" style={{ fontSize: '14px' }}>{exp.vendor || '—'}</td>
+                                <td className="px-5 py-4 text-slate-400 truncate max-w-40" style={{ fontSize: '13px' }}>{exp.description || '—'}</td>
+                                <td className="px-5 py-4 text-right font-bold text-slate-900 whitespace-nowrap" style={{ fontSize: '14px' }}>
                                   ${parseFloat(exp.amount).toLocaleString(undefined, { minimumFractionDigits: 2 })}
                                 </td>
                                 <td className="px-5 py-4 text-right">
                                   <button onClick={() => handleDelete(exp.id)} className="text-slate-300 hover:text-red-500 transition-colors">
-                                    <Trash2 className="w-4 h-4" />
+                                    <Trash2 style={{ width: '15px', height: '15px' }} />
                                   </button>
                                 </td>
                               </tr>
@@ -587,11 +603,11 @@ const ExpensesPage = () => {
                         </tbody>
                         <tfoot className="bg-slate-50 border-t border-slate-100">
                           <tr>
-                            <td colSpan={4} className="px-5 py-3 text-xs font-semibold text-slate-500">{filtered.length} expenses</td>
-                            <td className="px-5 py-3 text-right font-extrabold text-slate-900">
-                              ${filtered.reduce((s,e) => s + parseFloat(e.amount||0), 0).toLocaleString(undefined, { minimumFractionDigits: 2 })}
+                            <td colSpan={4} className="px-5 py-3 text-slate-500 font-semibold" style={{ fontSize: '12px' }}>{filtered.length} expenses</td>
+                            <td className="px-5 py-3 text-right font-extrabold text-slate-900" style={{ fontSize: '15px' }}>
+                              ${filtered.reduce((s, e) => s + parseFloat(e.amount || 0), 0).toLocaleString(undefined, { minimumFractionDigits: 2 })}
                             </td>
-                            <td></td>
+                            <td />
                           </tr>
                         </tfoot>
                       </table>
