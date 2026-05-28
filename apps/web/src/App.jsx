@@ -88,6 +88,14 @@ import ValueEnginePage from '@/pages/ValueEnginePage.jsx';
 import SmartHomeHubPage from '@/pages/SmartHomeHubPage.jsx';
 import InsightsReportsPage from '@/pages/InsightsReportsPage.jsx';
 
+// ── Tier-9 Website Master Spec (public, SiteLayout) ─────────────────
+import MarketingHomePage from '@/pages/MarketingHomePage.jsx';
+import ProductPage from '@/pages/ProductPage.jsx';
+import AgentsPage from '@/pages/AgentsPage.jsx';
+import BrokeragesPage from '@/pages/BrokeragesPage.jsx';
+import SupportPage from '@/pages/SupportPage.jsx';
+import ResourcesPage from '@/pages/ResourcesPage.jsx';
+
 // ═══════════════════════════════════════════════════════════════════════
 
 const AppContent = () => {
@@ -113,10 +121,17 @@ const AppContent = () => {
           {/* ── Auth & Public ─────────────────────────────────────── */}
           <Route path="/password-reset" element={<PasswordResetPage />} />
           <Route path="/password-confirm" element={<PasswordConfirmPage />} />
-          <Route path="/" element={<LandingPage />} />
+          <Route path="/" element={<MarketingHomePage />} />
           <Route path="/login" element={<LoginPage />} />
           <Route path="/signup" element={<SignupPage />} />
           <Route path="/gallery" element={<ImageGalleryPage />} />
+
+          {/* ── Tier-9 Website Master (public, SiteLayout) ────────── */}
+          <Route path="/product" element={<ProductPage />} />
+          <Route path="/agents" element={<AgentsPage />} />
+          <Route path="/brokerages" element={<BrokeragesPage />} />
+          <Route path="/support" element={<SupportPage />} />
+          <Route path="/resources" element={<ResourcesPage />} />
 
           {/* ── Marketing / Narrative (public, no Layout) ─────────── */}
           <Route path="/homeos" element={<HomeOSOverviewPage />} />
@@ -126,13 +141,13 @@ const AppContent = () => {
           <Route path="/homeowner-journey" element={<HomeownerJourneyPage />} />
           <Route path="/compass-preview" element={<CompassHomeOSPreviewPage />} />
 
-          {/* ── Tier-4 Info Pages (public, no Layout) ─────────────── */}
+          {/* ── Tier-4 Info Pages (public) ────────────────────────── */}
           <Route path="/pricing" element={<PricingPage />} />
           <Route path="/security" element={<SecurityPrivacyPage />} />
           <Route path="/about" element={<AboutPage />} />
           <Route path="/contact" element={<ContactPage />} />
 
-          {/* ── Tier-5 Legal & System Pages (public, no Layout) ───── */}
+          {/* ── Tier-5 Legal & System Pages (public) ─────────────── */}
           <Route path="/privacy" element={<PrivacyPolicyPage />} />
           <Route path="/terms" element={<TermsOfServicePage />} />
           <Route path="/cookies" element={<CookiePolicyPage />} />
@@ -180,7 +195,7 @@ const AppContent = () => {
           <Route path="/home-learn" element={<ProtectedRoute><Layout><HomeLearnPage /></Layout></ProtectedRoute>} />
           <Route path="/ready-to-sell" element={<ProtectedRoute><Layout><ReadyToSellPage /></Layout></ProtectedRoute>} />
 
-          {/* ── Tier-6 Future Expansion Modules (protected + Layout) ─ */}
+          {/* ── Tier-6 Future Expansion Modules ───────────────────── */}
           <Route path="/copilot" element={<ProtectedRoute><CopilotPage /></ProtectedRoute>} />
           <Route path="/marketplace" element={<ProtectedRoute><Layout><MarketplacePage /></Layout></ProtectedRoute>} />
           <Route path="/document-intelligence" element={<ProtectedRoute><Layout><DocumentIntelligencePage /></Layout></ProtectedRoute>} />
