@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { Helmet } from 'react-helmet';
 import { Link } from 'react-router-dom';
 import { FileText, ChevronDown, ChevronUp, Mail } from 'lucide-react';
+import SiteLayout from '@/pages/SiteLayout.jsx';
 
 const useFadeIn = () => {
   const ref = useRef(null);
@@ -164,56 +165,51 @@ const AccordionSection = ({ section, index }) => {
 };
 
 const TermsOfServicePage = () => (
-  <>
-    <Helmet><title>Terms of Service — HomeOS</title></Helmet>
-    <div className="min-h-screen bg-white overflow-x-hidden">
-
-      <section className="relative overflow-hidden" style={{ background: '#1e3a5f', padding: '80px 32px 64px' }}>
-        <div className="absolute inset-0 overflow-hidden pointer-events-none">
-          <div className="absolute rounded-full opacity-5" style={{ width: '500px', height: '500px', background: '#e8604c', top: '-120px', right: '-80px' }} />
-        </div>
-        <div className="relative z-10 max-w-3xl mx-auto text-center">
-          <div className="flex items-center justify-center" style={{ marginBottom: '20px' }}>
-            <div style={{ width: '56px', height: '56px', borderRadius: '14px', background: 'rgba(255,255,255,0.1)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-              <FileText style={{ width: '28px', height: '28px', color: 'white' }} />
-            </div>
+  <SiteLayout seo={{ title: 'Terms of Service — HomeOS' }} fullWidth>
+    <section className="relative overflow-hidden" style={{ background: '#1e3a5f', padding: '80px 32px 64px' }}>
+      <div className="absolute inset-0 overflow-hidden pointer-events-none">
+        <div className="absolute rounded-full opacity-5" style={{ width: '500px', height: '500px', background: '#e8604c', top: '-120px', right: '-80px' }} />
+      </div>
+      <div className="relative z-10 max-w-3xl mx-auto text-center">
+        <div className="flex items-center justify-center" style={{ marginBottom: '20px' }}>
+          <div style={{ width: '56px', height: '56px', borderRadius: '14px', background: 'rgba(255,255,255,0.1)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+            <FileText style={{ width: '28px', height: '28px', color: 'white' }} />
           </div>
-          <h1 className="font-semibold text-white" style={{ fontSize: '44px', lineHeight: '1.15', marginBottom: '16px' }}>Terms of Service</h1>
-          <p className="text-blue-200" style={{ fontSize: '17px', lineHeight: '1.75', maxWidth: '460px', margin: '0 auto 20px' }}>
-            Please read these terms carefully before using HomeOS.
-          </p>
-          <p style={{ fontSize: '13px', color: 'rgba(255,255,255,0.4)' }}>Last updated: May 2026 · Effective: May 1, 2026</p>
         </div>
-      </section>
+        <h1 className="font-semibold text-white" style={{ fontSize: '44px', lineHeight: '1.15', marginBottom: '16px' }}>Terms of Service</h1>
+        <p className="text-blue-200" style={{ fontSize: '17px', lineHeight: '1.75', maxWidth: '460px', margin: '0 auto 20px' }}>
+          Please read these terms carefully before using HomeOS.
+        </p>
+        <p style={{ fontSize: '13px', color: 'rgba(255,255,255,0.4)' }}>Last updated: May 2026 · Effective: May 1, 2026</p>
+      </div>
+    </section>
 
-      <section style={{ padding: '64px 32px', background: '#f8fafc' }}>
-        <div style={{ maxWidth: '800px', margin: '0 auto' }}>
-          <FadeIn>
-            <div className="bg-white" style={{ borderRadius: '16px', border: '1px solid #e2e8f0', overflow: 'hidden', boxShadow: '0 1px 4px rgba(0,0,0,0.04)' }}>
-              {SECTIONS.map((section, i) => (
-                <AccordionSection key={i} section={section} index={i} />
-              ))}
-            </div>
-          </FadeIn>
-          <FadeIn delay={100}>
-            <div style={{ marginTop: '32px', padding: '20px 24px', borderRadius: '12px', background: '#eef2f8', border: '1px solid #c7d7eb' }}>
-              <p style={{ fontSize: '13px', color: '#1e3a5f', lineHeight: '1.6' }}>
-                By using HomeOS, you acknowledge that you have read, understood, and agree to be bound by these Terms of Service. For legal questions, contact <span style={{ fontWeight: 700 }}>legal@homeos.com</span>.
-              </p>
-            </div>
-          </FadeIn>
-          <FadeIn delay={150}>
-            <div className="flex flex-wrap gap-3 justify-center" style={{ marginTop: '32px' }}>
-              {[['Privacy Policy', '/privacy'], ['Cookie Policy', '/cookies'], ['Security', '/security']].map(([label, href], i) => (
-                <Link key={i} to={href} className="font-medium hover:opacity-70 transition-opacity" style={{ fontSize: '13px', color: '#1e3a5f', textDecoration: 'underline' }}>{label}</Link>
-              ))}
-            </div>
-          </FadeIn>
-        </div>
-      </section>
-
-    </div>
-  </>
+    <section style={{ padding: '64px 32px', background: '#f8fafc' }}>
+      <div style={{ maxWidth: '800px', margin: '0 auto' }}>
+        <FadeIn>
+          <div className="bg-white" style={{ borderRadius: '16px', border: '1px solid #e2e8f0', overflow: 'hidden', boxShadow: '0 1px 4px rgba(0,0,0,0.04)' }}>
+            {SECTIONS.map((section, i) => (
+              <AccordionSection key={i} section={section} index={i} />
+            ))}
+          </div>
+        </FadeIn>
+        <FadeIn delay={100}>
+          <div style={{ marginTop: '32px', padding: '20px 24px', borderRadius: '12px', background: '#eef2f8', border: '1px solid #c7d7eb' }}>
+            <p style={{ fontSize: '13px', color: '#1e3a5f', lineHeight: '1.6' }}>
+              By using HomeOS, you acknowledge that you have read, understood, and agree to be bound by these Terms of Service. For legal questions, contact <span style={{ fontWeight: 700 }}>legal@homeos.com</span>.
+            </p>
+          </div>
+        </FadeIn>
+        <FadeIn delay={150}>
+          <div className="flex flex-wrap gap-3 justify-center" style={{ marginTop: '32px' }}>
+            {[['Privacy Policy', '/privacy'], ['Cookie Policy', '/cookies'], ['Security', '/security']].map(([label, href], i) => (
+              <Link key={i} to={href} className="font-medium hover:opacity-70 transition-opacity" style={{ fontSize: '13px', color: '#1e3a5f', textDecoration: 'underline' }}>{label}</Link>
+            ))}
+          </div>
+        </FadeIn>
+      </div>
+    </section>
+  </SiteLayout>
 );
 
 export default TermsOfServicePage;
