@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { Helmet } from 'react-helmet';
 import { Link } from 'react-router-dom';
 import { Cookie, ChevronDown, ChevronUp, Mail, CheckCircle2 } from 'lucide-react';
+import SiteLayout from '@/pages/SiteLayout.jsx';
 
 const useFadeIn = () => {
   const ref = useRef(null);
@@ -138,83 +139,73 @@ const AccordionSection = ({ section, index }) => {
 };
 
 const CookiePolicyPage = () => (
-  <>
-    <Helmet><title>Cookie Policy — HomeOS</title></Helmet>
-    <div className="min-h-screen bg-white overflow-x-hidden">
-
-      <section className="relative overflow-hidden" style={{ background: '#1e3a5f', padding: '80px 32px 64px' }}>
-        <div className="absolute inset-0 overflow-hidden pointer-events-none">
-          <div className="absolute rounded-full opacity-5" style={{ width: '500px', height: '500px', background: '#e8604c', top: '-120px', right: '-80px' }} />
-        </div>
-        <div className="relative z-10 max-w-3xl mx-auto text-center">
-          <div className="flex items-center justify-center" style={{ marginBottom: '20px' }}>
-            <div style={{ width: '56px', height: '56px', borderRadius: '14px', background: 'rgba(255,255,255,0.1)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-              <Cookie style={{ width: '28px', height: '28px', color: 'white' }} />
-            </div>
+  <SiteLayout seo={{ title: 'Cookie Policy — HomeOS' }} fullWidth>
+    <section className="relative overflow-hidden" style={{ background: '#1e3a5f', padding: '80px 32px 64px' }}>
+      <div className="absolute inset-0 overflow-hidden pointer-events-none">
+        <div className="absolute rounded-full opacity-5" style={{ width: '500px', height: '500px', background: '#e8604c', top: '-120px', right: '-80px' }} />
+      </div>
+      <div className="relative z-10 max-w-3xl mx-auto text-center">
+        <div className="flex items-center justify-center" style={{ marginBottom: '20px' }}>
+          <div style={{ width: '56px', height: '56px', borderRadius: '14px', background: 'rgba(255,255,255,0.1)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+            <Cookie style={{ width: '28px', height: '28px', color: 'white' }} />
           </div>
-          <h1 className="font-semibold text-white" style={{ fontSize: '44px', lineHeight: '1.15', marginBottom: '16px' }}>Cookie Policy</h1>
-          <p className="text-blue-200" style={{ fontSize: '17px', lineHeight: '1.75', maxWidth: '460px', margin: '0 auto 20px' }}>
-            Learn how HomeOS uses cookies to improve your experience.
-          </p>
-          <p style={{ fontSize: '13px', color: 'rgba(255,255,255,0.4)' }}>Last updated: May 2026</p>
         </div>
-      </section>
+        <h1 className="font-semibold text-white" style={{ fontSize: '44px', lineHeight: '1.15', marginBottom: '16px' }}>Cookie Policy</h1>
+        <p className="text-blue-200" style={{ fontSize: '17px', lineHeight: '1.75', maxWidth: '460px', margin: '0 auto 20px' }}>
+          Learn how HomeOS uses cookies to improve your experience.
+        </p>
+        <p style={{ fontSize: '13px', color: 'rgba(255,255,255,0.4)' }}>Last updated: May 2026</p>
+      </div>
+    </section>
 
-      <section style={{ padding: '64px 32px', background: '#f8fafc' }}>
-        <div style={{ maxWidth: '800px', margin: '0 auto' }}>
-
-          {/* Cookie type cards */}
-          <FadeIn>
-            <p className="font-semibold text-slate-500 uppercase tracking-widest" style={{ fontSize: '12px', marginBottom: '16px', letterSpacing: '0.12em' }}>Types of Cookies We Use</p>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', marginBottom: '32px' }}>
-              {COOKIE_TYPES.map((ct, i) => (
-                <div key={i} style={{ background: 'white', borderRadius: '14px', border: `1px solid ${ct.border}`, padding: '20px 24px', boxShadow: '0 1px 3px rgba(0,0,0,0.04)' }}>
-                  <div className="flex items-center justify-between" style={{ marginBottom: '8px' }}>
-                    <div className="flex items-center gap-2">
-                      <p className="font-semibold text-slate-900" style={{ fontSize: '15px' }}>{ct.label}</p>
-                      {ct.required && (
-                        <span style={{ fontSize: '11px', fontWeight: 700, color: ct.color, background: ct.bg, padding: '1px 7px', borderRadius: '999px' }}>Required</span>
-                      )}
-                    </div>
-                    {!ct.required && (
-                      <span style={{ fontSize: '11px', fontWeight: 600, color: '#94a3b8', background: '#f8fafc', padding: '1px 7px', borderRadius: '999px', border: '1px solid #e2e8f0' }}>Optional</span>
+    <section style={{ padding: '64px 32px', background: '#f8fafc' }}>
+      <div style={{ maxWidth: '800px', margin: '0 auto' }}>
+        <FadeIn>
+          <p className="font-semibold text-slate-500 uppercase tracking-widest" style={{ fontSize: '12px', marginBottom: '16px', letterSpacing: '0.12em' }}>Types of Cookies We Use</p>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', marginBottom: '32px' }}>
+            {COOKIE_TYPES.map((ct, i) => (
+              <div key={i} style={{ background: 'white', borderRadius: '14px', border: `1px solid ${ct.border}`, padding: '20px 24px', boxShadow: '0 1px 3px rgba(0,0,0,0.04)' }}>
+                <div className="flex items-center justify-between" style={{ marginBottom: '8px' }}>
+                  <div className="flex items-center gap-2">
+                    <p className="font-semibold text-slate-900" style={{ fontSize: '15px' }}>{ct.label}</p>
+                    {ct.required && (
+                      <span style={{ fontSize: '11px', fontWeight: 700, color: ct.color, background: ct.bg, padding: '1px 7px', borderRadius: '999px' }}>Required</span>
                     )}
                   </div>
-                  <p style={{ fontSize: '13px', color: '#64748b', marginBottom: '10px', lineHeight: '1.6' }}>{ct.desc}</p>
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-                    {ct.uses.map((use, j) => (
-                      <div key={j} className="flex items-center gap-2">
-                        <CheckCircle2 style={{ width: '13px', height: '13px', color: ct.color, flexShrink: 0 }} />
-                        <p style={{ fontSize: '13px', color: '#475569' }}>{use}</p>
-                      </div>
-                    ))}
-                  </div>
+                  {!ct.required && (
+                    <span style={{ fontSize: '11px', fontWeight: 600, color: '#94a3b8', background: '#f8fafc', padding: '1px 7px', borderRadius: '999px', border: '1px solid #e2e8f0' }}>Optional</span>
+                  )}
                 </div>
-              ))}
-            </div>
-          </FadeIn>
-
-          {/* Additional accordion sections */}
-          <FadeIn delay={80}>
-            <div className="bg-white" style={{ borderRadius: '16px', border: '1px solid #e2e8f0', overflow: 'hidden', boxShadow: '0 1px 4px rgba(0,0,0,0.04)' }}>
-              {SECTIONS.map((section, i) => (
-                <AccordionSection key={i} section={section} index={i} />
-              ))}
-            </div>
-          </FadeIn>
-
-          <FadeIn delay={130}>
-            <div className="flex flex-wrap gap-3 justify-center" style={{ marginTop: '32px' }}>
-              {[['Privacy Policy', '/privacy'], ['Terms of Service', '/terms'], ['Security', '/security']].map(([label, href], i) => (
-                <Link key={i} to={href} className="font-medium hover:opacity-70 transition-opacity" style={{ fontSize: '13px', color: '#1e3a5f', textDecoration: 'underline' }}>{label}</Link>
-              ))}
-            </div>
-          </FadeIn>
-        </div>
-      </section>
-
-    </div>
-  </>
+                <p style={{ fontSize: '13px', color: '#64748b', marginBottom: '10px', lineHeight: '1.6' }}>{ct.desc}</p>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                  {ct.uses.map((use, j) => (
+                    <div key={j} className="flex items-center gap-2">
+                      <CheckCircle2 style={{ width: '13px', height: '13px', color: ct.color, flexShrink: 0 }} />
+                      <p style={{ fontSize: '13px', color: '#475569' }}>{use}</p>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            ))}
+          </div>
+        </FadeIn>
+        <FadeIn delay={80}>
+          <div className="bg-white" style={{ borderRadius: '16px', border: '1px solid #e2e8f0', overflow: 'hidden', boxShadow: '0 1px 4px rgba(0,0,0,0.04)' }}>
+            {SECTIONS.map((section, i) => (
+              <AccordionSection key={i} section={section} index={i} />
+            ))}
+          </div>
+        </FadeIn>
+        <FadeIn delay={130}>
+          <div className="flex flex-wrap gap-3 justify-center" style={{ marginTop: '32px' }}>
+            {[['Privacy Policy', '/privacy'], ['Terms of Service', '/terms'], ['Security', '/security']].map(([label, href], i) => (
+              <Link key={i} to={href} className="font-medium hover:opacity-70 transition-opacity" style={{ fontSize: '13px', color: '#1e3a5f', textDecoration: 'underline' }}>{label}</Link>
+            ))}
+          </div>
+        </FadeIn>
+      </div>
+    </section>
+  </SiteLayout>
 );
 
 export default CookiePolicyPage;
