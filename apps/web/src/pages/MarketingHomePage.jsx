@@ -45,7 +45,7 @@ const TESTIMONIALS = [
   { name: 'Jennifer M.', role: 'Homeowner · Atlanta, GA', quote: 'I finally feel like I understand what I own. HomeOS gave me a system I never knew I needed.', rating: 5 },
   { name: 'Marcus T.', role: 'Homeowner · San Francisco, CA', quote: 'The document vault alone is worth it. I can find anything in seconds — no more lost warranties.', rating: 5 },
   { name: 'Sarah K.', role: 'Homeowner · Austin, TX', quote: 'The maintenance reminders caught a roof issue before it became a $20,000 problem. Incredible.', rating: 5 },
-  { name: 'David L.', role: 'Real Estate Attorney · Nashville, TN', quote: 'Every homeowner should have this. It's the missing layer between owning a home and understanding it.', rating: 5 },
+  { name: 'David L.', role: 'Real Estate Attorney · Nashville, TN', quote: "Every homeowner should have this. It's the missing layer between owning a home and understanding it.", rating: 5 },
 ];
 
 const INTEGRATIONS = [
