@@ -1,8 +1,8 @@
 /// <reference path="../pb_data/types.d.ts" />
 
 // TEST HOOK — extraction only, no database writes, no login required.
-// Open this link in a browser to run it:
-//   https://rezpanda-production.up.railway.app/casaceo/extract-test
+// Test by putting bill text in the URL after ?text= , for example:
+//   https://rezpanda-production.up.railway.app/casaceo/extract-test?text=Comcast%20Amount%20due%20$89.99%20Due%2007/01/2026
 // Delete this file once extraction is verified.
 
 routerAdd("GET", "/casaceo/extract-test", (e) => {
@@ -13,11 +13,12 @@ routerAdd("GET", "/casaceo/extract-test", (e) => {
     return e.json(500, { error: "ANTHROPIC_API_KEY not found in environment" });
   }
 
-  const billText =
-    "Xcel Energy\n" +
-    "Account: 1234567\n" +
-    "Amount due: $142.18\n" +
-    "Due date: 06/15/2026";
+  // Read bill text from the URL (?text=...). Falls back to a sample if none given.
+  let billText = e.request.url.query().get("text") || "";
+  if (!billText.trim()) {
+    billText =
+      "Xcel Energy\nAccount: 1234567\nAmount due: $142.18\nDue date: 06/15/2026";
+  }
 
   const systemPrompt =
     "You extract structured data from utility bills, invoices, and receipts. " +
@@ -50,9 +51,6 @@ routerAdd("GET", "/casaceo/extract-test", (e) => {
     return e.json(502, { error: "API request failed", detail: String(err) });
   }
 
-  console.log("EXTRACT-TEST status:", res.statusCode);
-  console.log("EXTRACT-TEST raw response:", res.raw);
-
   if (res.statusCode !== 200) {
     return e.json(502, { error: "Anthropic API error", status: res.statusCode, body: res.raw });
   }
@@ -69,10 +67,8 @@ routerAdd("GET", "/casaceo/extract-test", (e) => {
     const end = cleaned.lastIndexOf("}");
     parsed = JSON.parse(cleaned.slice(start, end + 1));
   } catch (err) {
-    console.log("EXTRACT-TEST parse failed:", String(err));
     return e.json(500, { error: "Could not parse model output", detail: String(err) });
   }
 
-  console.log("EXTRACT-TEST parsed:", JSON.stringify(parsed));
-  return e.json(200, { ok: true, parsed: parsed });
+  return e.json(200, { ok: true, billTextUsed: billText, parsed: parsed });
 });
