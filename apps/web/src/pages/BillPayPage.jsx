@@ -20,6 +20,7 @@ import AddServiceCompanyForm from '@/components/AddServiceCompanyForm.jsx';
 import ServiceCompanyCard from '@/components/ServiceCompanyCard.jsx';
 import PaymentHistoryTab from '@/components/PaymentHistoryTab.jsx';
 import UtilityCompanyListing from '@/components/UtilityCompanyListing.jsx';
+import PendingReviewSection from '@/components/PendingReviewSection.jsx';
 
 // ═══════════════════════════════════════════════════════════════════════
 // BILLS DUE SUMMARY BANNER — preserved exactly
@@ -432,6 +433,8 @@ const BillPayPage = () => {
               </div>
             ) : (
               <>
+                {/* Pending Review (email-ingested bills) */}
+                <PendingReviewSection onConfirmed={fetchCompanies} />
                 {/* Next Bill Due */}
                 <NextBillDue companies={companies} />
 
