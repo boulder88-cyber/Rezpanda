@@ -4,10 +4,11 @@ import { useToast } from '@/hooks/use-toast.js';
 import { Upload, Loader2 } from 'lucide-react';
 
 // ═══════════════════════════════════════════════════════════════════════
-// UPLOAD A BILL — lets the user pick a photo or PDF of a bill.
-// Sends it to the /casaceo/upload-test hook, which extracts the bill and
-// saves it as pending_review. On success, calls onUploaded() so the
-// "Bills to Review" section refreshes.
+// UPLOAD A BILL (hybrid) — reads the file in the browser, sends:
+//   • billBase64 : base64 of the file, for Claude to read
+//   • billType   : media type (image/png, application/pdf, etc.)
+//   • bill       : the original file, for storage in billFile
+// On success, calls onUploaded() so "Bills to Review" refreshes.
 // ═══════════════════════════════════════════════════════════════════════
 
 const UploadBillButton = ({ onUploaded }) => {
@@ -19,17 +20,34 @@ const UploadBillButton = ({ onUploaded }) => {
     if (fileInputRef.current) fileInputRef.current.click();
   };
 
+  // read a File into a base64 string (no data: prefix)
+  const fileToBase64 = (file) => new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => {
+      const result = reader.result || '';
+      const comma = result.indexOf(',');
+      resolve(comma >= 0 ? result.slice(comma + 1) : result);
+    };
+    reader.onerror = reject;
+    reader.readAsDataURL(file);
+  });
+
   const handleFileChosen = async (event) => {
     const file = event.target.files && event.target.files[0];
     if (!file) return;
 
     setUploading(true);
     try {
-      const formData = new FormData();
-      formData.append('bill', file);
+      const base64 = await fileToBase64(file);
+      let billType = file.type || 'image/jpeg';
+      // normalize a couple of common cases
+      if (file.name && file.name.toLowerCase().endsWith('.pdf')) billType = 'application/pdf';
 
-      // pb.baseUrl is the PocketBase server address; the auth token is sent
-      // so the hook knows who the owner is.
+      const formData = new FormData();
+      formData.append('bill', file);          // original, for storage
+      formData.append('billBase64', base64);  // for Claude
+      formData.append('billType', billType);
+
       const res = await fetch(pb.baseUrl + '/casaceo/upload-test', {
         method: 'POST',
         headers: { Authorization: pb.authStore.token },
@@ -47,7 +65,6 @@ const UploadBillButton = ({ onUploaded }) => {
       toast({ title: 'Upload failed', description: 'Please try again.', variant: 'destructive' });
     } finally {
       setUploading(false);
-      // reset so the same file can be picked again if needed
       if (fileInputRef.current) fileInputRef.current.value = '';
     }
   };
