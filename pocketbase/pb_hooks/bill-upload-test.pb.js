@@ -6,8 +6,7 @@
 
 routerAdd("POST", "/casaceo/upload-test", (e) => {
   const CATEGORIES = ["Electric", "Water", "Internet", "Insurance", "Auto", "Other"];
-  const TEST_OWNER_ID = "v41fdvkhgnvpjrt";
-
+  
   const apiKey = $os.getenv("ANTHROPIC_API_KEY");
   if (!apiKey) {
     return e.json(500, { error: "ANTHROPIC_API_KEY not found in environment" });
@@ -103,7 +102,7 @@ routerAdd("POST", "/casaceo/upload-test", (e) => {
     record.set("status", "pending_review");
     record.set("source", "email");
     record.set("parsed_raw", parsed);
-    record.set("ownerId", TEST_OWNER_ID);
+    record.set("ownerId", e.auth.id);
     $app.save(record);
     savedId = record.id;
   } catch (err) {
@@ -111,4 +110,4 @@ routerAdd("POST", "/casaceo/upload-test", (e) => {
   }
 
   return e.json(200, { ok: true, saved: true, savedId: savedId, filename: filename, parsed: parsed });
-});
+}, $apis.requireAuth());
