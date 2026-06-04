@@ -21,6 +21,7 @@ import ServiceCompanyCard from '@/components/ServiceCompanyCard.jsx';
 import PaymentHistoryTab from '@/components/PaymentHistoryTab.jsx';
 import UtilityCompanyListing from '@/components/UtilityCompanyListing.jsx';
 import PendingReviewSection from '@/components/PendingReviewSection.jsx';
+import UploadBillButton from '@/components/UploadBillButton.jsx';
 
 // ═══════════════════════════════════════════════════════════════════════
 // BILLS DUE SUMMARY BANNER — preserved exactly
@@ -380,6 +381,7 @@ const BillPayPage = () => {
             <button onClick={handleOpenAddCustom} className="flex items-center gap-2 font-semibold text-white hover:opacity-90 transition-all rounded-xl" style={{ background: '#1e3a5f', padding: '10px 20px', fontSize: '14px' }}>
               <Plus style={{ width: '16px', height: '16px' }} /> Add Bill
             </button>
+            <UploadBillButton onUploaded={fetchCompanies} />
           </div>
         </div>
       </div>
