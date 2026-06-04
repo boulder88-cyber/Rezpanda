@@ -23,7 +23,7 @@ routerAdd("POST", "/casaceo/upload-test", (e) => {
     filename = f.originalName || "upload";
     const reader = f.reader;
     const bytes = toBytes(reader);          // byte slice (PocketBase v0.29+)
-    base64 = bytesToBase64(bytes);          // base64 string for the API
+    base64 = toBase64(bytes);               // base64 string for the API
   } catch (err) {
     return e.json(500, { error: "Could not read uploaded file", detail: String(err) });
   }
