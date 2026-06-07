@@ -147,7 +147,7 @@ const TaskModal = ({ task, onSave, onClose }) => {
         <div style={{ padding: '24px', display: 'flex', flexDirection: 'column', gap: '16px' }}>
           <div>
             <Label className="text-sm font-semibold text-slate-700 mb-1.5 block">Maintenance Type</Label>
-            <Input placeholder="e.g. Gutter Cleaning" value={form.systemName} onChange={e => setForm(p => ({ ...p, systemName: e.target.value }))} className="h-11 rounded-xl" />
+            <Input placeholder="e.g. Termite Inspection, Filter Replacement" value={form.systemName} onChange={e => setForm(p => ({ ...p, systemName: e.target.value }))} className="h-11 rounded-xl" />
           </div>
 
           <div>
