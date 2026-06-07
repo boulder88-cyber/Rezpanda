@@ -22,22 +22,22 @@ import {
 // values in the maintenance_systems collection (case-sensitive).
 
 const MAINTENANCE_CATEGORIES = [
-  { name: 'HVAC', icon: '❄️', color: 'bg-blue-50 border-blue-100', cadences: ['Monthly', 'Quarterly', 'Semi-Annual', 'Annual'] },
-  { name: 'Plumbing', icon: '🔧', color: 'bg-cyan-50 border-cyan-100', cadences: ['Monthly', 'Quarterly', 'Annual'] },
-  { name: 'Electrical', icon: '⚡', color: 'bg-yellow-50 border-yellow-100', cadences: ['Annual', 'Every 3 Years', 'Every 5 Years'] },
-  { name: 'Roofing', icon: '🏠', color: 'bg-orange-50 border-orange-100', cadences: ['Semi-Annual', 'Annual', 'Every 3 Years'] },
-  { name: 'Landscaping', icon: '🌿', color: 'bg-green-50 border-green-100', cadences: ['Weekly', 'Bi-Weekly', 'Monthly', 'Seasonal'] },
-  { name: 'Pest Control', icon: '🐛', color: 'bg-red-50 border-red-100', cadences: ['Monthly', 'Quarterly', 'Semi-Annual'] },
-  { name: 'Appliances', icon: '🍳', color: 'bg-purple-50 border-purple-100', cadences: ['Semi-Annual', 'Annual'] },
-  { name: 'Pool/Spa', icon: '🏊', color: 'bg-sky-50 border-sky-100', cadences: ['Weekly', 'Monthly', 'Seasonal'] },
-  { name: 'Security', icon: '🔒', color: 'bg-slate-50 border-slate-200', cadences: ['Monthly', 'Semi-Annual', 'Annual'] },
-  { name: 'Gutters', icon: '🍂', color: 'bg-amber-50 border-amber-100', cadences: ['Semi-Annual', 'Annual'] },
-  { name: 'Painting', icon: '🖌️', color: 'bg-pink-50 border-pink-100', cadences: ['Every 3 Years', 'Every 5 Years', 'Every 10 Years'] },
-  { name: 'Foundation', icon: '🧱', color: 'bg-stone-50 border-stone-200', cadences: ['Annual', 'Every 3 Years', 'Every 5 Years'] },
-  { name: 'Insulation', icon: '🧊', color: 'bg-indigo-50 border-indigo-100', cadences: ['Every 5 Years', 'Every 10 Years'] },
-  { name: 'Windows', icon: '🪟', color: 'bg-teal-50 border-teal-100', cadences: ['Annual', 'Every 3 Years'] },
-  { name: 'Doors', icon: '🚪', color: 'bg-rose-50 border-rose-100', cadences: ['Annual', 'Every 3 Years'] },
-  { name: 'General', icon: '🔨', color: 'bg-gray-50 border-gray-200', cadences: ['Monthly', 'Quarterly', 'Annual'] },
+  { name: 'HVAC', icon: '❄️', color: 'bg-blue-50 border-blue-100' },
+  { name: 'Plumbing', icon: '🔧', color: 'bg-cyan-50 border-cyan-100' },
+  { name: 'Electrical', icon: '⚡', color: 'bg-yellow-50 border-yellow-100' },
+  { name: 'Roofing', icon: '🏠', color: 'bg-orange-50 border-orange-100' },
+  { name: 'Landscaping', icon: '🌿', color: 'bg-green-50 border-green-100' },
+  { name: 'Pest Control', icon: '🐛', color: 'bg-red-50 border-red-100' },
+  { name: 'Appliances', icon: '🍳', color: 'bg-purple-50 border-purple-100' },
+  { name: 'Pool/Spa', icon: '🏊', color: 'bg-sky-50 border-sky-100' },
+  { name: 'Security', icon: '🔒', color: 'bg-slate-50 border-slate-200' },
+  { name: 'Gutters', icon: '🍂', color: 'bg-amber-50 border-amber-100' },
+  { name: 'Painting', icon: '🖌️', color: 'bg-pink-50 border-pink-100' },
+  { name: 'Foundation', icon: '🧱', color: 'bg-stone-50 border-stone-200' },
+  { name: 'Insulation', icon: '🧊', color: 'bg-indigo-50 border-indigo-100' },
+  { name: 'Windows', icon: '🪟', color: 'bg-teal-50 border-teal-100' },
+  { name: 'Doors', icon: '🚪', color: 'bg-rose-50 border-rose-100' },
+  { name: 'General', icon: '🔨', color: 'bg-gray-50 border-gray-200' },
 ];
 
 const RECOMMENDED_VENDORS = {
@@ -66,32 +66,39 @@ const SEASONAL_TASKS = {
   Winter: { icon: Snowflake, color: '#2563eb', bg: '#eff6ff', tasks: ['Pipe insulation', 'Heating check', 'Storm prep', 'Generator test', 'Smoke detector check'] },
 };
 
+// One master cadence list used by every category.
+const CADENCE_LIST = ['Weekly', 'Monthly', 'Quarterly', 'Semi-Annual', 'Annually', 'Custom'];
+
 const CADENCE_DAYS = {
-  'Weekly': 7, 'Bi-Weekly': 14, 'Monthly': 30, 'Quarterly': 90,
-  'Semi-Annual': 180, 'Annual': 365, 'Every 3 Years': 365 * 3,
-  'Every 5 Years': 365 * 5, 'Every 10 Years': 365 * 10, 'Seasonal': 90,
+  'Weekly': 7, 'Monthly': 30, 'Quarterly': 90, 'Semi-Annual': 180, 'Annually': 365,
 };
 
-// Map a number of days back to the closest cadence label (for display/editing)
+// Map a number of days back to a cadence label (for display/editing).
+// Exact matches return the named cadence; anything else is treated as Custom.
 const daysToCadence = (days) => {
-  if (!days) return 'Annual';
-  let best = 'Annual';
-  let bestDiff = Infinity;
+  if (!days) return 'Annually';
   for (const [label, d] of Object.entries(CADENCE_DAYS)) {
-    const diff = Math.abs(d - days);
-    if (diff < bestDiff) { bestDiff = diff; best = label; }
+    if (d === days) return label;
   }
-  return best;
+  return 'Custom';
+};
+
+// Human-friendly label for cards/lists: shows the day count for custom intervals.
+const cadenceDisplay = (days) => {
+  const label = daysToCadence(days);
+  return label === 'Custom' ? `Every ${days}d` : label;
 };
 
 // ═══════════════════════════════════════════════════════════════════════
 // HELPERS
 // ═══════════════════════════════════════════════════════════════════════
 
-const calcNextDate = (lastDate, cadence) => {
+const calcNextDate = (lastDate, cadence, customDays) => {
   if (!lastDate) return '';
+  const days = cadence === 'Custom' ? (parseInt(customDays, 10) || 0) : (CADENCE_DAYS[cadence] || 365);
+  if (!days) return '';
   const d = new Date(lastDate);
-  d.setDate(d.getDate() + (CADENCE_DAYS[cadence] || 365));
+  d.setDate(d.getDate() + days);
   return d.toISOString().split('T')[0];
 };
 
@@ -111,17 +118,20 @@ const getTaskStatus = (task) => {
 // ═══════════════════════════════════════════════════════════════════════
 
 const TaskModal = ({ task, onSave, onClose }) => {
-  const [form, setForm] = useState({
-    systemName: task?.systemName || '',
-    systemType: task?.systemType || 'HVAC',
-    cadence: task ? daysToCadence(task.reminderFrequencyDays) : 'Annual',
-    lastServiceDate: task?.lastServiceDate ? task.lastServiceDate.split(' ')[0] : '',
-    nextServiceDate: task?.nextServiceDate ? task.nextServiceDate.split(' ')[0] : '',
-    vendor: task?.vendor || '',
-    serviceHistory: task?.serviceHistory || '',
+  const [form, setForm] = useState(() => {
+    const cad = task ? daysToCadence(task.reminderFrequencyDays) : 'Annually';
+    return {
+      systemName: task?.systemName || '',
+      systemType: task?.systemType || 'HVAC',
+      cadence: cad,
+      customDays: cad === 'Custom' ? String(task?.reminderFrequencyDays || '') : '',
+      lastServiceDate: task?.lastServiceDate ? task.lastServiceDate.split(' ')[0] : '',
+      nextServiceDate: task?.nextServiceDate ? task.nextServiceDate.split(' ')[0] : '',
+      vendor: task?.vendor || '',
+      serviceHistory: task?.serviceHistory || '',
+    };
   });
 
-  const selectedCategory = MAINTENANCE_CATEGORIES.find(c => c.name === form.systemType);
   const suggestedVendors = RECOMMENDED_VENDORS[form.systemType] || [];
 
   return (
@@ -156,20 +166,28 @@ const TaskModal = ({ task, onSave, onClose }) => {
           <div>
             <Label className="text-sm font-semibold text-slate-700 mb-1.5 block">Service Cadence</Label>
             <div className="flex flex-wrap gap-2">
-              {(selectedCategory?.cadences || ['Annual']).map(c => (
-                <button key={c} onClick={() => setForm(p => ({ ...p, cadence: c, nextServiceDate: calcNextDate(p.lastServiceDate, c) }))}
+              {CADENCE_LIST.map(c => (
+                <button key={c} onClick={() => setForm(p => ({ ...p, cadence: c, nextServiceDate: calcNextDate(p.lastServiceDate, c, p.customDays) }))}
                   className={`px-4 py-2 rounded-xl text-sm font-medium border transition-all ${form.cadence === c ? 'bg-blue-600 border-blue-600 text-white' : 'bg-white border-slate-200 text-slate-600 hover:border-slate-400'}`}>
                   {c}
                 </button>
               ))}
             </div>
+            {form.cadence === 'Custom' && (
+              <div style={{ marginTop: '12px' }}>
+                <Label className="text-xs font-medium text-slate-500 mb-1 block">Every how many days?</Label>
+                <Input type="number" min="1" placeholder="e.g. 45" value={form.customDays}
+                  onChange={e => setForm(p => ({ ...p, customDays: e.target.value, nextServiceDate: calcNextDate(p.lastServiceDate, 'Custom', e.target.value) }))}
+                  className="h-11 rounded-xl" style={{ maxWidth: '160px' }} />
+              </div>
+            )}
           </div>
 
           <div className="grid grid-cols-2 gap-4">
             <div>
               <Label className="text-sm font-semibold text-slate-700 mb-1.5 block">Last Service Date</Label>
               <Input type="date" value={form.lastServiceDate}
-                onChange={e => setForm(p => ({ ...p, lastServiceDate: e.target.value, nextServiceDate: calcNextDate(e.target.value, p.cadence) }))}
+                onChange={e => setForm(p => ({ ...p, lastServiceDate: e.target.value, nextServiceDate: calcNextDate(e.target.value, p.cadence, p.customDays) }))}
                 className="h-11 rounded-xl" />
             </div>
             <div>
@@ -272,7 +290,7 @@ const ServiceLogModal = ({ task, onAddLog, onClose }) => {
 const TaskCard = ({ task, onEdit, onDelete, onLogService }) => {
   const status = getTaskStatus(task);
   const cat = MAINTENANCE_CATEGORIES.find(c => c.name === task.systemType);
-  const cadenceLabel = daysToCadence(task.reminderFrequencyDays);
+  const cadenceLabel = cadenceDisplay(task.reminderFrequencyDays);
 
   return (
     <div className="bg-white hover:shadow-md transition-all" style={{
@@ -471,7 +489,7 @@ const MaintenanceManagementPage = () => {
   const buildPayload = (form) => ({
     systemName: form.systemName,
     systemType: form.systemType,
-    reminderFrequencyDays: CADENCE_DAYS[form.cadence] || 365,
+    reminderFrequencyDays: form.cadence === 'Custom' ? (parseInt(form.customDays, 10) || 0) : (CADENCE_DAYS[form.cadence] || 365),
     recurringReminder: true,
     lastServiceDate: form.lastServiceDate || '',
     nextServiceDate: form.nextServiceDate || '',
@@ -731,7 +749,7 @@ const MaintenanceManagementPage = () => {
                       <div className="flex-1 min-w-0">
                         <p className="font-semibold text-slate-900" style={{ fontSize: '15px' }}>{task.systemName}</p>
                         <p className="text-slate-400" style={{ fontSize: '13px', marginTop: '2px' }}>
-                          {task.vendor && `${task.vendor} · `}{daysToCadence(task.reminderFrequencyDays)}
+                          {task.vendor && `${task.vendor} · `}{cadenceDisplay(task.reminderFrequencyDays)}
                         </p>
                       </div>
                       <div className="text-right flex-shrink-0">
