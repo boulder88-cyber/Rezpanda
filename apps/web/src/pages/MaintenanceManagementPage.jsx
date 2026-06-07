@@ -138,7 +138,7 @@ const TaskModal = ({ task, onSave, onClose }) => {
     <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4 overflow-y-auto">
       <div className="bg-white w-full max-w-lg my-4" style={{ borderRadius: '16px', boxShadow: '0 25px 50px rgba(0,0,0,0.2)' }}>
         <div className="flex items-center justify-between" style={{ background: '#1e3a5f', borderRadius: '16px 16px 0 0', padding: '20px 24px' }}>
-          <h2 className="font-semibold text-white" style={{ fontSize: '18px' }}>{task ? 'Edit System' : 'Add Home System'}</h2>
+          <h2 className="font-semibold text-white" style={{ fontSize: '18px' }}>{task ? 'Edit Maintenance' : 'Add Maintenance'}</h2>
           <button onClick={onClose} className="flex items-center justify-center rounded-full hover:bg-white/10 transition-colors" style={{ width: '32px', height: '32px' }}>
             <X style={{ width: '16px', height: '16px', color: 'rgba(255,255,255,0.7)' }} />
           </button>
@@ -146,8 +146,8 @@ const TaskModal = ({ task, onSave, onClose }) => {
 
         <div style={{ padding: '24px', display: 'flex', flexDirection: 'column', gap: '16px' }}>
           <div>
-            <Label className="text-sm font-semibold text-slate-700 mb-1.5 block">System Name</Label>
-            <Input placeholder="e.g. HVAC Filter Change" value={form.systemName} onChange={e => setForm(p => ({ ...p, systemName: e.target.value }))} className="h-11 rounded-xl" />
+            <Label className="text-sm font-semibold text-slate-700 mb-1.5 block">Maintenance Type</Label>
+            <Input placeholder="e.g. Gutter Cleaning" value={form.systemName} onChange={e => setForm(p => ({ ...p, systemName: e.target.value }))} className="h-11 rounded-xl" />
           </div>
 
           <div>
@@ -165,10 +165,10 @@ const TaskModal = ({ task, onSave, onClose }) => {
 
           <div>
             <Label className="text-sm font-semibold text-slate-700 mb-1.5 block">Service Cadence</Label>
-            <div className="flex flex-wrap gap-2">
+            <div className="flex gap-1.5">
               {CADENCE_LIST.map(c => (
                 <button key={c} onClick={() => setForm(p => ({ ...p, cadence: c, nextServiceDate: calcNextDate(p.lastServiceDate, c, p.customDays) }))}
-                  className={`px-4 py-2 rounded-xl text-sm font-medium border transition-all ${form.cadence === c ? 'bg-blue-600 border-blue-600 text-white' : 'bg-white border-slate-200 text-slate-600 hover:border-slate-400'}`}>
+                  className={`px-2.5 py-1.5 rounded-lg text-xs font-medium border transition-all whitespace-nowrap ${form.cadence === c ? 'bg-blue-600 border-blue-600 text-white' : 'bg-white border-slate-200 text-slate-600 hover:border-slate-400'}`}>
                   {c}
                 </button>
               ))}
@@ -226,7 +226,7 @@ const TaskModal = ({ task, onSave, onClose }) => {
           <div className="flex gap-3">
             <Button variant="outline" onClick={onClose} className="flex-1 h-12 rounded-xl">Cancel</Button>
             <Button onClick={() => onSave(form)} disabled={!form.systemName} className="flex-1 h-12 rounded-xl text-white font-bold" style={{ background: '#1e3a5f' }}>
-              {task ? 'Save Changes' : 'Add System'}
+              {task ? 'Save Changes' : 'Add Maintenance'}
             </Button>
           </div>
         </div>
@@ -407,7 +407,7 @@ const SummaryStats = ({ tasks, onFilter }) => {
               background: health >= 80 ? '#059669' : health >= 50 ? '#d97706' : '#dc2626'
             }} />
           </div>
-          <p className="text-slate-400" style={{ fontSize: '12px', marginTop: '6px' }}>{upToDate} of {total} systems current · {overdue} overdue</p>
+          <p className="text-slate-400" style={{ fontSize: '12px', marginTop: '6px' }}>{upToDate} of {total} up to date · {overdue} overdue</p>
         </div>
       )}
     </div>
@@ -501,27 +501,27 @@ const MaintenanceManagementPage = () => {
     try {
       if (editingTask) {
         await pb.collection('maintenance_systems').update(editingTask.id, buildPayload(form), { $autoCancel: false });
-        toast({ title: '✅ System updated' });
+        toast({ title: '✅ Maintenance updated' });
       } else {
         await pb.collection('maintenance_systems').create(
           { ...buildPayload(form), homeId: home.id, ownerId: currentUser.id },
           { $autoCancel: false }
         );
-        toast({ title: '✅ System added' });
+        toast({ title: '✅ Maintenance added' });
       }
       setShowTaskModal(false); setEditingTask(null); loadTasks();
     } catch (e) {
       console.error('Save failed:', e);
-      toast({ title: 'Error saving system', variant: 'destructive' });
+      toast({ title: 'Error saving maintenance', variant: 'destructive' });
     }
   };
 
   const handleDelete = async (id) => {
-    if (!window.confirm('Delete this home system?')) return;
+    if (!window.confirm('Delete this maintenance item?')) return;
     try {
       await pb.collection('maintenance_systems').delete(id, { $autoCancel: false });
-      toast({ title: '✅ System deleted' }); loadTasks();
-    } catch { toast({ title: 'Error deleting system', variant: 'destructive' }); }
+      toast({ title: '✅ Maintenance deleted' }); loadTasks();
+    } catch { toast({ title: 'Error deleting maintenance', variant: 'destructive' }); }
   };
 
   // Logging a service updates the system's dates + appends to its notes/history.
@@ -602,14 +602,14 @@ const MaintenanceManagementPage = () => {
               </div>
               <div>
                 <h1 className="font-semibold text-slate-900" style={{ fontSize: '28px', lineHeight: '1.2' }}>Maintenance</h1>
-                <p className="text-slate-400" style={{ fontSize: '14px', marginTop: '2px' }}>{home.name} · {tasks.length} systems tracked</p>
+                <p className="text-slate-400" style={{ fontSize: '14px', marginTop: '2px' }}>{home.name} · {tasks.length} tracked</p>
               </div>
             </div>
             <div className="flex gap-3">
               <button onClick={() => { setEditingTask(null); setShowTaskModal(true); }}
                 className="flex items-center gap-2 font-semibold text-white hover:opacity-90 transition-all rounded-xl"
                 style={{ background: '#1e3a5f', padding: '10px 20px', fontSize: '14px' }}>
-                <Plus style={{ width: '16px', height: '16px' }} /> Add System
+                <Plus style={{ width: '16px', height: '16px' }} /> Add Maintenance
               </button>
             </div>
           </div>
@@ -618,7 +618,7 @@ const MaintenanceManagementPage = () => {
         {/* ── Tabs ── */}
         <div className="flex gap-1 bg-white border border-slate-200 rounded-2xl w-fit shadow-sm" style={{ padding: '6px', marginBottom: '32px' }}>
           {[
-            { key: 'schedule', label: 'Home Systems', icon: Calendar },
+            { key: 'schedule', label: 'Maintenance', icon: Calendar },
             { key: 'log', label: 'Service Log', icon: ClipboardList },
             { key: 'seasonal', label: 'Seasonal Guide', icon: TreePine },
             { key: 'vendors', label: 'Vendors', icon: User },
@@ -638,7 +638,7 @@ const MaintenanceManagementPage = () => {
           })}
         </div>
 
-        {/* ── Home Systems Tab ── */}
+        {/* ── Maintenance Tab ── */}
         {activeTab === 'schedule' && (
           <>
             <SummaryStats tasks={tasks} onFilter={setFilterStatus} />
@@ -647,7 +647,7 @@ const MaintenanceManagementPage = () => {
             <div className="flex flex-col sm:flex-row gap-3" style={{ marginBottom: '24px' }}>
               <div className="relative flex-1">
                 <Search style={{ width: '16px', height: '16px', color: '#94a3b8', position: 'absolute', left: '12px', top: '50%', transform: 'translateY(-50%)' }} />
-                <Input placeholder="Search systems or vendors…" value={searchQuery} onChange={e => setSearchQuery(e.target.value)} className="pl-9 h-11 rounded-xl border-slate-200" />
+                <Input placeholder="Search maintenance or vendors…" value={searchQuery} onChange={e => setSearchQuery(e.target.value)} className="pl-9 h-11 rounded-xl border-slate-200" />
               </div>
               <select value={filterCategory} onChange={e => setFilterCategory(e.target.value)} className="h-11 px-4 rounded-xl border border-slate-200 text-sm font-medium text-slate-700 bg-white">
                 <option value="All">All Categories</option>
@@ -670,12 +670,12 @@ const MaintenanceManagementPage = () => {
                 <div className="flex items-center justify-center mx-auto" style={{ width: '64px', height: '64px', borderRadius: '16px', background: '#fff7ed', marginBottom: '16px' }}>
                   <Wrench style={{ width: '28px', height: '28px', color: '#f97316' }} />
                 </div>
-                <p className="font-semibold text-slate-900" style={{ fontSize: '18px', marginBottom: '8px' }}>No home systems yet.</p>
+                <p className="font-semibold text-slate-900" style={{ fontSize: '18px', marginBottom: '8px' }}>No maintenance yet.</p>
                 <p className="text-slate-400" style={{ fontSize: '14px', marginBottom: '24px' }}>Stay ahead of costly repairs — start building your home's maintenance history today.</p>
                 <button onClick={() => { setEditingTask(null); setShowTaskModal(true); }}
                   className="font-semibold text-white rounded-xl hover:opacity-90 transition-all"
                   style={{ background: '#1e3a5f', padding: '12px 24px', fontSize: '14px' }}>
-                  <Plus className="w-4 h-4 inline mr-2" /> Add First System
+                  <Plus className="w-4 h-4 inline mr-2" /> Add First Maintenance
                 </button>
               </div>
             ) : (
@@ -739,7 +739,7 @@ const MaintenanceManagementPage = () => {
                 <div className="text-center" style={{ padding: '32px 0' }}>
                   <ClipboardList className="w-10 h-10 text-slate-300 mx-auto" style={{ marginBottom: '12px' }} />
                   <p className="font-semibold text-slate-900" style={{ fontSize: '16px' }}>No service history yet.</p>
-                  <p className="text-slate-400" style={{ fontSize: '14px', marginTop: '4px' }}>Log your first service from the Home Systems tab.</p>
+                  <p className="text-slate-400" style={{ fontSize: '14px', marginTop: '4px' }}>Log your first service from the Maintenance tab.</p>
                 </div>
               ) : (
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
@@ -774,14 +774,14 @@ const MaintenanceManagementPage = () => {
             <div className="bg-white" style={{ borderRadius: '12px', border: '1px solid #e2e8f0', overflow: 'hidden' }}>
               <div className="border-b border-slate-100" style={{ padding: '20px 24px' }}>
                 <h2 className="font-semibold text-slate-900" style={{ fontSize: '18px' }}>Your Vendors</h2>
-                <p className="text-slate-400" style={{ fontSize: '14px', marginTop: '4px' }}>Vendors saved from your home systems.</p>
+                <p className="text-slate-400" style={{ fontSize: '14px', marginTop: '4px' }}>Vendors saved from your maintenance.</p>
               </div>
               <div style={{ padding: '24px' }}>
                 {tasks.filter(t => t.vendor).length === 0 ? (
                   <div className="text-center" style={{ padding: '32px 0' }}>
                     <User className="w-10 h-10 text-slate-300 mx-auto" style={{ marginBottom: '12px' }} />
                     <p className="font-semibold text-slate-900" style={{ fontSize: '16px' }}>No vendors saved yet.</p>
-                    <p className="text-slate-400" style={{ fontSize: '14px', marginTop: '4px' }}>Add vendor info when creating a home system.</p>
+                    <p className="text-slate-400" style={{ fontSize: '14px', marginTop: '4px' }}>Add vendor info when creating maintenance.</p>
                   </div>
                 ) : (
                   <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
