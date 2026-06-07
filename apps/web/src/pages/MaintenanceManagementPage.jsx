@@ -618,7 +618,8 @@ const MaintenanceManagementPage = () => {
         {/* ── Tabs ── */}
         <div className="flex gap-1 bg-white border border-slate-200 rounded-2xl w-fit shadow-sm" style={{ padding: '6px', marginBottom: '32px' }}>
           {[
-            { key: 'schedule', label: 'Maintenance', icon: Calendar },
+            { key: 'schedule', label: 'Maintenance', icon: Wrench },
+            { key: 'calendar', label: 'Calendar', icon: Calendar },
             { key: 'log', label: 'Service Log', icon: ClipboardList },
             { key: 'seasonal', label: 'Seasonal Guide', icon: TreePine },
             { key: 'vendors', label: 'Vendors', icon: User },
@@ -725,6 +726,74 @@ const MaintenanceManagementPage = () => {
               </>
             )}
           </>
+        )}
+
+        {/* ── Calendar Tab (agenda grouped by month) ── */}
+        {activeTab === 'calendar' && (
+          (() => {
+            // Only items with a next due date; sorted chronologically.
+            const dated = tasks
+              .filter(t => t.nextServiceDate)
+              .sort((a, b) => new Date(a.nextServiceDate) - new Date(b.nextServiceDate));
+
+            if (dated.length === 0) {
+              return (
+                <div className="bg-white text-center" style={{ borderRadius: '12px', padding: '48px 20px', border: '2px dashed #e2e8f0' }}>
+                  <div className="flex items-center justify-center mx-auto" style={{ width: '64px', height: '64px', borderRadius: '16px', background: '#eff6ff', marginBottom: '16px' }}>
+                    <Calendar style={{ width: '28px', height: '28px', color: '#2563eb' }} />
+                  </div>
+                  <p className="font-semibold text-slate-900" style={{ fontSize: '18px', marginBottom: '8px' }}>Nothing scheduled yet.</p>
+                  <p className="text-slate-400" style={{ fontSize: '14px' }}>Add maintenance with a next due date to see it here.</p>
+                </div>
+              );
+            }
+
+            // Group items by "Month Year" of their next due date.
+            const groups = {};
+            dated.forEach(t => {
+              const d = new Date(t.nextServiceDate);
+              const key = d.toLocaleDateString('en-US', { month: 'long', year: 'numeric' });
+              if (!groups[key]) groups[key] = [];
+              groups[key].push(t);
+            });
+
+            return (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
+                {Object.entries(groups).map(([month, items]) => (
+                  <div key={month}>
+                    <div className="flex items-center gap-2" style={{ marginBottom: '12px' }}>
+                      <Calendar style={{ width: '16px', height: '16px', color: '#1e3a5f' }} />
+                      <h2 className="font-semibold text-slate-900" style={{ fontSize: '16px' }}>{month} <span className="text-slate-400 font-normal">({items.length})</span></h2>
+                    </div>
+                    <div className="bg-white" style={{ borderRadius: '12px', border: '1px solid #e2e8f0', overflow: 'hidden' }}>
+                      {items.map((t, i) => {
+                        const status = getTaskStatus(t);
+                        const cat = MAINTENANCE_CATEGORIES.find(c => c.name === t.systemType);
+                        const d = new Date(t.nextServiceDate);
+                        return (
+                          <div key={t.id} className="flex items-center gap-4 hover:bg-slate-50 transition-colors"
+                            style={{ padding: '14px 16px', borderTop: i === 0 ? 'none' : '1px solid #f1f5f9' }}>
+                            <div className="text-center flex-shrink-0" style={{ width: '44px' }}>
+                              <p className="font-extrabold text-slate-900" style={{ fontSize: '18px', lineHeight: 1 }}>{d.getDate()}</p>
+                              <p className="text-slate-400" style={{ fontSize: '11px', marginTop: '2px' }}>{d.toLocaleDateString('en-US', { weekday: 'short' })}</p>
+                            </div>
+                            <span style={{ fontSize: '20px' }}>{cat?.icon || '🔨'}</span>
+                            <div className="flex-1 min-w-0">
+                              <p className="font-semibold text-slate-900 truncate" style={{ fontSize: '15px' }}>{t.systemName}</p>
+                              <p className="text-slate-400" style={{ fontSize: '13px', marginTop: '2px' }}>
+                                {t.systemType}{t.vendor ? ` · ${t.vendor}` : ''}
+                              </p>
+                            </div>
+                            <span className={`font-medium rounded-full px-2 py-0.5 ${status.color}`} style={{ fontSize: '12px', flexShrink: 0 }}>{status.label}</span>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            );
+          })()
         )}
 
         {/* ── Service Log Tab ── */}
