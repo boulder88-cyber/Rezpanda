@@ -59,11 +59,56 @@ const RECOMMENDED_VENDORS = {
   'General': ['TaskRabbit', 'Angi', 'HomeAdvisor'],
 };
 
+// Common maintenance items per category — shown as tappable chips that fill
+// the Maintenance Type field. Sensible starter defaults; easy to edit later.
+const COMMON_ITEMS = {
+  'HVAC': ['Filter Replacement', 'Tune-Up / Service', 'Duct Cleaning', 'Refrigerant Check', 'Thermostat Check'],
+  'Plumbing': ['Water Heater Flush', 'Leak Inspection', 'Drain Cleaning', 'Sump Pump Test', 'Shutoff Valve Check'],
+  'Electrical': ['Panel Inspection', 'Outlet / GFCI Test', 'Smoke Detector Batteries', 'Surge Protector Check', 'Generator Test'],
+  'Roofing': ['Roof Inspection', 'Shingle Check', 'Flashing Inspection', 'Moss / Debris Removal'],
+  'Landscaping': ['Lawn Mowing', 'Fertilization', 'Tree / Shrub Trimming', 'Irrigation Check', 'Mulching'],
+  'Pest Control': ['Termite Inspection', 'Quarterly Spray', 'Rodent Check', 'Mosquito Treatment', 'Ant / Roach Treatment'],
+  'Appliances': ['Refrigerator Coil Cleaning', 'Dishwasher Cleaning', 'Dryer Vent Cleaning', 'Washer Hose Check', 'Oven / Range Service'],
+  'Pool/Spa': ['Water Testing', 'Filter Cleaning', 'Skimmer / Basket Clean', 'Chemical Balancing', 'Opening / Closing'],
+  'Security': ['Alarm Test', 'Camera Check', 'Smoke / CO Detector Test', 'Lock / Deadbolt Check', 'Battery Replacement'],
+  'Gutters': ['Gutter Cleaning', 'Downspout Check', 'Guard Inspection', 'Seam / Leak Check'],
+  'Painting': ['Exterior Repaint', 'Interior Touch-Up', 'Caulking', 'Trim / Fascia Paint', 'Deck Staining'],
+  'Foundation': ['Crack Inspection', 'Drainage Check', 'Grading Review', 'Crawl Space Inspection'],
+  'Insulation': ['Attic Insulation Check', 'Weatherstripping', 'Air Leak Sealing', 'Pipe Insulation'],
+  'Windows': ['Seal / Caulk Check', 'Glass / Screen Cleaning', 'Weatherstrip Replacement', 'Track Lubrication'],
+  'Doors': ['Weatherstrip Check', 'Hinge / Lock Lubrication', 'Threshold Inspection', 'Garage Door Service'],
+  'General': ['Seasonal Walkthrough', 'Caulk / Seal Check', 'Battery Replacement', 'Air Filter Check'],
+};
+
 const SEASONAL_TASKS = {
-  Spring: { icon: TreePine, color: '#16a34a', bg: '#f0fdf4', tasks: ['Gutter cleaning', 'HVAC tune-up', 'Exterior inspection', 'Lawn fertilization', 'Pest control check'] },
-  Summer: { icon: Sun, color: '#d97706', bg: '#fffbeb', tasks: ['AC service', 'Pool maintenance', 'Pest control', 'Irrigation check', 'Deck inspection'] },
-  Fall: { icon: Wind, color: '#f97316', bg: '#fff7ed', tasks: ['Roof inspection', 'Heating prep', 'Gutter cleaning', 'Weatherization', 'Chimney sweep'] },
-  Winter: { icon: Snowflake, color: '#2563eb', bg: '#eff6ff', tasks: ['Pipe insulation', 'Heating check', 'Storm prep', 'Generator test', 'Smoke detector check'] },
+  Spring: { icon: TreePine, color: '#16a34a', bg: '#f0fdf4', tasks: [
+    { name: 'Gutter Cleaning', category: 'Gutters', cadence: 'Semi-Annual' },
+    { name: 'HVAC Tune-Up', category: 'HVAC', cadence: 'Semi-Annual' },
+    { name: 'Exterior Inspection', category: 'General', cadence: 'Annually' },
+    { name: 'Lawn Fertilization', category: 'Landscaping', cadence: 'Quarterly' },
+    { name: 'Pest Control Check', category: 'Pest Control', cadence: 'Quarterly' },
+  ] },
+  Summer: { icon: Sun, color: '#d97706', bg: '#fffbeb', tasks: [
+    { name: 'AC Service', category: 'HVAC', cadence: 'Annually' },
+    { name: 'Pool Maintenance', category: 'Pool/Spa', cadence: 'Monthly' },
+    { name: 'Mosquito Treatment', category: 'Pest Control', cadence: 'Quarterly' },
+    { name: 'Irrigation Check', category: 'Landscaping', cadence: 'Quarterly' },
+    { name: 'Deck Inspection', category: 'General', cadence: 'Annually' },
+  ] },
+  Fall: { icon: Wind, color: '#f97316', bg: '#fff7ed', tasks: [
+    { name: 'Roof Inspection', category: 'Roofing', cadence: 'Annually' },
+    { name: 'Heating Prep', category: 'HVAC', cadence: 'Annually' },
+    { name: 'Gutter Cleaning', category: 'Gutters', cadence: 'Semi-Annual' },
+    { name: 'Weatherization', category: 'Insulation', cadence: 'Annually' },
+    { name: 'Chimney Sweep', category: 'General', cadence: 'Annually' },
+  ] },
+  Winter: { icon: Snowflake, color: '#2563eb', bg: '#eff6ff', tasks: [
+    { name: 'Pipe Insulation', category: 'Insulation', cadence: 'Annually' },
+    { name: 'Heating Check', category: 'HVAC', cadence: 'Annually' },
+    { name: 'Storm Prep', category: 'General', cadence: 'Annually' },
+    { name: 'Generator Test', category: 'Electrical', cadence: 'Quarterly' },
+    { name: 'Smoke Detector Check', category: 'Security', cadence: 'Semi-Annual' },
+  ] },
 };
 
 // One master cadence list used by every category.
@@ -133,12 +178,13 @@ const TaskModal = ({ task, onSave, onClose }) => {
   });
 
   const suggestedVendors = RECOMMENDED_VENDORS[form.systemType] || [];
+  const suggestedItems = COMMON_ITEMS[form.systemType] || [];
 
   return (
     <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4 overflow-y-auto">
       <div className="bg-white w-full max-w-lg my-4" style={{ borderRadius: '16px', boxShadow: '0 25px 50px rgba(0,0,0,0.2)' }}>
         <div className="flex items-center justify-between" style={{ background: '#1e3a5f', borderRadius: '16px 16px 0 0', padding: '20px 24px' }}>
-          <h2 className="font-semibold text-white" style={{ fontSize: '18px' }}>{task ? 'Edit Maintenance' : 'Add Maintenance'}</h2>
+          <h2 className="font-semibold text-white" style={{ fontSize: '18px' }}>{task?.id ? 'Edit Maintenance' : 'Add Maintenance'}</h2>
           <button onClick={onClose} className="flex items-center justify-center rounded-full hover:bg-white/10 transition-colors" style={{ width: '32px', height: '32px' }}>
             <X style={{ width: '16px', height: '16px', color: 'rgba(255,255,255,0.7)' }} />
           </button>
@@ -161,6 +207,19 @@ const TaskModal = ({ task, onSave, onClose }) => {
                 </button>
               ))}
             </div>
+            {suggestedItems.length > 0 && (
+              <div style={{ marginTop: '12px' }}>
+                <p className="text-xs text-slate-400 mb-2">Common for {form.systemType}:</p>
+                <div className="flex flex-wrap gap-2">
+                  {suggestedItems.map(item => (
+                    <button key={item} onClick={() => setForm(p => ({ ...p, systemName: item }))}
+                      className={`px-3 py-1.5 rounded-lg text-xs font-medium border transition-all ${form.systemName === item ? 'bg-blue-600 border-blue-600 text-white' : 'bg-white border-slate-200 text-slate-600 hover:border-blue-300'}`}>
+                      {item}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            )}
           </div>
 
           <div>
@@ -226,7 +285,7 @@ const TaskModal = ({ task, onSave, onClose }) => {
           <div className="flex gap-3">
             <Button variant="outline" onClick={onClose} className="flex-1 h-12 rounded-xl">Cancel</Button>
             <Button onClick={() => onSave(form)} disabled={!form.systemName} className="flex-1 h-12 rounded-xl text-white font-bold" style={{ background: '#1e3a5f' }}>
-              {task ? 'Save Changes' : 'Add Maintenance'}
+              {task?.id ? 'Save Changes' : 'Add Maintenance'}
             </Button>
           </div>
         </div>
@@ -415,13 +474,19 @@ const SummaryStats = ({ tasks, onFilter }) => {
 };
 
 // ═══════════════════════════════════════════════════════════════════════
-// SEASONAL GUIDE
+// HOME CARE SCHEDULE
 // ═══════════════════════════════════════════════════════════════════════
+// Car-booklet-style seasonal checklist. Tapping an item pre-fills the Add
+// Maintenance modal (name + category + cadence) so it becomes a tracked item.
+// Items already tracked (matched by name) show a checked/added state.
 
-const SeasonalGuide = () => (
+const HomeCareSchedule = ({ onPick, existingNames }) => (
   <div style={{ marginBottom: '32px' }}>
-    <h2 className="font-semibold text-slate-900" style={{ fontSize: '18px', marginBottom: '16px' }}>Seasonal Task Guide</h2>
-    <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+    <div style={{ marginBottom: '16px' }}>
+      <h2 className="font-semibold text-slate-900" style={{ fontSize: '18px' }}>Home Care Schedule</h2>
+      <p className="text-slate-400" style={{ fontSize: '14px', marginTop: '4px' }}>Your home's seasonal service guide — tap any item to add it to your tracked maintenance.</p>
+    </div>
+    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
       {Object.entries(SEASONAL_TASKS).map(([season, data]) => {
         const Icon = data.icon;
         return (
@@ -433,12 +498,19 @@ const SeasonalGuide = () => (
               <p className="font-semibold text-slate-900" style={{ fontSize: '14px' }}>{season}</p>
             </div>
             <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
-              {data.tasks.map((task, i) => (
-                <div key={i} className="flex items-center gap-2">
-                  <CheckCircle2 style={{ width: '12px', height: '12px', color: data.color, flexShrink: 0 }} />
-                  <p className="text-slate-600" style={{ fontSize: '12px' }}>{task}</p>
-                </div>
-              ))}
+              {data.tasks.map((task, i) => {
+                const added = existingNames.includes(task.name.toLowerCase());
+                return (
+                  <button key={i} onClick={() => !added && onPick(task)} disabled={added}
+                    className={`flex items-center gap-2 text-left rounded-lg transition-all ${added ? 'cursor-default' : 'hover:bg-slate-50 cursor-pointer'}`}
+                    style={{ padding: '6px 8px', margin: '0 -8px' }}>
+                    {added
+                      ? <CheckCircle2 style={{ width: '14px', height: '14px', color: data.color, flexShrink: 0 }} />
+                      : <Plus style={{ width: '14px', height: '14px', color: '#94a3b8', flexShrink: 0 }} />}
+                    <span className={added ? 'text-slate-400 line-through' : 'text-slate-600'} style={{ fontSize: '12px' }}>{task.name}</span>
+                  </button>
+                );
+              })}
             </div>
           </div>
         );
@@ -497,9 +569,20 @@ const MaintenanceManagementPage = () => {
     serviceHistory: form.serviceHistory || '',
   });
 
+  // Seed the Add Maintenance modal from a Home Care Schedule item.
+  // No id on the seed -> handleSaveTask routes it through create.
+  const handlePickSeasonal = (item) => {
+    setEditingTask({
+      systemName: item.name,
+      systemType: item.category,
+      reminderFrequencyDays: CADENCE_DAYS[item.cadence] || 365,
+    });
+    setShowTaskModal(true);
+  };
+
   const handleSaveTask = async (form) => {
     try {
-      if (editingTask) {
+      if (editingTask && editingTask.id) {
         await pb.collection('maintenance_systems').update(editingTask.id, buildPayload(form), { $autoCancel: false });
         toast({ title: '✅ Maintenance updated' });
       } else {
@@ -621,7 +704,7 @@ const MaintenanceManagementPage = () => {
             { key: 'schedule', label: 'Maintenance', icon: Wrench },
             { key: 'calendar', label: 'Calendar', icon: Calendar },
             { key: 'log', label: 'Service Log', icon: ClipboardList },
-            { key: 'seasonal', label: 'Seasonal Guide', icon: TreePine },
+            { key: 'seasonal', label: 'Home Care Schedule', icon: TreePine },
             { key: 'vendors', label: 'Vendors', icon: User },
           ].map(tab => {
             const Icon = tab.icon;
@@ -834,8 +917,13 @@ const MaintenanceManagementPage = () => {
           </div>
         )}
 
-        {/* ── Seasonal Guide Tab ── */}
-        {activeTab === 'seasonal' && <SeasonalGuide />}
+        {/* ── Home Care Schedule Tab ── */}
+        {activeTab === 'seasonal' && (
+          <HomeCareSchedule
+            onPick={handlePickSeasonal}
+            existingNames={tasks.map(t => (t.systemName || '').toLowerCase())}
+          />
+        )}
 
         {/* ── Vendors Tab ── */}
         {activeTab === 'vendors' && (
