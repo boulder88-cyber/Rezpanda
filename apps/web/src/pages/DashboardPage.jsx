@@ -282,14 +282,14 @@ const DashboardPage = () => {
         {/* ── Top Nav Bar ── */}
         <header className="sticky top-0 z-30 bg-white border-b border-slate-200 px-4 sm:px-6 lg:px-8 h-18 py-3 flex items-center justify-between shadow-sm">
           <div className="flex items-center gap-3">
-            <div className="flex items-center gap-2">
+            <Link to="/dashboard" className="flex items-center gap-2 hover:opacity-80 transition-opacity">
               <div className="w-9 h-9 rounded-xl flex items-center justify-center" style={{background:'#1e3a5f'}}>
                 <Home className="w-5 h-5 text-white" />
               </div>
               <span className="font-extrabold text-lg hidden sm:block" style={{color:'#1e3a5f'}}>
                 Casa<span style={{color:'#c9a96e'}}>CEO</span>
               </span>
-            </div>
+            </Link>
           </div>
 
           <PropertySwitcher />
