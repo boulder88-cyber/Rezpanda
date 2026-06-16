@@ -354,8 +354,12 @@ const BillPayPage = () => {
 
       {/* ── Page Header ── */}
       <div className="bg-white border-b border-slate-200 -mx-4 sm:-mx-6 lg:-mx-8 px-4 sm:px-6 lg:px-8" style={{ padding: '24px 32px', marginBottom: '32px' }}>
+        {/* Home button — clear way back to the dashboard */}
+        <Link to="/dashboard" className="inline-flex items-center gap-2 font-semibold text-slate-600 hover:text-slate-900 transition-colors" style={{ fontSize: '14px', marginBottom: '16px' }}>
+          <Home style={{ width: '16px', height: '16px' }} /> Home
+        </Link>
         <div className="flex items-center gap-2 text-slate-400" style={{ fontSize: '13px', marginBottom: '12px' }}>
-          <Link to="/home-profile" className="hover:text-slate-600 transition-colors">Home Profile</Link>
+          <Link to="/dashboard" className="hover:text-slate-600 transition-colors">Home</Link>
           <ChevronRight style={{ width: '14px', height: '14px' }} />
           <span className="text-slate-700 font-medium">Bill Pay</span>
         </div>
