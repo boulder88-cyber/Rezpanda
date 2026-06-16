@@ -18,6 +18,7 @@ import ImageGalleryPage from '@/pages/ImageGalleryPage.jsx';
 
 // ── Core App ────────────────────────────────────────────────────────
 import DashboardPage from '@/pages/DashboardPage.jsx';
+import ExplorePage from '@/pages/ExplorePage.jsx';
 import HomeProfilePage from '@/pages/HomeProfilePage.jsx';
 import NotificationsCenterPage from '@/pages/NotificationsCenterPage.jsx';
 import VendorDirectoryPage from '@/pages/VendorDirectoryPage.jsx';
@@ -156,6 +157,7 @@ const AppContent = () => {
 
           {/* ── Core (protected, no Layout wrapper) ───────────────── */}
           <Route path="/dashboard" element={<ProtectedRoute><DashboardPage /></ProtectedRoute>} />
+          <Route path="/explore" element={<ProtectedRoute><Layout><ExplorePage /></Layout></ProtectedRoute>} />
           <Route path="/home-profile" element={<ProtectedRoute><HomeProfilePage /></ProtectedRoute>} />
           <Route path="/notifications" element={<ProtectedRoute><NotificationsCenterPage /></ProtectedRoute>} />
           <Route path="/vendors" element={<ProtectedRoute><VendorDirectoryPage /></ProtectedRoute>} />
