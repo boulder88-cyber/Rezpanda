@@ -6,11 +6,9 @@ import { useAuth } from '@/contexts/AuthContext.jsx';
 import pb from '@/lib/horizonsBackend.js';
 import { Button } from '@/components/ui/button.jsx';
 import {
-  Building2, Wrench, FileText, CreditCard, TreePine, ShieldCheck,
-  Home, FolderOpen, Users, LineChart,
-  ChevronDown, Plus, MapPin, Check, Bell, AlertCircle,
-  Clock, DollarSign, TrendingUp, Key, Loader2, X,
-  ArrowRight, CheckCircle2, Sparkles, BookOpen
+  Wrench, CreditCard, FolderOpen,
+  Home, ChevronDown, Plus, MapPin, Check, Bell, AlertCircle,
+  TrendingUp, ArrowRight, Sparkles
 } from 'lucide-react';
 
 // ─── Property Switcher ────────────────────────────────────────────────
@@ -45,7 +43,7 @@ const PropertySwitcher = () => {
         onClick={() => setIsOpen(!isOpen)}
         className="flex items-center gap-3 bg-white border border-slate-200 rounded-2xl px-5 py-3 shadow-sm hover:shadow-md transition-all group"
       >
-        <div className="w-9 h-9 bg-navy-50 rounded-xl flex items-center justify-center flex-shrink-0" style={{background:'#eef2f8'}}>
+        <div className="w-9 h-9 rounded-xl flex items-center justify-center flex-shrink-0" style={{background:'#eef2f8'}}>
           <Home className="w-5 h-5" style={{color:'#1e3a5f'}} />
         </div>
         <div className="text-left">
@@ -135,188 +133,60 @@ const PropertySwitcher = () => {
   );
 };
 
-// ─── Module Tiles ─────────────────────────────────────────────────────
-const MODULES = [
+// ─── The Three Tiles ──────────────────────────────────────────────────
+// Bills    → Bill Pay, Property Tax, Insurance (premium), Mortgage
+// Maintenance → Maintenance, Warranty servicing, Vendors
+// Records  → Documents, Insurance policy doc, Warranty docs
+const TILES = [
   {
-    title: 'Maintenance',
-    description: 'Schedule, log, and automate every service',
-    icon: Wrench,
-    link: '/maintenance-management',
-    color: '#f97316',
-    bg: '#fff7ed',
-    badge: null,
-  },
-  {
-    title: 'Bill Pay',
-    description: 'Centralize every payment and reminder',
+    title: 'Bills',
+    description: 'Bills, mortgage, property tax & insurance — what you owe, all in one place.',
     icon: CreditCard,
     link: '/bill-pay',
-    color: '#2563eb',
-    bg: '#eff6ff',
-    badge: null,
+    color: '#e8604c',
+    bg: '#fdf0ee',
   },
   {
-    title: 'Documents',
-    description: 'Your secure, searchable home archive',
+    title: 'Maintenance',
+    description: 'Service schedules, warranties & the pros who keep your home running.',
+    icon: Wrench,
+    link: '/maintenance-management',
+    color: '#1e3a5f',
+    bg: '#eef2f8',
+  },
+  {
+    title: 'Records',
+    description: 'Documents, policies & warranties — your home’s paperwork, filed and findable.',
     icon: FolderOpen,
     link: '/documents',
-    color: '#7c3aed',
-    bg: '#f5f3ff',
-    badge: null,
-  },
-  {
-    title: 'Expenses',
-    description: 'Know exactly where your money goes',
-    icon: DollarSign,
-    link: '/expenses',
-    color: '#059669',
-    bg: '#ecfdf5',
-    badge: null,
-  },
-  {
-    title: 'Utilities',
-    description: 'All your accounts, one dashboard',
-    icon: Building2,
-    link: '/utilities',
-    color: '#0891b2',
-    bg: '#ecfeff',
-    badge: null,
-  },
-  {
-    title: 'Home Value',
-    description: 'See what your homes are worth today',
-    icon: TrendingUp,
-    link: '/home-valuation',
-    color: '#1e3a5f',
-    bg: '#eef2f8',
-    badge: 'New',
-  },
-  {
-    title: 'Rental Properties',
-    description: 'Manage tenants, leases, and requests',
-    icon: Key,
-    link: '/rental-properties',
-    color: '#db2777',
-    bg: '#fdf2f8',
-    badge: null,
-  },
-  {
-    title: 'Landscaping',
-    description: 'Keep your properties beautiful effortlessly',
-    icon: TreePine,
-    link: '/plants',
-    color: '#16a34a',
-    bg: '#f0fdf4',
-    badge: null,
-  },
-  {
-    title: 'Insurance',
-    description: 'Never let coverage lapse again',
-    icon: ShieldCheck,
-    link: '/documents',
-    color: '#dc2626',
-    bg: '#fef2f2',
-    badge: null,
-  },
-  {
-    title: 'Tax Reports',
-    description: 'Export ready-to-file reports in one click',
-    icon: FileText,
-    link: '/expenses',
-    color: '#d97706',
-    bg: '#fffbeb',
-    badge: 'Soon',
-  },
-  {
-    title: 'Vendors',
-    description: 'Find vetted pros near your homes',
-    icon: Users,
-    link: '/maintenance-management',
-    color: '#0369a1',
-    bg: '#f0f9ff',
-    badge: 'Soon',
-  },
-  {
-    title: 'Learning Hub',
-    description: 'Expert guides for maintenance, finance, insurance & more',
-    icon: BookOpen,
-    link: '/learn',
-    color: '#7c3aed',
-    bg: '#f5f3ff',
-    badge: '12 guides',
-  },
-  {
-    title: 'Property Tax',
-    description: 'Track bills, find exemptions, and appeal over-assessments',
-    icon: FileText,
-    link: '/property-tax',
-    color: '#dc2626',
-    bg: '#fef2f2',
-    badge: null,
-  },
-  {
-    title: 'Home Timeline',
-    description: 'Every event, update, and insight — remembered automatically',
-    icon: Clock,
-    link: '/timeline',
-    color: '#1e3a5f',
-    bg: '#eef2f8',
-    badge: null,
-  },
-  {
-    title: 'Warranty Tracker',
-    description: 'Track coverage across every home',
-    icon: ShieldCheck,
-    link: '/warranty-tracker',
-    color: '#059669',
-    bg: '#ecfdf5',
-    badge: null,
-  },
-  {
-    title: 'Reports',
-    description: 'Data-driven decisions for every home',
-    icon: LineChart,
-    link: '/expenses',
-    color: '#7c3aed',
-    bg: '#faf5ff',
-    badge: 'Soon',
-  },
-  {
-    title: 'Ready to Sell',
-    description: 'Your Home Dossier is one tap away',
-    icon: Home,
-    link: '/ready-to-sell',
-    color: '#1A1A1A',
-    bg: '#f1f5f9',
-    badge: null,
+    color: '#c9a96e',
+    bg: '#faf6ee',
   },
 ];
 
-// ─── Module Tile Component ────────────────────────────────────────────
-const ModuleTile = ({ module }) => {
-  const Icon = module.icon;
+const HomeTile = ({ tile }) => {
+  const Icon = tile.icon;
   return (
     <Link
-      to={module.link}
-      className="bg-white rounded-2xl border border-slate-100 p-5 hover:shadow-md hover:-translate-y-0.5 transition-all group relative overflow-hidden"
+      to={tile.link}
+      className="bg-white rounded-3xl border border-slate-100 p-8 hover:shadow-lg hover:-translate-y-1 transition-all group relative overflow-hidden flex flex-col"
     >
-      {module.badge && (
-        <span className={`absolute top-3 right-3 text-xs font-bold px-2 py-0.5 rounded-full ${
-          module.badge === 'New' ? 'bg-green-100 text-green-600' : 'bg-slate-100 text-slate-500'
-        }`}>
-          {module.badge}
-        </span>
-      )}
+      {/* soft corner wash in the tile's color */}
       <div
-        className="w-12 h-12 rounded-xl flex items-center justify-center mb-4 group-hover:scale-110 transition-transform"
-        style={{ background: module.bg }}
+        className="absolute top-0 right-0 w-32 h-32 rounded-full opacity-[0.07] group-hover:opacity-10 transition-opacity"
+        style={{ background: tile.color, transform: 'translate(30%, -30%)' }}
+      />
+      <div
+        className="w-16 h-16 rounded-2xl flex items-center justify-center mb-6 group-hover:scale-105 transition-transform"
+        style={{ background: tile.bg }}
       >
-        <Icon className="w-6 h-6" style={{ color: module.color }} />
+        <Icon className="w-8 h-8" style={{ color: tile.color }} />
       </div>
-      <h3 className="font-bold text-slate-900 text-base mb-1">{module.title}</h3>
-      <p className="text-slate-400 text-xs leading-relaxed">{module.description}</p>
-      <div className="mt-4 flex items-center gap-1 text-xs font-semibold opacity-0 group-hover:opacity-100 transition-opacity" style={{ color: module.color }}>
-        Open <ArrowRight className="w-3.5 h-3.5" />
+      <h3 className="font-extrabold text-slate-900 text-2xl mb-2">{tile.title}</h3>
+      <p className="text-slate-500 text-sm leading-relaxed flex-1">{tile.description}</p>
+      <div className="mt-6 flex items-center gap-1.5 text-sm font-bold" style={{ color: tile.color }}>
+        Open
+        <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
       </div>
     </Link>
   );
@@ -342,7 +212,7 @@ const QuickAlerts = ({ selectedHome }) => {
     <div className="bg-white rounded-2xl border border-slate-100 p-5 shadow-sm">
       <div className="flex items-center gap-2 mb-4">
         <Bell className="w-4 h-4 text-slate-400" />
-        <h2 className="font-bold text-slate-900 text-base">Alerts</h2>
+        <h2 className="font-bold text-slate-900 text-base">Needs your attention</h2>
         <span className="bg-red-100 text-red-600 text-xs font-bold px-2 py-0.5 rounded-full">
           {alerts.filter(a => a.urgent).length}
         </span>
@@ -379,10 +249,10 @@ const WelcomeBanner = ({ user, selectedHome }) => {
           <div>
             <p className="text-blue-200 text-sm font-medium mb-1">{greeting}, {firstName} 👋</p>
             <h1 className="text-2xl font-extrabold text-white mb-1">
-              {selectedHome ? selectedHome.name : 'Welcome to CasaOS'}
+              {selectedHome ? selectedHome.name : 'Welcome to CasaCEO'}
             </h1>
             <p className="text-blue-200 text-sm">
-              {selectedHome?.address || 'Select a property to begin managing your home like an asset'}
+              {selectedHome?.address || 'Add a property to start running your home like an asset'}
             </p>
           </div>
           <div className="text-right">
@@ -395,60 +265,6 @@ const WelcomeBanner = ({ user, selectedHome }) => {
     </div>
   );
 };
-
-// ─── Quick Stats ──────────────────────────────────────────────────────
-const QuickStats = () => (
-  <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
-    {[
-      {
-        label: 'Bills Due', value: '3', sublabel: 'this week',
-        trend: '↑ 1 more than last week', trendUp: false,
-        icon: <CreditCard className="w-4 h-4" />, color: '#d97706', bg: '#fffbeb', border: '#fde68a',
-        link: '/bill-pay', tooltip: 'View bills due this week',
-      },
-      {
-        label: 'Maintenance', value: '2', sublabel: 'overdue',
-        trend: '↑ action needed', trendUp: false,
-        icon: <Wrench className="w-4 h-4" />, color: '#dc2626', bg: '#fef2f2', border: '#fecaca',
-        link: '/maintenance-management', tooltip: 'View overdue maintenance tasks',
-      },
-      {
-        label: 'Documents', value: '14', sublabel: 'stored',
-        trend: '↑ 2 added this month', trendUp: true,
-        icon: <FolderOpen className="w-4 h-4" />, color: '#7c3aed', bg: '#f5f3ff', border: '#ddd6fe',
-        link: '/documents', tooltip: 'Open document vault',
-      },
-      {
-        label: 'This Month', value: '$2,840', sublabel: 'expenses',
-        trend: '↓ 12% vs last month', trendUp: true,
-        icon: <DollarSign className="w-4 h-4" />, color: '#059669', bg: '#ecfdf5', border: '#a7f3d0',
-        link: '/expenses', tooltip: 'View expense breakdown',
-      },
-    ].map((stat, i) => (
-      <Link
-        key={i}
-        to={stat.link}
-        title={stat.tooltip}
-        className="bg-white rounded-2xl border p-4 shadow-sm hover:shadow-md hover:-translate-y-0.5 transition-all group cursor-pointer block"
-        style={{ borderColor: stat.border }}
-      >
-        <div className="flex items-center justify-between mb-3">
-          <div className="w-8 h-8 rounded-lg flex items-center justify-center group-hover:scale-110 transition-transform" style={{ background: stat.bg }}>
-            <span style={{ color: stat.color }}>{stat.icon}</span>
-          </div>
-          <span className="text-xs font-medium" style={{ color: stat.trendUp ? '#059669' : '#dc2626' }}>{stat.trend}</span>
-        </div>
-        <p className="text-2xl font-extrabold text-slate-900">{stat.value}</p>
-        <div className="flex items-center justify-between mt-0.5">
-          <p className="text-xs text-slate-400">{stat.label} · {stat.sublabel}</p>
-          <span className="text-xs font-bold opacity-0 group-hover:opacity-100 transition-opacity flex items-center gap-0.5" style={{ color: stat.color }}>
-            View <ArrowRight className="w-3 h-3" />
-          </span>
-        </div>
-      </Link>
-    ))}
-  </div>
-);
 
 // ─── Main Dashboard ───────────────────────────────────────────────────
 const DashboardPage = () => {
@@ -479,7 +295,7 @@ const DashboardPage = () => {
           <PropertySwitcher />
 
           <div className="flex items-center gap-3">
-            {/* Ready to Sell button — top right */}
+            {/* Ready to Sell — kept as a top-right button per plan */}
             <Link
               to="/ready-to-sell"
               className="hidden sm:flex items-center gap-2 px-4 py-2 rounded-xl font-semibold text-white text-sm hover:opacity-90 transition-all"
@@ -495,70 +311,53 @@ const DashboardPage = () => {
         </header>
 
         {/* ── Main Content ── */}
-        <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-8">
+        <main className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-8">
 
           <WelcomeBanner user={currentUser} selectedHome={selectedHome} />
-          <QuickStats />
 
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+          {/* ── The three tiles — the whole point of the screen ── */}
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
+            {TILES.map((tile, i) => (
+              <HomeTile key={i} tile={tile} />
+            ))}
+          </div>
 
-            <div className="lg:col-span-2">
-              <div className="flex items-center justify-between mb-5">
-                <h2 className="text-lg font-extrabold text-slate-900">Your Modules</h2>
-                <p className="text-xs text-slate-400">{selectedHome?.name || 'Add a property to get started'}</p>
-              </div>
-              <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
-                {MODULES.map((module, i) => (
-                  <ModuleTile key={i} module={module} />
+          {/* ── Supporting context: alerts + quick actions ── */}
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            <QuickAlerts selectedHome={selectedHome} />
+
+            <div className="bg-white rounded-2xl border border-slate-100 p-5 shadow-sm">
+              <h2 className="font-bold text-slate-900 text-base mb-4 flex items-center gap-2">
+                <Sparkles className="w-4 h-4 text-amber-500" />
+                Quick actions
+              </h2>
+              <div className="space-y-2">
+                {[
+                  { label: 'Log a bill payment', link: '/bill-pay', icon: <CreditCard className="w-4 h-4" /> },
+                  { label: 'Add a maintenance task', link: '/maintenance-management', icon: <Wrench className="w-4 h-4" /> },
+                  { label: 'Upload a document', link: '/documents', icon: <FolderOpen className="w-4 h-4" /> },
+                ].map((action, i) => (
+                  <Link key={i} to={action.link}>
+                    <div className="flex items-center gap-3 p-3 rounded-xl hover:bg-slate-50 transition-colors group">
+                      <div className="w-8 h-8 rounded-lg bg-slate-100 flex items-center justify-center text-slate-500 group-hover:bg-slate-200 flex-shrink-0">
+                        {action.icon}
+                      </div>
+                      <span className="text-sm font-medium text-slate-700">{action.label}</span>
+                      <ArrowRight className="w-3.5 h-3.5 text-slate-300 ml-auto group-hover:text-slate-500 flex-shrink-0" />
+                    </div>
+                  </Link>
                 ))}
               </div>
             </div>
-
-            <div className="space-y-6">
-              <QuickAlerts selectedHome={selectedHome} />
-
-              <div className="bg-white rounded-2xl border border-slate-100 p-5 shadow-sm">
-                <h2 className="font-bold text-slate-900 text-base mb-4 flex items-center gap-2">
-                  <Sparkles className="w-4 h-4 text-amber-500" />
-                  Quick Actions
-                </h2>
-                <div className="space-y-2">
-                  {[
-                    { label: 'Log a bill payment', link: '/bill-pay', icon: <CreditCard className="w-4 h-4" /> },
-                    { label: 'Add maintenance task', link: '/maintenance-management', icon: <Wrench className="w-4 h-4" /> },
-                    { label: 'Upload a document', link: '/documents', icon: <FolderOpen className="w-4 h-4" /> },
-                    { label: 'Check home value', link: '/home-valuation', icon: <TrendingUp className="w-4 h-4" /> },
-                    { label: 'Ready to Sell', link: '/ready-to-sell', icon: <Home className="w-4 h-4" /> },
-                  ].map((action, i) => (
-                    <Link key={i} to={action.link}>
-                      <div className="flex items-center gap-3 p-3 rounded-xl hover:bg-slate-50 transition-colors group">
-                        <div className="w-8 h-8 rounded-lg bg-slate-100 flex items-center justify-center text-slate-500 group-hover:bg-slate-200 flex-shrink-0">
-                          {action.icon}
-                        </div>
-                        <span className="text-sm font-medium text-slate-700">{action.label}</span>
-                        <ArrowRight className="w-3.5 h-3.5 text-slate-300 ml-auto group-hover:text-slate-500 flex-shrink-0" />
-                      </div>
-                    </Link>
-                  ))}
-                </div>
-              </div>
-
-              {!loading && homes.length === 0 && (
-                <div className="bg-amber-50 border border-amber-100 rounded-2xl p-5 text-center">
-                  <Home className="w-8 h-8 text-amber-500 mx-auto mb-3" />
-                  <p className="font-bold text-amber-800 text-sm mb-1">No properties yet</p>
-                  <p className="text-amber-600 text-xs mb-3">Add your first property to unlock your full dashboard.</p>
-                  <button
-                    onClick={() => {}}
-                    className="text-xs font-bold px-4 py-2 rounded-xl text-white"
-                    style={{ background: '#1e3a5f' }}
-                  >
-                    Add Your First Property →
-                  </button>
-                </div>
-              )}
-            </div>
           </div>
+
+          {!loading && homes.length === 0 && (
+            <div className="bg-amber-50 border border-amber-100 rounded-2xl p-5 text-center">
+              <Home className="w-8 h-8 text-amber-500 mx-auto mb-3" />
+              <p className="font-bold text-amber-800 text-sm mb-1">No properties yet</p>
+              <p className="text-amber-600 text-xs mb-3">Add your first property to start managing your home.</p>
+            </div>
+          )}
         </main>
       </div>
     </>
