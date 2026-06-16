@@ -8,7 +8,7 @@ import { Button } from '@/components/ui/button.jsx';
 import {
   Wrench, CreditCard, FolderOpen,
   Home, ChevronDown, Plus, MapPin, Check, Bell, AlertCircle,
-  TrendingUp, ArrowRight, Sparkles
+  TrendingUp, ArrowRight, Sparkles, Compass
 } from 'lucide-react';
 
 // ─── Property Switcher ────────────────────────────────────────────────
@@ -321,6 +321,21 @@ const DashboardPage = () => {
               <HomeTile key={i} tile={tile} />
             ))}
           </div>
+
+          {/* ── Explore — one quiet door to the optional extras ── */}
+          <Link
+            to="/explore"
+            className="group flex items-center gap-4 bg-white border border-slate-100 rounded-2xl px-6 py-4 hover:shadow-md hover:border-slate-200 transition-all"
+          >
+            <div className="w-11 h-11 rounded-xl flex items-center justify-center flex-shrink-0" style={{ background: '#f1f5f9' }}>
+              <Compass className="w-5 h-5 text-slate-400" />
+            </div>
+            <div className="flex-1 min-w-0">
+              <p className="font-bold text-slate-700 text-base">Explore</p>
+              <p className="text-slate-400 text-sm">Home value, spending, utilities & more — when you want to dig deeper.</p>
+            </div>
+            <ArrowRight className="w-5 h-5 text-slate-300 group-hover:text-slate-500 group-hover:translate-x-1 transition-all flex-shrink-0" />
+          </Link>
 
           {/* ── Supporting context: alerts + quick actions ── */}
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
