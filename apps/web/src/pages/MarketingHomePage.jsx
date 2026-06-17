@@ -36,13 +36,13 @@ const FEATURES = [
 ];
 
 const HOW_IT_WORKS = [
-  { step: '01', title: 'Add your home', desc: 'Enter your address and property details. HomeOS pulls the public record data automatically.' },
+  { step: '01', title: 'Add your home', desc: 'Enter your address and property details. CasaCEO pulls the public record data automatically.' },
   { step: '02', title: 'Upload documents', desc: 'Drop in your closing docs, warranties, and insurance policies. AI classifies everything.' },
-  { step: '03', title: 'HomeOS organizes everything automatically', desc: 'Maintenance reminders surface, timelines populate, valuations update — all on their own.' },
+  { step: '03', title: 'CasaCEO organizes everything automatically', desc: 'Maintenance reminders surface, timelines populate, valuations update — all on their own.' },
 ];
 
 const TESTIMONIALS = [
-  { name: 'Jennifer M.', role: 'Homeowner · Atlanta, GA', quote: 'I finally feel like I understand what I own. HomeOS gave me a system I never knew I needed.', rating: 5 },
+  { name: 'Jennifer M.', role: 'Homeowner · Atlanta, GA', quote: 'I finally feel like I understand what I own. CasaCEO gave me a system I never knew I needed.', rating: 5 },
   { name: 'Marcus T.', role: 'Homeowner · San Francisco, CA', quote: 'The document vault alone is worth it. I can find anything in seconds — no more lost warranties.', rating: 5 },
   { name: 'Sarah K.', role: 'Homeowner · Austin, TX', quote: 'The maintenance reminders caught a roof issue before it became a $20,000 problem. Incredible.', rating: 5 },
   { name: 'David L.', role: 'Real Estate Attorney · Nashville, TN', quote: "Every homeowner should have this. It's the missing layer between owning a home and understanding it.", rating: 5 },
@@ -71,14 +71,14 @@ const HeroSection = () => (
     <div style={{ maxWidth: '900px', margin: '0 auto', textAlign: 'center', position: 'relative', zIndex: 1 }}>
       <div style={{ marginBottom: '20px' }}>
         <span style={{ fontSize: '13px', fontWeight: 600, background: 'rgba(26,115,232,0.2)', color: '#93c5fd', padding: '6px 16px', borderRadius: '999px', border: '1px solid rgba(26,115,232,0.3)' }}>
-          The Home Ownership Operating System
+          The operating system for your home
         </span>
       </div>
       <h1 style={{ fontSize: 'clamp(2.5rem, 6vw, 4rem)', fontWeight: 800, color: 'white', lineHeight: 1.1, marginBottom: '24px', letterSpacing: '-0.03em' }}>
         Your Home, Organized.<br />Finally.
       </h1>
       <p style={{ fontSize: '20px', lineHeight: 1.7, color: 'rgba(255,255,255,0.7)', maxWidth: '560px', margin: '0 auto 40px' }}>
-        The Operating System for Homeownership. One platform for your documents, maintenance, valuation, insurance, and everything in between.
+        CasaCEO is one platform for your documents, maintenance, valuation, insurance, and everything in between — your home, finally run like an asset.
       </p>
       <div style={{ display: 'flex', gap: '12px', justifyContent: 'center', flexWrap: 'wrap' }}>
         <Link to="/signup" style={{ display: 'inline-flex', alignItems: 'center', gap: '7px', padding: '15px 32px', borderRadius: '10px', background: '#1A73E8', color: 'white', fontSize: '16px', fontWeight: 700, textDecoration: 'none', transition: 'opacity 0.15s' }}
@@ -108,7 +108,7 @@ const FeatureGrid = () => (
         <div style={{ textAlign: 'center', marginBottom: '56px' }}>
           <p style={{ fontSize: '12px', fontWeight: 700, color: '#1A73E8', letterSpacing: '0.15em', textTransform: 'uppercase', marginBottom: '12px' }}>The Platform</p>
           <h2 style={{ fontSize: 'clamp(1.75rem, 4vw, 2.5rem)', fontWeight: 800, color: '#0F172A', letterSpacing: '-0.02em', marginBottom: '16px' }}>
-            Six modules. One operating system.
+            Six modules. One simple platform.
           </h2>
           <p style={{ fontSize: '18px', color: '#64748b', maxWidth: '520px', margin: '0 auto' }}>
             Every aspect of homeownership — organized, intelligent, and connected.
@@ -259,7 +259,7 @@ const CTASection = () => (
 // ═══════════════════════════════════════════════════════════════════════
 
 const MarketingHomePage = () => (
-  <SiteLayout seo={{ title: 'HomeOS — The Operating System for Homeownership' }} fullWidth>
+  <SiteLayout seo={{ title: 'CasaCEO — The Operating System for Your Home' }} fullWidth>
     <HeroSection />
     <FeatureGrid />
     <HowItWorksSection />
