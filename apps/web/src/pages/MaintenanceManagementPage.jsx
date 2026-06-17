@@ -12,7 +12,7 @@ import {
   Wrench, Plus, X, Check, Edit2, Trash2, Calendar, Clock,
   AlertCircle, CheckCircle2, User, Star, Search,
   ClipboardList, TreePine, Wind, Sun,
-  Snowflake, ArrowRight, ChevronRight, Home
+  Snowflake, ArrowRight, ChevronRight
 } from 'lucide-react';
 
 // ═══════════════════════════════════════════════════════════════════════
@@ -673,10 +673,6 @@ const MaintenanceManagementPage = () => {
 
         {/* ── Page Header ── */}
         <div className="bg-white border-b border-slate-200 -mx-4 sm:-mx-6 lg:-mx-8 px-4 sm:px-6 lg:px-8" style={{ padding: '24px 32px', marginBottom: '32px' }}>
-          {/* Home button — clear way back to the dashboard */}
-          <Link to="/dashboard" className="inline-flex items-center gap-2 font-semibold text-slate-600 hover:text-slate-900 transition-colors" style={{ fontSize: '14px', marginBottom: '16px' }}>
-            <Home style={{ width: '16px', height: '16px' }} /> Home
-          </Link>
           <div className="flex items-center gap-2 text-slate-400" style={{ fontSize: '13px', marginBottom: '12px' }}>
             <Link to="/dashboard" className="hover:text-slate-600 transition-colors">Home</Link>
             <ChevronRight style={{ width: '14px', height: '14px' }} />
