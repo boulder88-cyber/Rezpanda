@@ -1,7 +1,7 @@
 import React from 'react';
 import { NavLink } from 'react-router-dom';
 import {
-  LayoutDashboard,
+  Home,
   CreditCard,
   Wrench,
   FolderOpen,
@@ -12,9 +12,9 @@ import { Button } from '@/components/ui/button.jsx';
 
 const Sidebar = ({ isOpen, closeSidebar }) => {
   // Mirrors the dashboard's three-tile structure so the frame agrees with the pages.
-  // Primary: Dashboard / Bills / Maintenance / Records. Explore holds the optional extras.
+  // Home = the dashboard (the calm landing place). Then the three primary domains.
   const navItems = [
-    { path: '/dashboard', label: 'Dashboard', icon: LayoutDashboard },
+    { path: '/dashboard', label: 'Home', icon: Home },
     { path: '/bill-pay', label: 'Bills', icon: CreditCard },
     { path: '/maintenance-management', label: 'Maintenance', icon: Wrench },
     { path: '/documents', label: 'Records', icon: FolderOpen },
@@ -38,7 +38,7 @@ const Sidebar = ({ isOpen, closeSidebar }) => {
         <div className="h-16 flex items-center justify-between px-4 border-b border-slate-200 lg:hidden">
           <div className="flex items-center gap-2">
             <div className="w-8 h-8 bg-blue-600 rounded-lg flex items-center justify-center">
-              <LayoutDashboard className="w-5 h-5 text-white" />
+              <Home className="w-5 h-5 text-white" />
             </div>
             <span className="text-xl font-bold text-slate-900">CasaCEO</span>
           </div>
