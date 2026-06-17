@@ -24,7 +24,6 @@ const FOOTER_COLS = [
       { label: 'For Brokerages', href: '/brokerages' },
       { label: 'For Homeowners', href: '/pricing' },
       { label: 'For Family Offices', href: '/pricing' },
-      { label: 'CompassHomeOS', href: '/compass-preview' },
     ],
   },
   {
@@ -85,12 +84,14 @@ const SiteFooter = () => {
                   <path d="M8 2L2 6.5V14h4v-4h4v4h4V6.5L8 2z" fill="white" fillOpacity="0.95" />
                 </svg>
               </div>
-              <span style={{ fontSize: '18px', fontWeight: 800, color: 'white', letterSpacing: '-0.02em' }}>HomeOS</span>
+              <span style={{ fontSize: '18px', fontWeight: 800, letterSpacing: '-0.02em' }}>
+                <span style={{ color: 'white' }}>Casa</span><span style={{ color: '#c9a96e' }}>CEO</span>
+              </span>
             </Link>
 
             {/* Tagline */}
             <p style={{ fontSize: '13px', color: 'rgba(255,255,255,0.5)', lineHeight: '1.6', marginBottom: '20px', maxWidth: '200px' }}>
-              The Operating System for Homeownership.
+              The operating system for your home.
             </p>
 
             {/* Social icons */}
@@ -143,7 +144,7 @@ const SiteFooter = () => {
       <div style={{ borderTop: '1px solid rgba(255,255,255,0.08)' }}>
         <div style={{ maxWidth: '1280px', margin: '0 auto', padding: '20px 24px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '12px' }}>
           <p style={{ fontSize: '13px', color: 'rgba(255,255,255,0.35)' }}>
-            © {currentYear} HomeOS. All rights reserved.
+            © {currentYear} CasaCEO. All rights reserved.
           </p>
           <div style={{ display: 'flex', gap: '20px' }}>
             {[['Privacy', '/privacy'], ['Terms', '/terms'], ['Status', '/status']].map(([label, href]) => (
