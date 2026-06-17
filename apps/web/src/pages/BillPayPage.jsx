@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { Helmet } from 'react-helmet';
 import { Link } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext.jsx';
+import { useHome } from '@/contexts/HomeContext.jsx';
 import pb from '@/lib/pocketbaseClient.js';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs.jsx';
 import { Button } from '@/components/ui/button.jsx';
@@ -15,7 +16,6 @@ import {
 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast.js';
 
-import AccountSelector from '@/components/AccountSelector.jsx';
 import AddServiceCompanyForm from '@/components/AddServiceCompanyForm.jsx';
 import ServiceCompanyCard from '@/components/ServiceCompanyCard.jsx';
 import PaymentHistoryTab from '@/components/PaymentHistoryTab.jsx';
@@ -286,11 +286,10 @@ const NextBillDue = ({ companies }) => {
 
 const BillPayPage = () => {
   const { currentUser } = useAuth();
+  const { selectedHome } = useHome();
   const { toast } = useToast();
 
   const [activeTab, setActiveTab] = useState('dashboard');
-  const [selectedAccountId, setSelectedAccountId] = useState(null);
-  const [selectedAccountName, setSelectedAccountName] = useState('');
   const [companies, setCompanies] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
@@ -320,23 +319,12 @@ const BillPayPage = () => {
 
   useEffect(() => { fetchCompanies(); }, [currentUser]);
 
-  useEffect(() => {
-    const fetchAccountName = async () => {
-      if (!selectedAccountId || selectedAccountId === 'none') { setSelectedAccountName(''); return; }
-      try {
-        const account = await pb.collection('homes').getOne(selectedAccountId, { $autoCancel: false });
-        setSelectedAccountName(account.name);
-      } catch {}
-    };
-    fetchAccountName();
-  }, [selectedAccountId]);
-
   const handleLogPayment = async (company) => {
     if (!currentUser) return;
     try {
       await pb.collection('payment_history').create({
         companyName: company.companyName, datePaid: new Date().toISOString(),
-        amount: company.amount || null, accountUsed: selectedAccountName || 'Default Account', ownerId: currentUser.id
+        amount: company.amount || null, accountUsed: selectedHome?.name || 'Default Account', ownerId: currentUser.id
       }, { $autoCancel: false });
       toast({ title: '✅ Payment Logged', description: `Recorded payment to ${company.companyName}` });
       setHistoryRefreshTrigger(prev => prev + 1);
@@ -354,10 +342,6 @@ const BillPayPage = () => {
 
       {/* ── Page Header ── */}
       <div className="bg-white border-b border-slate-200 -mx-4 sm:-mx-6 lg:-mx-8 px-4 sm:px-6 lg:px-8" style={{ padding: '24px 32px', marginBottom: '32px' }}>
-        {/* Home button — clear way back to the dashboard */}
-        <Link to="/dashboard" className="inline-flex items-center gap-2 font-semibold text-slate-600 hover:text-slate-900 transition-colors" style={{ fontSize: '14px', marginBottom: '16px' }}>
-          <Home style={{ width: '16px', height: '16px' }} /> Home
-        </Link>
         <div className="flex items-center gap-2 text-slate-400" style={{ fontSize: '13px', marginBottom: '12px' }}>
           <Link to="/dashboard" className="hover:text-slate-600 transition-colors">Home</Link>
           <ChevronRight style={{ width: '14px', height: '14px' }} />
@@ -371,14 +355,11 @@ const BillPayPage = () => {
             <div>
               <h1 className="font-semibold text-slate-900" style={{ fontSize: '28px', lineHeight: '1.2' }}>Bill Pay</h1>
               <p className="text-slate-400" style={{ fontSize: '14px', marginTop: '2px' }}>
-                Stay ahead of every due date — all your bills in one place.
+                {selectedHome?.name ? `${selectedHome.name} · ` : ''}Stay ahead of every due date.
               </p>
             </div>
           </div>
           <div className="flex items-center gap-3">
-            <div className="bg-slate-50 border border-slate-200 rounded-xl" style={{ padding: '8px 12px' }}>
-              <AccountSelector selectedAccount={selectedAccountId} onSelectAccount={setSelectedAccountId} />
-            </div>
             <button className="flex items-center gap-2 font-semibold text-slate-600 border border-slate-200 hover:bg-slate-50 transition-all rounded-xl" style={{ padding: '10px 16px', fontSize: '13px' }}>
               <Download style={{ width: '15px', height: '15px' }} /> Export
             </button>
