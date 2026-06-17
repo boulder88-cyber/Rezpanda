@@ -18,6 +18,7 @@ const NAV_LINKS = [
 
 // ═══════════════════════════════════════════════════════════════════════
 // LOGO
+// (Component kept named HomeOSLogo for import compatibility; displays CasaCEO.)
 // ═══════════════════════════════════════════════════════════════════════
 
 const HomeOSLogo = ({ dark = false }) => (
@@ -33,8 +34,8 @@ const HomeOSLogo = ({ dark = false }) => (
       </svg>
     </div>
     {/* Wordmark */}
-    <span style={{ fontSize: '18px', fontWeight: 800, color: dark ? 'white' : '#0F172A', letterSpacing: '-0.02em' }}>
-      HomeOS
+    <span style={{ fontSize: '18px', fontWeight: 800, letterSpacing: '-0.02em' }}>
+      <span style={{ color: dark ? 'white' : '#1e3a5f' }}>Casa</span><span style={{ color: '#c9a96e' }}>CEO</span>
     </span>
   </Link>
 );
