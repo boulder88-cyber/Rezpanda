@@ -16,7 +16,7 @@ import {
   ArrowLeft, FolderOpen, Search, AlertCircle,
   Clock, CheckCircle2, Upload, Grid, X,
   ChevronRight, Lock, Plus, Download, Filter,
-  Home, AlertTriangle
+  AlertTriangle
 } from 'lucide-react';
 
 // ═══════════════════════════════════════════════════════════════════════
@@ -262,10 +262,6 @@ const DocumentsPage = () => {
     return (
       <div className="max-w-6xl mx-auto">
         <div className="bg-white border-b border-slate-200 -mx-4 sm:-mx-6 lg:-mx-8 px-4 sm:px-6 lg:px-8" style={{ padding: '24px 32px', marginBottom: '32px' }}>
-          {/* Home button — clear way back to the dashboard */}
-          <Link to="/dashboard" className="inline-flex items-center gap-2 font-semibold text-slate-600 hover:text-slate-900 transition-colors" style={{ fontSize: '14px', marginBottom: '16px' }}>
-            <Home style={{ width: '16px', height: '16px' }} /> Home
-          </Link>
           <div className="flex items-center gap-4">
             <div className="flex items-center justify-center" style={{ width: '48px', height: '48px', borderRadius: '12px', background: '#eef2f8' }}>
               <FolderOpen style={{ width: '24px', height: '24px', color: '#1e3a5f' }} />
@@ -294,10 +290,6 @@ const DocumentsPage = () => {
 
         {/* ── Page Header ── */}
         <div className="bg-white border-b border-slate-200 -mx-4 sm:-mx-6 lg:-mx-8 px-4 sm:px-6 lg:px-8" style={{ padding: '24px 32px', marginBottom: '32px' }}>
-          {/* Home button — clear way back to the dashboard */}
-          <Link to="/dashboard" className="inline-flex items-center gap-2 font-semibold text-slate-600 hover:text-slate-900 transition-colors" style={{ fontSize: '14px', marginBottom: '16px' }}>
-            <Home style={{ width: '16px', height: '16px' }} /> Home
-          </Link>
           <div className="flex items-center gap-2 text-slate-400" style={{ fontSize: '13px', marginBottom: '12px' }}>
             <Link to="/dashboard" className="hover:text-slate-600 transition-colors">Home</Link>
             <ChevronRight style={{ width: '14px', height: '14px' }} />
