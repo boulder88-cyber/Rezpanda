@@ -3,7 +3,7 @@ import pb from '@/lib/pocketbaseClient.js';
 import { useAuth } from '@/contexts/AuthContext.jsx';
 import { useHome } from '@/contexts/HomeContext.jsx';
 import { useToast } from '@/hooks/use-toast.js';
-import { Sparkles, Check, Calendar, Tag, Pencil, X } from 'lucide-react';
+import { Sparkles, Check, Calendar, Tag, Pencil, X, ExternalLink, Mail } from 'lucide-react';
 
 // ═══════════════════════════════════════════════════════════════════════
 // PENDING REVIEW SECTION
@@ -313,6 +313,42 @@ const PendingReviewSection = ({ onConfirmed }) => {
                     );
                   })()}
 
+                  {/* ── Helpers while reviewing ──
+                      Someone reviewing a bill usually needs more than the email:
+                      a link to the vendor's site (to verify the charge / log in),
+                      and a quick way to forward the bill to someone with a
+                      question. Forwarding opens the user's OWN mail client
+                      pre-filled (mailto:) — CasaCEO never sends on their behalf. */}
+                  <div className="flex flex-wrap items-center gap-2" style={{ marginTop: '12px' }}>
+                    {bill.paymentLink ? (
+                      <a
+                        href={bill.paymentLink}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="flex items-center gap-1 font-medium transition-colors"
+                        style={{ fontSize: '12px', color: '#1e3a5f', border: '1px solid #c7d7eb', borderRadius: '8px', padding: '6px 10px', background: '#fff' }}>
+                        <ExternalLink style={{ width: '13px', height: '13px' }} />
+                        Open vendor site
+                      </a>
+                    ) : (
+                      <span className="text-slate-400" style={{ fontSize: '12px' }}>
+                        No vendor link yet — add one when confirming.
+                      </span>
+                    )}
+
+                    <a
+                      href={`mailto:?subject=${encodeURIComponent(`Question about ${draft.companyName || bill.companyName} bill`)}&body=${encodeURIComponent(
+                        `I have a question about this bill:\n\n` +
+                        `Company: ${draft.companyName || bill.companyName || ''}\n` +
+                        `Amount: ${draft.amount || (typeof bill.amount === 'number' ? bill.amount : '') || ''}\n` +
+                        `Due date: ${draft.dueDate || (bill.dueDate ? String(bill.dueDate).slice(0, 10) : '') || ''}\n\n`
+                      )}`}
+                      className="flex items-center gap-1 font-medium transition-colors"
+                      style={{ fontSize: '12px', color: '#64748b', border: '1px solid #cbd5e1', borderRadius: '8px', padding: '6px 10px', background: '#fff' }}>
+                      <Mail style={{ width: '13px', height: '13px' }} />
+                      Forward / ask a question
+                    </a>
+                  </div>
                   <div className="flex items-center justify-end gap-2" style={{ marginTop: '14px' }}>
                     <button
                       onClick={cancelReview}
