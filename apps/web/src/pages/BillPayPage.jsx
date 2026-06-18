@@ -105,7 +105,19 @@ const UpcomingStrip = ({ companies }) => {
           return (
             <div key={c.id} className="flex items-center justify-between" style={{ fontSize: '13px', padding: '3px 0' }}>
               <div className="flex items-center gap-2 min-w-0">
-                {auto && <Repeat style={{ width: '12px', height: '12px', color: '#7c3aed', flexShrink: 0 }} />}
+                <span className="font-medium flex items-center gap-1 flex-shrink-0" style={{
+                  fontSize: '10px',
+                  textTransform: 'uppercase',
+                  letterSpacing: '0.03em',
+                  borderRadius: '5px',
+                  padding: '1px 6px',
+                  color: auto ? '#7c3aed' : '#475569',
+                  background: auto ? '#f5f3ff' : '#f1f5f9',
+                  minWidth: '54px',
+                  justifyContent: 'center',
+                }}>
+                  {auto ? <><Repeat style={{ width: '10px', height: '10px' }} /> Auto</> : 'Manual'}
+                </span>
                 <span className="text-slate-700 truncate">{c.companyName}</span>
                 <span className="text-slate-400 flex-shrink-0">{auto ? `drafts ~${d}` : `due ${d}`}</span>
               </div>
