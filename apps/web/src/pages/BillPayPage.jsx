@@ -10,8 +10,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/u
 import {
   Plus, CreditCard, LayoutGrid, Search, BookOpen,
   AlertCircle, CheckCircle2, Clock, DollarSign, Zap,
-  Bell, ShieldCheck, TrendingDown, TrendingUp, ArrowRight,
-  ChevronRight, Home, Download, BarChart2, Lightbulb,
+  Bell, ChevronRight, Download, BarChart2,
   Droplets, Wifi, Car, Shield
 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast.js';
@@ -32,144 +31,115 @@ const TIMEFRAMES = [
 ];
 
 // ═══════════════════════════════════════════════════════════════════════
-// BILLS DUE SUMMARY BANNER
+// CONDENSED SUMMARY STRIP
+// Slim, single row: Total Due, Overdue, Providers, Quick Pay Ready.
 // ═══════════════════════════════════════════════════════════════════════
 
-const BillsDueSummary = ({ companies, onPay }) => {
+const SummaryStrip = ({ companies }) => {
+  const today = new Date();
+  const totalDue = companies.reduce((sum, c) => sum + (parseFloat(c.amount) || 0), 0);
+  const overdue = companies.filter(c => c.dueDate && new Date(c.dueDate) < today).length;
+  const providers = companies.length;
+  const quickPay = companies.filter(c => c.paymentLink).length;
+
+  const stats = [
+    { label: 'Total Due', value: `$${totalDue.toFixed(0)}`, color: '#1e3a5f' },
+    { label: 'Overdue', value: overdue, color: overdue > 0 ? '#dc2626' : '#059669' },
+    { label: 'Providers', value: providers, color: '#7c3aed' },
+    { label: 'Quick Pay Ready', value: quickPay, color: '#059669' },
+  ];
+
+  return (
+    <div className="bg-white grid grid-cols-2 sm:grid-cols-4" style={{ borderRadius: '12px', border: '1px solid #e2e8f0', boxShadow: '0 1px 3px rgba(0,0,0,0.06)', marginBottom: '16px', overflow: 'hidden' }}>
+      {stats.map((s, i) => (
+        <div key={i} style={{ padding: '14px 18px', borderRight: i < 3 ? '1px solid #f1f5f9' : 'none', borderBottom: i < 2 ? '1px solid #f1f5f9' : 'none' }} className="sm:border-b-0">
+          <p className="text-slate-400 font-medium uppercase tracking-wide" style={{ fontSize: '10px', marginBottom: '2px' }}>{s.label}</p>
+          <p className="font-extrabold" style={{ fontSize: '20px', lineHeight: 1, color: s.color }}>{s.value}</p>
+        </div>
+      ))}
+    </div>
+  );
+};
+
+// ═══════════════════════════════════════════════════════════════════════
+// SLIM ATTENTION STRIP
+// One compact line for overdue / due-soon, or an all-clear line.
+// ═══════════════════════════════════════════════════════════════════════
+
+const AttentionStrip = ({ companies }) => {
   const today = new Date();
   const in7Days = new Date(today.getTime() + 7 * 24 * 60 * 60 * 1000);
-
+  const overdue = companies.filter(c => c.dueDate && new Date(c.dueDate) < today);
   const dueSoon = companies.filter(c => {
     if (!c.dueDate) return false;
-    const due = new Date(c.dueDate);
-    return due <= in7Days && due >= today;
+    const d = new Date(c.dueDate);
+    return d >= today && d <= in7Days;
   });
 
-  const overdue = companies.filter(c => {
-    if (!c.dueDate) return false;
-    return new Date(c.dueDate) < today;
-  });
-
-  const totalDue = [...dueSoon, ...overdue].reduce((sum, c) => sum + (parseFloat(c.amount) || 0), 0);
-
-  if (dueSoon.length === 0 && overdue.length === 0) {
+  if (overdue.length === 0 && dueSoon.length === 0) {
     return (
-      <div className="flex items-center gap-4" style={{ background: '#ecfdf5', border: '1px solid #a7f3d0', borderRadius: '12px', padding: '16px 20px', marginBottom: '24px' }}>
-        <div className="flex items-center justify-center flex-shrink-0" style={{ width: '40px', height: '40px', borderRadius: '10px', background: '#d1fae5' }}>
-          <CheckCircle2 style={{ width: '20px', height: '20px', color: '#059669' }} />
-        </div>
-        <div>
-          <p className="font-semibold text-green-800" style={{ fontSize: '15px' }}>You're all caught up!</p>
-          <p className="text-green-600" style={{ fontSize: '13px', marginTop: '2px' }}>No bills due in the next 7 days.</p>
-        </div>
+      <div className="flex items-center gap-2" style={{ background: '#ecfdf5', border: '1px solid #a7f3d0', borderRadius: '10px', padding: '10px 16px', marginBottom: '16px' }}>
+        <CheckCircle2 style={{ width: '16px', height: '16px', color: '#059669' }} />
+        <p className="font-medium text-green-800" style={{ fontSize: '13px' }}>All caught up — nothing due in the next 7 days.</p>
       </div>
     );
   }
 
   return (
-    <div className="bg-white" style={{ borderRadius: '12px', border: '1px solid #e2e8f0', padding: '20px', marginBottom: '24px', boxShadow: '0 1px 3px rgba(0,0,0,0.06)' }}>
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4" style={{ marginBottom: '16px' }}>
-        <div className="flex items-center gap-2">
-          <Bell style={{ width: '18px', height: '18px', color: '#f97316' }} />
-          <h2 className="font-semibold text-slate-900" style={{ fontSize: '18px' }}>Bills Needing Attention</h2>
-          {overdue.length > 0 && (
-            <span className="font-medium text-red-600 bg-red-100 rounded-full" style={{ padding: '2px 8px', fontSize: '12px' }}>
-              {overdue.length} Overdue
-            </span>
-          )}
-        </div>
-        {totalDue > 0 && (
-          <div className="text-right bg-slate-50 rounded-xl" style={{ padding: '10px 16px', border: '1px solid #e2e8f0' }}>
-            <p className="text-slate-400 font-medium uppercase tracking-wide" style={{ fontSize: '11px' }}>Total Due</p>
-            <p className="font-extrabold text-slate-900" style={{ fontSize: '24px', lineHeight: 1 }}>${totalDue.toFixed(2)}</p>
-          </div>
-        )}
+    <div className="flex flex-wrap items-center gap-x-6 gap-y-1" style={{ background: '#fffbeb', border: '1px solid #fde68a', borderRadius: '10px', padding: '10px 16px', marginBottom: '16px' }}>
+      <div className="flex items-center gap-2">
+        <Bell style={{ width: '16px', height: '16px', color: '#f97316' }} />
+        <p className="font-semibold text-slate-800" style={{ fontSize: '13px' }}>Needs attention:</p>
       </div>
-      <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-        {overdue.map(bill => (
-          <div key={bill.id} className="flex items-center justify-between" style={{ background: '#fef2f2', border: '1px solid #fecaca', borderRadius: '10px', padding: '12px 14px' }}>
-            <div className="flex items-center gap-3">
-              <div className="flex items-center justify-center" style={{ width: '36px', height: '36px', borderRadius: '8px', background: '#fee2e2', flexShrink: 0 }}>
-                <AlertCircle style={{ width: '16px', height: '16px', color: '#ef4444' }} />
-              </div>
-              <div>
-                <p className="font-semibold text-slate-900" style={{ fontSize: '14px' }}>{bill.companyName}</p>
-                <p className="font-bold text-red-500 uppercase" style={{ fontSize: '11px' }}>Overdue</p>
-              </div>
-            </div>
-            <div className="flex items-center gap-3">
-              {bill.amount && <span className="font-bold text-slate-900" style={{ fontSize: '14px' }}>${parseFloat(bill.amount).toFixed(2)}</span>}
-              {bill.paymentLink && (
-                <button className="font-semibold text-white rounded-xl hover:opacity-90 transition-all" style={{ background: '#ef4444', padding: '6px 14px', fontSize: '12px' }}
-                  onClick={() => { window.open(bill.paymentLink, '_blank', 'noopener,noreferrer'); onPay(bill); }}>
-                  Pay Now
-                </button>
-              )}
-            </div>
-          </div>
-        ))}
-        {dueSoon.map(bill => (
-          <div key={bill.id} className="flex items-center justify-between" style={{ background: '#fffbeb', border: '1px solid #fde68a', borderRadius: '10px', padding: '12px 14px' }}>
-            <div className="flex items-center gap-3">
-              <div className="flex items-center justify-center" style={{ width: '36px', height: '36px', borderRadius: '8px', background: '#fef3c7', flexShrink: 0 }}>
-                <Clock style={{ width: '16px', height: '16px', color: '#f59e0b' }} />
-              </div>
-              <div>
-                <p className="font-semibold text-slate-900" style={{ fontSize: '14px' }}>{bill.companyName}</p>
-                <p className="text-amber-600" style={{ fontSize: '12px' }}>Due {new Date(bill.dueDate).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}</p>
-              </div>
-            </div>
-            <div className="flex items-center gap-3">
-              {bill.amount && <span className="font-bold text-slate-900" style={{ fontSize: '14px' }}>${parseFloat(bill.amount).toFixed(2)}</span>}
-              {bill.paymentLink && (
-                <button className="font-semibold text-amber-700 border border-amber-200 rounded-xl hover:bg-amber-50 transition-all" style={{ padding: '6px 14px', fontSize: '12px' }}
-                  onClick={() => { window.open(bill.paymentLink, '_blank', 'noopener,noreferrer'); onPay(bill); }}>
-                  Pay
-                </button>
-              )}
-            </div>
-          </div>
-        ))}
-      </div>
+      {overdue.length > 0 && (
+        <span className="font-medium text-red-600" style={{ fontSize: '13px' }}>
+          {overdue.length} overdue
+        </span>
+      )}
+      {dueSoon.length > 0 && (
+        <span className="font-medium text-amber-700" style={{ fontSize: '13px' }}>
+          {dueSoon.length} due within 7 days
+        </span>
+      )}
     </div>
   );
 };
 
 // ═══════════════════════════════════════════════════════════════════════
-// QUICK STATS
+// NEXT BILL DUE — slim line
 // ═══════════════════════════════════════════════════════════════════════
 
-const QuickStats = ({ companies }) => {
-  const totalMonthly = companies.reduce((sum, c) => sum + (parseFloat(c.amount) || 0), 0);
-  const totalProviders = companies.length;
-  const withPayLinks = companies.filter(c => c.paymentLink).length;
-  const overdue = companies.filter(c => c.dueDate && new Date(c.dueDate) < new Date()).length;
+const NextBillDue = ({ companies }) => {
+  const today = new Date();
+  const upcoming = companies
+    .filter(c => c.dueDate && new Date(c.dueDate) >= today)
+    .sort((a, b) => new Date(a.dueDate) - new Date(b.dueDate));
+  if (upcoming.length === 0) return null;
+
+  const next = upcoming[0];
+  const daysUntil = Math.ceil((new Date(next.dueDate) - today) / 86400000);
 
   return (
-    <div className="grid grid-cols-2 sm:grid-cols-4 gap-4" style={{ marginBottom: '24px' }}>
-      {[
-        { label: 'Total Due This Month', value: `$${totalMonthly.toFixed(0)}`, icon: DollarSign, color: '#1e3a5f', bg: '#eef2f8', border: '#c7d7eb' },
-        { label: 'Overdue Bills', value: overdue, icon: AlertCircle, color: overdue > 0 ? '#dc2626' : '#059669', bg: overdue > 0 ? '#fef2f2' : '#ecfdf5', border: overdue > 0 ? '#fecaca' : '#a7f3d0' },
-        { label: 'Providers Tracked', value: totalProviders, icon: LayoutGrid, color: '#7c3aed', bg: '#f5f3ff', border: '#ddd6fe' },
-        { label: 'Quick Pay Ready', value: withPayLinks, icon: Zap, color: '#059669', bg: '#ecfdf5', border: '#a7f3d0' },
-      ].map((stat, i) => {
-        const Icon = stat.icon;
-        return (
-          <div key={i} className="bg-white" style={{ borderRadius: '12px', border: `1px solid ${stat.border}`, padding: '16px', boxShadow: '0 1px 3px rgba(0,0,0,0.06)' }}>
-            <div className="flex items-center justify-center" style={{ width: '32px', height: '32px', borderRadius: '8px', background: stat.bg, marginBottom: '8px' }}>
-              <Icon style={{ width: '16px', height: '16px', color: stat.color }} />
-            </div>
-            <p className="font-extrabold text-slate-900" style={{ fontSize: '24px', lineHeight: 1 }}>{stat.value}</p>
-            <p className="font-medium text-slate-600" style={{ fontSize: '12px', marginTop: '4px' }}>{stat.label}</p>
-          </div>
-        );
-      })}
+    <div className="flex items-center gap-3 bg-white" style={{ borderRadius: '10px', border: '1px solid #bfdbfe', padding: '10px 16px', marginBottom: '24px' }}>
+      <Clock style={{ width: '16px', height: '16px', color: '#2563eb', flexShrink: 0 }} />
+      <p className="text-slate-600" style={{ fontSize: '13px' }}>
+        <span className="text-slate-400">Next due:</span>{' '}
+        <span className="font-semibold text-slate-900">{next.companyName}</span>
+        {' '}in {daysUntil} day{daysUntil !== 1 ? 's' : ''}
+        {next.amount && ` · $${parseFloat(next.amount).toFixed(2)}`}
+      </p>
+      {next.paymentLink && (
+        <button className="font-semibold text-blue-600 hover:text-blue-800 transition-colors ml-auto" style={{ fontSize: '13px' }}
+          onClick={() => window.open(next.paymentLink, '_blank', 'noopener,noreferrer')}>
+          Pay →
+        </button>
+      )}
     </div>
   );
 };
 
 // ═══════════════════════════════════════════════════════════════════════
-// CATEGORY BREAKDOWN
+// ANALYSIS — Category Breakdown + Annual Spend (lives in its own tab)
 // ═══════════════════════════════════════════════════════════════════════
 
 const CategoryBreakdown = ({ companies }) => {
@@ -195,7 +165,7 @@ const CategoryBreakdown = ({ companies }) => {
   const total = companies.reduce((sum, c) => sum + (parseFloat(c.amount) || 0), 0);
 
   return (
-    <div className="bg-white" style={{ borderRadius: '12px', border: '1px solid #e2e8f0', padding: '20px', marginBottom: '24px', boxShadow: '0 1px 3px rgba(0,0,0,0.06)' }}>
+    <div className="bg-white" style={{ borderRadius: '12px', border: '1px solid #e2e8f0', padding: '20px', boxShadow: '0 1px 3px rgba(0,0,0,0.06)' }}>
       <h3 className="font-semibold text-slate-900" style={{ fontSize: '16px', marginBottom: '16px' }}>Spending by Category</h3>
       <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
         {categories.map((cat, i) => {
@@ -225,65 +195,23 @@ const CategoryBreakdown = ({ companies }) => {
   );
 };
 
-// ═══════════════════════════════════════════════════════════════════════
-// ANNUAL SPEND SUMMARY
-// ═══════════════════════════════════════════════════════════════════════
-
 const AnnualSpendSummary = ({ companies }) => {
   const monthly = companies.reduce((sum, c) => sum + (parseFloat(c.amount) || 0), 0);
   const annual = monthly * 12;
 
   return (
-    <div className="flex flex-col sm:flex-row gap-4" style={{ marginBottom: '24px' }}>
+    <div className="flex flex-col gap-4">
       {[
-        { label: 'Monthly Total', value: `$${monthly.toFixed(0)}`, sub: 'Current month estimate', color: '#1e3a5f', bg: '#eef2f8' },
-        { label: 'Annual Projection', value: `$${annual.toLocaleString()}`, sub: 'Based on current bills', color: '#059669', bg: '#ecfdf5' },
-        { label: 'Avg per Bill', value: companies.length > 0 ? `$${(monthly / companies.length).toFixed(0)}` : '$0', sub: `Across ${companies.length} providers`, color: '#7c3aed', bg: '#f5f3ff' },
+        { label: 'Monthly Total', value: `$${monthly.toFixed(0)}`, sub: 'Current month estimate', color: '#1e3a5f' },
+        { label: 'Annual Projection', value: `$${annual.toLocaleString()}`, sub: 'Based on current bills', color: '#059669' },
+        { label: 'Avg per Bill', value: companies.length > 0 ? `$${(monthly / companies.length).toFixed(0)}` : '$0', sub: `Across ${companies.length} providers`, color: '#7c3aed' },
       ].map((s, i) => (
-        <div key={i} className="flex-1 bg-white" style={{ borderRadius: '12px', border: '1px solid #e2e8f0', padding: '16px', boxShadow: '0 1px 3px rgba(0,0,0,0.06)' }}>
+        <div key={i} className="bg-white" style={{ borderRadius: '12px', border: '1px solid #e2e8f0', padding: '16px', boxShadow: '0 1px 3px rgba(0,0,0,0.06)' }}>
           <p className="text-slate-400 font-medium uppercase tracking-wide" style={{ fontSize: '11px', marginBottom: '6px' }}>{s.label}</p>
           <p className="font-extrabold" style={{ fontSize: '26px', lineHeight: 1, color: s.color }}>{s.value}</p>
           <p className="text-slate-400" style={{ fontSize: '12px', marginTop: '4px' }}>{s.sub}</p>
         </div>
       ))}
-    </div>
-  );
-};
-
-// ═══════════════════════════════════════════════════════════════════════
-// NEXT BILL DUE WIDGET
-// ═══════════════════════════════════════════════════════════════════════
-
-const NextBillDue = ({ companies }) => {
-  const today = new Date();
-  const upcoming = companies
-    .filter(c => c.dueDate && new Date(c.dueDate) >= today)
-    .sort((a, b) => new Date(a.dueDate) - new Date(b.dueDate));
-
-  if (upcoming.length === 0) return null;
-
-  const next = upcoming[0];
-  const daysUntil = Math.ceil((new Date(next.dueDate) - today) / 86400000);
-
-  return (
-    <div className="flex items-center gap-4 bg-white" style={{ borderRadius: '12px', border: '1px solid #bfdbfe', padding: '16px 20px', marginBottom: '24px', boxShadow: '0 1px 3px rgba(0,0,0,0.06)' }}>
-      <div className="flex items-center justify-center flex-shrink-0" style={{ width: '44px', height: '44px', borderRadius: '12px', background: '#eff6ff' }}>
-        <Clock style={{ width: '20px', height: '20px', color: '#2563eb' }} />
-      </div>
-      <div className="flex-1">
-        <p className="text-slate-400 font-medium uppercase tracking-wide" style={{ fontSize: '11px', marginBottom: '2px' }}>Next Bill Due</p>
-        <p className="font-semibold text-slate-900" style={{ fontSize: '15px' }}>{next.companyName}</p>
-        <p className="text-slate-400" style={{ fontSize: '13px' }}>
-          Due in {daysUntil} day{daysUntil !== 1 ? 's' : ''} . {new Date(next.dueDate).toLocaleDateString('en-US', { month: 'long', day: 'numeric' })}
-          {next.amount && ` . $${parseFloat(next.amount).toFixed(2)}`}
-        </p>
-      </div>
-      {next.paymentLink && (
-        <button className="font-semibold text-white hover:opacity-90 transition-all rounded-xl flex-shrink-0" style={{ background: '#2563eb', padding: '8px 16px', fontSize: '13px' }}
-          onClick={() => window.open(next.paymentLink, '_blank', 'noopener,noreferrer')}>
-          Pay Now
-        </button>
-      )}
     </div>
   );
 };
@@ -337,7 +265,7 @@ const BillPayPage = () => {
       }, { $autoCancel: false });
       setHistoryRefreshTrigger(prev => prev + 1);
     } catch {
-      // non-fatal: the bill is still marked paid even if history logging fails
+      // non-fatal: bill is still marked paid even if history logging fails
     }
   };
 
@@ -345,14 +273,11 @@ const BillPayPage = () => {
   const handleSelectDirectoryCompany = (company) => { setPrefillData(company); setIsAddModalOpen(true); };
 
   // ── Split bills by status ──
-  // Ready to pay = confirmed (or anything not paid and not still pending_review).
-  // Paid = status 'paid', shown greyed as history, filtered by the timeframe.
   const isPaid = (c) => c.status === 'paid';
 
   const readyToPay = companies
     .filter(c => !isPaid(c) && c.status !== 'pending_review')
     .sort((a, b) => {
-      // soonest due date first; undated go last
       const da = a.dueDate ? new Date(a.dueDate).getTime() : Infinity;
       const db = b.dueDate ? new Date(b.dueDate).getTime() : Infinity;
       return da - db;
@@ -361,18 +286,17 @@ const BillPayPage = () => {
   const paidBills = companies
     .filter(c => {
       if (!isPaid(c)) return false;
-      if (timeframeDays == null) return true;          // 'All'
-      if (!c.paidDate) return true;                    // no date -> keep visible
+      if (timeframeDays == null) return true;
+      if (!c.paidDate) return true;
       const days = (Date.now() - new Date(c.paidDate).getTime()) / 86400000;
       return days <= timeframeDays;
     })
     .sort((a, b) => {
       const da = a.paidDate ? new Date(a.paidDate).getTime() : 0;
       const db = b.paidDate ? new Date(b.paidDate).getTime() : 0;
-      return db - da; // most recently paid first
+      return db - da;
     });
 
-  // Dashboards/banners use only the bills that still need paying.
   const openCompanies = readyToPay;
 
   return (
@@ -380,28 +304,25 @@ const BillPayPage = () => {
       <Helmet><title>Bill Pay — CasaCEO</title></Helmet>
 
       {/* ── Page Header ── */}
-      <div className="bg-white border-b border-slate-200 -mx-4 sm:-mx-6 lg:-mx-8 px-4 sm:px-6 lg:px-8" style={{ padding: '24px 32px', marginBottom: '32px' }}>
-        <div className="flex items-center gap-2 text-slate-400" style={{ fontSize: '13px', marginBottom: '12px' }}>
+      <div className="bg-white border-b border-slate-200 -mx-4 sm:-mx-6 lg:-mx-8 px-4 sm:px-6 lg:px-8" style={{ padding: '20px 32px', marginBottom: '24px' }}>
+        <div className="flex items-center gap-2 text-slate-400" style={{ fontSize: '13px', marginBottom: '10px' }}>
           <Link to="/dashboard" className="hover:text-slate-600 transition-colors">Home</Link>
           <ChevronRight style={{ width: '14px', height: '14px' }} />
           <span className="text-slate-700 font-medium">Bill Pay</span>
         </div>
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
           <div className="flex items-center gap-4">
-            <div className="flex items-center justify-center" style={{ width: '48px', height: '48px', borderRadius: '12px', background: '#eff6ff' }}>
-              <CreditCard style={{ width: '24px', height: '24px', color: '#2563eb' }} />
+            <div className="flex items-center justify-center" style={{ width: '44px', height: '44px', borderRadius: '12px', background: '#eff6ff' }}>
+              <CreditCard style={{ width: '22px', height: '22px', color: '#2563eb' }} />
             </div>
             <div>
-              <h1 className="font-semibold text-slate-900" style={{ fontSize: '28px', lineHeight: '1.2' }}>Bill Pay</h1>
-              <p className="text-slate-400" style={{ fontSize: '14px', marginTop: '2px' }}>
-                {selectedHome?.name ? `${selectedHome.name} . ` : ''}Stay ahead of every due date.
+              <h1 className="font-semibold text-slate-900" style={{ fontSize: '24px', lineHeight: '1.2' }}>Bill Pay</h1>
+              <p className="text-slate-400" style={{ fontSize: '13px', marginTop: '2px' }}>
+                {selectedHome?.name ? `${selectedHome.name} · ` : ''}Stay ahead of every due date.
               </p>
             </div>
           </div>
           <div className="flex items-center gap-3">
-            <button className="flex items-center gap-2 font-semibold text-slate-600 border border-slate-200 hover:bg-slate-50 transition-all rounded-xl" style={{ padding: '10px 16px', fontSize: '13px' }}>
-              <Download style={{ width: '15px', height: '15px' }} /> Export
-            </button>
             <button onClick={handleOpenAddCustom} className="flex items-center gap-2 font-semibold text-white hover:opacity-90 transition-all rounded-xl" style={{ background: '#1e3a5f', padding: '10px 20px', fontSize: '14px' }}>
               <Plus style={{ width: '16px', height: '16px' }} /> Add Bill
             </button>
@@ -414,9 +335,10 @@ const BillPayPage = () => {
         <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
 
           {/* Tab Bar */}
-          <div className="flex gap-1 bg-white border border-slate-200 rounded-2xl w-fit shadow-sm" style={{ padding: '6px', marginBottom: '32px' }}>
+          <div className="flex gap-1 bg-white border border-slate-200 rounded-2xl w-fit shadow-sm" style={{ padding: '6px', marginBottom: '24px' }}>
             {[
               { key: 'dashboard', label: 'My Bills', icon: LayoutGrid },
+              { key: 'analysis', label: 'Analysis', icon: BarChart2 },
               { key: 'directory', label: 'Directory', icon: BookOpen },
               { key: 'history', label: 'History', icon: CreditCard },
             ].map(tab => {
@@ -461,17 +383,11 @@ const BillPayPage = () => {
               <>
                 {/* Pending Review (email-ingested bills) */}
                 <PendingReviewSection onConfirmed={fetchCompanies} />
-                {/* Next Bill Due — open bills only */}
+
+                {/* Condensed dashboard strip */}
+                <SummaryStrip companies={openCompanies} />
+                <AttentionStrip companies={openCompanies} />
                 <NextBillDue companies={openCompanies} />
-                {/* Bills Due Banner — open bills only */}
-                <BillsDueSummary companies={openCompanies} onPay={handleLogPayment} />
-                {/* Quick Stats — open bills only */}
-                <QuickStats companies={openCompanies} />
-                {/* Two column: Category Breakdown + Annual Summary — open bills only */}
-                <div className="grid grid-cols-1 lg:grid-cols-2 gap-6" style={{ marginBottom: '24px' }}>
-                  <CategoryBreakdown companies={openCompanies} />
-                  <AnnualSpendSummary companies={openCompanies} />
-                </div>
 
                 {/* ── Ready to Pay list ── */}
                 <div className="flex items-center justify-between" style={{ marginBottom: '12px' }}>
@@ -523,6 +439,20 @@ const BillPayPage = () => {
                   </div>
                 )}
               </>
+            )}
+          </TabsContent>
+
+          {/* ── Analysis Tab ── */}
+          <TabsContent value="analysis" className="mt-0">
+            {companies.length === 0 ? (
+              <div className="bg-white text-center text-slate-400" style={{ borderRadius: '12px', border: '1px solid #e2e8f0', padding: '40px', fontSize: '14px' }}>
+                Add some bills to see your spending analysis.
+              </div>
+            ) : (
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                <CategoryBreakdown companies={openCompanies} />
+                <AnnualSpendSummary companies={openCompanies} />
+              </div>
             )}
           </TabsContent>
 
