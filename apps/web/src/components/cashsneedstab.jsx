@@ -1,0 +1,268 @@
+import React, { useState } from 'react';
+import { Repeat, TrendingDown, AlertCircle, CheckCircle2, ChevronRight } from 'lucide-react';
+
+// ═══════════════════════════════════════════════════════════════════════
+// CASH NEEDS — a forward-looking lens on bills you already have.
+//
+// NOT a new module: every number here comes from existing bills (amount,
+// dueDate, paymentType, homeId). It re-asks the data one question —
+// "what's leaving my accounts, and when" — instead of "what do I owe."
+//
+// Shape (blend, timeline-first, reassurance-led):
+//   1. Reassurance line   — plain-language "am I okay?" before any numbers
+//   2. Timeline (spine)   — windowed (7/30/60/90d) outflows, date order,
+//                           auto vs manual distinguished, running total
+//   3. Breakdown          — same window sliced: auto vs manual, by property
+//
+// Deliberately NOT here: spending history/trends (that's Analysis), editing
+// bills (that's My Bills), any new data. Forward-looking only.
+//
+// Built so a future "view as calendar" toggle drops into the timeline
+// section without a rewrite.
+// ═══════════════════════════════════════════════════════════════════════
+
+const WINDOWS = [
+  { label: 'This week', days: 7 },
+  { label: '30 days', days: 30 },
+  { label: '60 days', days: 60 },
+  { label: '90 days', days: 90 },
+];
+
+const isAuto = (c) => c.paymentType === 'Autopay (card)' || c.paymentType === 'Autopay (bank)';
+const money = (n) => `$${(parseFloat(n) || 0).toFixed(2)}`;
+const money0 = (n) => `$${(parseFloat(n) || 0).toFixed(0)}`;
+
+const CashNeedsTab = ({ companies = [], homes = [], homeName = () => null }) => {
+  const [windowDays, setWindowDays] = useState(30);
+
+  const today = new Date();
+  const horizon = new Date(today.getTime() + windowDays * 24 * 60 * 60 * 1000);
+
+  // Open bills only (not paid, not pending review), with a due date that
+  // falls inside the selected window. Sorted soonest-first.
+  const outflows = companies
+    .filter(c => c.status !== 'paid' && c.status !== 'pending_review')
+    .filter(c => {
+      if (!c.dueDate) return false;
+      const d = new Date(c.dueDate);
+      return d >= stripTime(today) && d <= horizon;
+    })
+    .sort((a, b) => new Date(a.dueDate) - new Date(b.dueDate));
+
+  const total = outflows.reduce((s, c) => s + (parseFloat(c.amount) || 0), 0);
+  const autoTotal = outflows.filter(isAuto).reduce((s, c) => s + (parseFloat(c.amount) || 0), 0);
+  const manualTotal = total - autoTotal;
+
+  // Overdue is its own urgent fact, independent of the window.
+  const overdue = companies
+    .filter(c => c.status !== 'paid' && c.status !== 'pending_review')
+    .filter(c => c.dueDate && new Date(c.dueDate) < stripTime(today));
+  const overdueTotal = overdue.reduce((s, c) => s + (parseFloat(c.amount) || 0), 0);
+
+  const windowLabel = (WINDOWS.find(w => w.days === windowDays) || {}).label || `${windowDays} days`;
+
+  // ── 1. Reassurance line ──
+  const reassurance = (() => {
+    if (overdue.length > 0) {
+      return {
+        tone: 'red',
+        icon: AlertCircle,
+        text: `${overdue.length} ${overdue.length === 1 ? 'bill is' : 'bills are'} overdue — ${money0(overdueTotal)} to catch up on.`,
+      };
+    }
+    if (outflows.length === 0) {
+      return {
+        tone: 'green',
+        icon: CheckCircle2,
+        text: `Nothing due in the ${windowLabel.toLowerCase()} from the bills you've added.`,
+      };
+    }
+    return {
+      tone: 'calm',
+      icon: TrendingDown,
+      text: `About ${money0(total)} leaving your accounts over the ${windowLabel.toLowerCase()}, based on what you've added.`,
+    };
+  })();
+
+  const toneColor = { red: '#dc2626', green: '#059669', calm: '#1e3a5f' };
+  const toneBg = { red: '#fef2f2', green: '#ecfdf5', calm: '#eef2f8' };
+  const toneBorder = { red: '#fecaca', green: '#a7f3d0', calm: '#c7d7eb' };
+  const RIcon = reassurance.icon;
+
+  const showByProperty = (homes || []).length > 1;
+
+  // by-property grouping for the breakdown
+  const byProperty = (() => {
+    const groups = {};
+    for (const c of outflows) {
+      const key = c.homeId || '__unassigned__';
+      groups[key] = (groups[key] || 0) + (parseFloat(c.amount) || 0);
+    }
+    return Object.entries(groups)
+      .map(([key, amt]) => ({
+        key,
+        label: key === '__unassigned__' ? 'Unassigned' : (homeName(key) || 'Property'),
+        amt,
+      }))
+      .sort((a, b) => b.amt - a.amt);
+  })();
+
+  const cardStyle = { background: '#fff', border: '1px solid #e9e4db', borderRadius: '12px', boxShadow: '0 1px 3px rgba(31,39,51,0.06)' };
+
+  return (
+    <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+
+      {/* ── 1. Reassurance hero ── */}
+      <div className="flex items-center gap-3" style={{ background: toneBg[reassurance.tone], border: `1px solid ${toneBorder[reassurance.tone]}`, borderRadius: '12px', padding: '16px 18px' }}>
+        <RIcon style={{ width: '20px', height: '20px', color: toneColor[reassurance.tone], flexShrink: 0 }} />
+        <p className="font-semibold" style={{ fontSize: '15px', color: '#1f2733' }}>{reassurance.text}</p>
+      </div>
+
+      {/* ── 2. Timeline (spine) ── */}
+      <div style={{ ...cardStyle, padding: '20px' }}>
+        {/* window toggle */}
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3" style={{ marginBottom: '16px' }}>
+          <h3 className="font-semibold" style={{ fontSize: '16px', color: '#1f2733' }}>What's coming</h3>
+          <div className="flex items-center gap-1" style={{ background: '#faf8f4', border: '1px solid #e9e4db', borderRadius: '10px', padding: '4px' }}>
+            {WINDOWS.map(w => (
+              <button key={w.days} onClick={() => setWindowDays(w.days)}
+                className="rounded-lg transition-all font-medium"
+                style={{ padding: '5px 12px', fontSize: '12px',
+                  background: windowDays === w.days ? '#1e3a5f' : 'transparent',
+                  color: windowDays === w.days ? '#fff' : '#5b6472' }}>
+                {w.label}
+              </button>
+            ))}
+          </div>
+        </div>
+
+        {/* running total */}
+        <div className="flex items-baseline gap-2" style={{ marginBottom: '4px' }}>
+          <span className="font-extrabold" style={{ fontSize: '30px', color: '#1e3a5f', lineHeight: 1 }}>{money(total)}</span>
+          <span style={{ fontSize: '13px', color: '#95a0ae' }}>over the {windowLabel.toLowerCase()}</span>
+        </div>
+        {total > 0 && (
+          <p style={{ fontSize: '12px', color: '#5b6472', marginBottom: '16px' }}>
+            {money0(autoTotal)} drafts automatically · {money0(manualTotal)} needs you to pay
+          </p>
+        )}
+
+        {/* the outflows, date order */}
+        {outflows.length === 0 ? (
+          <div className="text-center" style={{ background: '#faf8f4', border: '1px solid #e9e4db', borderRadius: '10px', padding: '24px', fontSize: '14px', color: '#95a0ae' }}>
+            Nothing scheduled in this window.
+          </div>
+        ) : (
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
+            {outflows.map(c => {
+              const auto = isAuto(c);
+              const d = new Date(c.dueDate).toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+              return (
+                <div key={c.id} className="flex items-center justify-between" style={{ padding: '8px 0', borderBottom: '1px solid #f1ece3' }}>
+                  <div className="flex items-center gap-3 min-w-0">
+                    <span className="font-medium flex items-center gap-1 flex-shrink-0" style={{
+                      fontSize: '10px', textTransform: 'uppercase', letterSpacing: '0.03em',
+                      borderRadius: '5px', padding: '2px 7px', minWidth: '58px', justifyContent: 'center',
+                      color: auto ? '#059669' : '#b45309',
+                      background: auto ? '#ecfdf5' : '#fffbeb',
+                    }}>
+                      {auto ? <><Repeat style={{ width: '10px', height: '10px' }} /> Auto</> : 'Manual'}
+                    </span>
+                    <span className="font-medium truncate" style={{ fontSize: '14px', color: '#1f2733' }}>{c.companyName}</span>
+                    {showByProperty && homeName(c.homeId) && (
+                      <span style={{ fontSize: '11px', color: '#1e3a5f', background: '#eef2f8', borderRadius: '6px', padding: '1px 7px' }}>
+                        {homeName(c.homeId)}
+                      </span>
+                    )}
+                  </div>
+                  <div className="flex items-center gap-3 flex-shrink-0">
+                    <span style={{ fontSize: '12px', color: '#95a0ae' }}>{auto ? `drafts ~${d}` : `due ${d}`}</span>
+                    <span className="font-semibold" style={{ fontSize: '14px', color: '#1f2733', minWidth: '70px', textAlign: 'right' }}>{money(c.amount)}</span>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        )}
+      </div>
+
+      {/* ── 3. Breakdown ── */}
+      {outflows.length > 0 && (
+        <div className={`grid grid-cols-1 ${showByProperty ? 'lg:grid-cols-2' : ''} gap-4`}>
+          {/* Auto vs Manual */}
+          <div style={{ ...cardStyle, padding: '18px 20px' }}>
+            <h4 className="font-semibold" style={{ fontSize: '13px', color: '#1f2733', marginBottom: '14px' }}>How it pulls</h4>
+            <Bar label="Drafts automatically" sub="autopay — happens on its own" amount={autoTotal} total={total} color="#059669" />
+            <div style={{ height: '10px' }} />
+            <Bar label="Needs you to pay" sub="manual — you have to act" amount={manualTotal} total={total} color="#f59e0b" />
+          </div>
+
+          {/* By property */}
+          {showByProperty && (
+            <div style={{ ...cardStyle, padding: '18px 20px' }}>
+              <h4 className="font-semibold" style={{ fontSize: '13px', color: '#1f2733', marginBottom: '14px' }}>By property</h4>
+              {byProperty.map((p, i) => (
+                <div key={p.key}>
+                  {i > 0 && <div style={{ height: '10px' }} />}
+                  <Bar label={p.label} amount={p.amt} total={total} color="#1e3a5f" />
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* footer note — sets the boundary AND admits this is only as complete
+          as what's been entered. Adaptive: if bills are missing due dates,
+          say so specifically (those won't show on the timeline); otherwise
+          give the gentle general caveat. Either way, no false comfort. */}
+      {(() => {
+        const undated = companies
+          .filter(c => c.status !== 'paid' && c.status !== 'pending_review')
+          .filter(c => !c.dueDate).length;
+        return (
+          <div style={{ marginTop: '4px' }}>
+            {undated > 0 && (
+              <p style={{ fontSize: '12px', color: '#b45309', textAlign: 'center', marginBottom: '4px' }}>
+                {undated} {undated === 1 ? 'bill has' : 'bills have'} no due date, so {undated === 1 ? "it isn't" : "they aren't"} counted here yet. Add dates in My Bills to see the full picture.
+              </p>
+            )}
+            <p style={{ fontSize: '12px', color: '#95a0ae', textAlign: 'center' }}>
+              This view is only as complete as the bills you've added. To pay or update a bill, head to My Bills.
+            </p>
+          </div>
+        );
+      })()}
+    </div>
+  );
+};
+
+// little labeled progress bar used in the breakdown
+const Bar = ({ label, sub, amount, total, color }) => {
+  const pct = total > 0 ? Math.round((amount / total) * 100) : 0;
+  return (
+    <div>
+      <div className="flex items-center justify-between" style={{ marginBottom: '4px' }}>
+        <div>
+          <span className="font-medium" style={{ fontSize: '13px', color: '#1f2733' }}>{label}</span>
+          {sub && <span style={{ fontSize: '11px', color: '#95a0ae', marginLeft: '6px' }}>{sub}</span>}
+        </div>
+        <span className="font-semibold" style={{ fontSize: '13px', color: '#1f2733' }}>
+          {money0(amount)} <span style={{ color: '#95a0ae', fontWeight: 400 }}>({pct}%)</span>
+        </span>
+      </div>
+      <div style={{ background: '#f1ece3', borderRadius: '999px', height: '6px' }}>
+        <div style={{ width: `${pct}%`, height: '6px', borderRadius: '999px', background: color, transition: 'width 0.2s' }} />
+      </div>
+    </div>
+  );
+};
+
+// normalize to start-of-day so "due today" counts as upcoming, not past
+function stripTime(date) {
+  const d = new Date(date);
+  d.setHours(0, 0, 0, 0);
+  return d;
+}
+
+export default CashNeedsTab;
