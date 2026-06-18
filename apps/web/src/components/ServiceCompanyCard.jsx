@@ -127,6 +127,29 @@ const ServiceCompanyCard = ({ company, onRefresh, onPay, propertyName = null, ho
     }
   };
 
+  // Undo: a paid/reviewed bill goes back to its open state. This is the
+  // safety net for an accidental "paid" or a mistake noticed after the fact.
+  // Flip status back to "confirmed" and clear BOTH date stamps so the bill
+  // re-lands in the correct open section (Ready to Pay or autopay review).
+  // No confirm dialog on purpose — undo IS the safety net, and it's itself
+  // reversible (just mark paid again).
+  const handleUndoPaid = async () => {
+    setIsMarking(true);
+    try {
+      await pb.collection('service_companies').update(
+        company.id,
+        { status: 'confirmed', paidDate: null, reviewedDate: null },
+        { $autoCancel: false }
+      );
+      toast({ title: 'Moved back to unpaid', description: `${company.companyName} is open again.` });
+      if (onRefresh) onRefresh();
+    } catch {
+      toast({ title: 'Could not undo', variant: 'destructive' });
+    } finally {
+      setIsMarking(false);
+    }
+  };
+
   const getDomain = (url) => {
     try { return new URL(url).hostname.replace('www.', ''); }
     catch (e) { return url; }
@@ -225,7 +248,16 @@ const ServiceCompanyCard = ({ company, onRefresh, onPay, propertyName = null, ho
         {/* Action area */}
         <div className="flex items-center gap-2 flex-shrink-0" style={{ minWidth: '190px', justifyContent: 'flex-end' }}>
           {isPaid ? (
-            <span className="font-medium" style={{ color: '#94a3b8', fontSize: '13px' }}>All set</span>
+            <div className="flex items-center gap-2">
+              <span className="font-medium" style={{ color: '#94a3b8', fontSize: '13px' }}>All set</span>
+              <button
+                onClick={handleUndoPaid}
+                disabled={isMarking}
+                className="font-medium text-slate-400 hover:text-slate-700 transition-colors underline"
+                style={{ fontSize: '12px', textUnderlineOffset: '2px', opacity: isMarking ? 0.5 : 1 }}>
+                {isMarking ? 'Undoing…' : 'Undo'}
+              </button>
+            </div>
           ) : autopay ? (
             // Autopay: the action is to REVIEW, not pay.
             <Button size="sm" className="font-semibold" style={{ background: '#7c3aed' }} disabled={isMarking} onClick={handleMarkReviewed}>
