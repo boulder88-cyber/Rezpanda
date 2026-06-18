@@ -6,8 +6,8 @@
 
 @layer base {
   :root {
-    /* Sophisticated Teal & Slate Palette */
-    --background: 210 40% 98%;
+    /* Warm-neutral base (design system): off-white #faf8f4, warm border #e9e4db */
+    --background: 40 33% 97%;
     --foreground: 222 47% 11%;
     
     --card: 0 0% 100%;
@@ -41,8 +41,8 @@
     --danger: 0 84% 60%;
     --danger-foreground: 210 40% 98%;
 
-    --border: 214 32% 91%;
-    --input: 214 32% 91%;
+    --border: 40 24% 89%;
+    --input: 40 24% 89%;
     --ring: 180 100% 25%;
     
     --radius: 1rem;
