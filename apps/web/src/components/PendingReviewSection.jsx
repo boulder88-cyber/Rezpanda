@@ -22,17 +22,6 @@ import { Sparkles, Check, Calendar, Tag, Pencil, X } from 'lucide-react';
 // Bills left untouched simply remain here for "review later".
 // ═══════════════════════════════════════════════════════════════════════
 
-// Categories live INSIDE Bills (Utilities, Property Tax, etc. are categories,
-// not modules). Keep this list short and aligned with the locked module spec.
-const CATEGORIES = [
-  'Utilities',
-  'Property Tax',
-  'Insurance',
-  'Internet & Phone',
-  'Subscription',
-  'Other',
-];
-
 const PendingReviewSection = ({ onConfirmed }) => {
   const { currentUser } = useAuth();
   const { toast } = useToast();
@@ -257,27 +246,40 @@ const PendingReviewSection = ({ onConfirmed }) => {
                     </div>
                     <div>
                       <label style={fieldLabel}>Category</label>
-                      <select
+                      <input
+                        type="text"
                         value={draft.category}
                         onChange={(e) => updateDraft('category', e.target.value)}
-                        style={fieldInput}>
-                        <option value="">— None —</option>
-                        {CATEGORIES.map(c => <option key={c} value={c}>{c}</option>)}
-                      </select>
+                        style={fieldInput}
+                        placeholder="e.g. Internet, Utilities"
+                      />
                     </div>
                   </div>
 
-                  {/* "What we saw" — the original parsed text, for reference. */}
-                  {bill.parsed_raw && (
-                    <div style={{ marginTop: '12px', background: '#fff', border: '1px solid #e2e8f0', borderRadius: '8px', padding: '10px 12px' }}>
-                      <p style={{ fontSize: '11px', fontWeight: 600, color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '0.04em', marginBottom: '4px' }}>
-                        What we saw
-                      </p>
-                      <p style={{ fontSize: '12px', color: '#64748b', whiteSpace: 'pre-wrap', lineHeight: 1.5, maxHeight: '120px', overflowY: 'auto' }}>
-                        {bill.parsed_raw}
-                      </p>
-                    </div>
-                  )}
+                  {/* "What we saw" — the original parsed values, for reference.
+                      parsed_raw is an object ({amount, category, companyName,
+                      dueDate}); it may also arrive as a JSON string. Normalize
+                      both into plain text so React never receives a raw object. */}
+                  {(() => {
+                    let raw = bill.parsed_raw;
+                    if (typeof raw === 'string') {
+                      try { raw = JSON.parse(raw); } catch { /* leave as string */ }
+                    }
+                    if (!raw) return null;
+                    const text = typeof raw === 'object'
+                      ? Object.entries(raw).map(([k, v]) => `${k}: ${v}`).join('\n')
+                      : String(raw);
+                    return (
+                      <div style={{ marginTop: '12px', background: '#fff', border: '1px solid #e2e8f0', borderRadius: '8px', padding: '10px 12px' }}>
+                        <p style={{ fontSize: '11px', fontWeight: 600, color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '0.04em', marginBottom: '4px' }}>
+                          What we saw
+                        </p>
+                        <p style={{ fontSize: '12px', color: '#64748b', whiteSpace: 'pre-wrap', lineHeight: 1.5, maxHeight: '120px', overflowY: 'auto' }}>
+                          {text}
+                        </p>
+                      </div>
+                    );
+                  })()}
 
                   <div className="flex items-center justify-end gap-2" style={{ marginTop: '14px' }}>
                     <button
@@ -308,3 +310,4 @@ const PendingReviewSection = ({ onConfirmed }) => {
 };
 
 export default PendingReviewSection;
+
