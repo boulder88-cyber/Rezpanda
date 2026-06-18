@@ -25,6 +25,19 @@ import { useToast } from '@/hooks/use-toast.js';
 
 const isAutopay = (c) => c.paymentType === 'Autopay (card)' || c.paymentType === 'Autopay (bank)';
 
+// ── Status color system ─────────────────────────────────────────────────
+// red    = overdue (manual, due date in the past, not paid)
+// yellow = needs action (manual, not yet paid, due now/soon or undated)
+// green  = handled, will close on its own (autopay, not yet reviewed)
+// grey   = paid / history
+// Returns the accent color used as a left bar on the row.
+const statusAccent = (c) => {
+  if (c.status === 'paid') return '#cbd5e1';            // grey
+  if (isAutopay(c)) return '#059669';                   // green
+  if (c.dueDate && new Date(c.dueDate) < new Date()) return '#dc2626'; // red
+  return '#f59e0b';                                     // yellow
+};
+
 const ServiceCompanyCard = ({ company, onRefresh, onPay, propertyName = null, homes = [] }) => {
   const { toast } = useToast();
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
@@ -131,6 +144,7 @@ const ServiceCompanyCard = ({ company, onRefresh, onPay, propertyName = null, ho
         style={{
           background: isPaid ? '#f8fafc' : '#fff',
           border: '1px solid #e2e8f0',
+          borderLeft: `4px solid ${statusAccent(company)}`,
           borderRadius: '10px',
           padding: '14px 16px',
           opacity: isPaid ? 0.7 : 1,
