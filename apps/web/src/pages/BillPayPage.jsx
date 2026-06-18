@@ -11,7 +11,7 @@ import {
   Plus, CreditCard, LayoutGrid, Search, BookOpen,
   AlertCircle, CheckCircle2, Clock, DollarSign, Zap,
   Bell, ChevronRight, Download, BarChart2,
-  Droplets, Wifi, Car, Shield
+  Droplets, Wifi, Car, Shield, TrendingDown, Repeat
 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast.js';
 
@@ -62,7 +62,65 @@ const SummaryStrip = ({ companies }) => {
 };
 
 // ═══════════════════════════════════════════════════════════════════════
-// SLIM ATTENTION STRIP
+// UPCOMING DRAFTS / DUE STRIP
+// Cashflow heads-up: everything leaving the accounts in the next 30 days,
+// with a running total. Autopay items are flagged because they pull whether
+// or not the account is ready — the user needs to ensure funds are available.
+// ═══════════════════════════════════════════════════════════════════════
+
+const UpcomingStrip = ({ companies }) => {
+  const today = new Date();
+  const in30 = new Date(today.getTime() + 30 * 24 * 60 * 60 * 1000);
+  const isAuto = (c) => c.paymentType === 'Autopay (card)' || c.paymentType === 'Autopay (bank)';
+
+  const upcoming = companies
+    .filter(c => c.dueDate && new Date(c.dueDate) >= today && new Date(c.dueDate) <= in30)
+    .sort((a, b) => new Date(a.dueDate) - new Date(b.dueDate));
+
+  if (upcoming.length === 0) return null;
+
+  const total = upcoming.reduce((sum, c) => sum + (parseFloat(c.amount) || 0), 0);
+  const autoTotal = upcoming.filter(isAuto).reduce((sum, c) => sum + (parseFloat(c.amount) || 0), 0);
+
+  return (
+    <div className="bg-white" style={{ borderRadius: '12px', border: '1px solid #ddd6fe', padding: '16px 18px', marginBottom: '16px', boxShadow: '0 1px 3px rgba(0,0,0,0.06)' }}>
+      <div className="flex items-center justify-between flex-wrap gap-2" style={{ marginBottom: '10px' }}>
+        <div className="flex items-center gap-2">
+          <TrendingDown style={{ width: '16px', height: '16px', color: '#7c3aed' }} />
+          <h3 className="font-semibold text-slate-900" style={{ fontSize: '14px' }}>Leaving your accounts — next 30 days</h3>
+        </div>
+        <div className="text-right">
+          <span className="font-extrabold text-slate-900" style={{ fontSize: '18px' }}>${total.toFixed(2)}</span>
+          {autoTotal > 0 && (
+            <span className="text-slate-400" style={{ fontSize: '12px', marginLeft: '6px' }}>
+              (${autoTotal.toFixed(2)} autopay)
+            </span>
+          )}
+        </div>
+      </div>
+      <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+        {upcoming.map(c => {
+          const auto = isAuto(c);
+          const d = new Date(c.dueDate).toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+          return (
+            <div key={c.id} className="flex items-center justify-between" style={{ fontSize: '13px', padding: '3px 0' }}>
+              <div className="flex items-center gap-2 min-w-0">
+                {auto && <Repeat style={{ width: '12px', height: '12px', color: '#7c3aed', flexShrink: 0 }} />}
+                <span className="text-slate-700 truncate">{c.companyName}</span>
+                <span className="text-slate-400 flex-shrink-0">{auto ? `drafts ~${d}` : `due ${d}`}</span>
+              </div>
+              <span className="font-semibold text-slate-900 flex-shrink-0">
+                {typeof c.amount === 'number' ? `$${c.amount.toFixed(2)}` : '—'}
+              </span>
+            </div>
+          );
+        })}
+      </div>
+    </div>
+  );
+};
+
+
 // One compact line for overdue / due-soon, or an all-clear line.
 // ═══════════════════════════════════════════════════════════════════════
 
@@ -280,18 +338,31 @@ const BillPayPage = () => {
 
   // ── Split bills by status ──
   const isPaid = (c) => c.status === 'paid';
+  const isAuto = (c) => c.paymentType === 'Autopay (card)' || c.paymentType === 'Autopay (bank)';
 
   // Property scope: in all-properties mode, show every bill. Otherwise show
-  // only the selected home's bills — plus any bill with no homeId yet (so
-  // un-assigned bills don't vanish before you've had a chance to tag them).
+  // only the selected home's bills — plus any bill with no homeId yet.
   const propertyFiltered = companies.filter(c => {
     if (allProperties) return true;
     if (!selectedHome) return true;
     return c.homeId === selectedHome.id || !c.homeId;
   });
 
-  const readyToPay = propertyFiltered
-    .filter(c => !isPaid(c) && c.status !== 'pending_review')
+  // Not-yet-closed bills (excludes pending_review and paid).
+  const openBills = propertyFiltered.filter(c => !isPaid(c) && c.status !== 'pending_review');
+
+  // Manual bills needing payment, sorted soonest-due first.
+  const readyToPay = openBills
+    .filter(c => !isAuto(c))
+    .sort((a, b) => {
+      const da = a.dueDate ? new Date(a.dueDate).getTime() : Infinity;
+      const db = b.dueDate ? new Date(b.dueDate).getTime() : Infinity;
+      return da - db;
+    });
+
+  // Autopay bills awaiting human review (drafts on their own; review only).
+  const autopayToReview = openBills
+    .filter(c => isAuto(c))
     .sort((a, b) => {
       const da = a.dueDate ? new Date(a.dueDate).getTime() : Infinity;
       const db = b.dueDate ? new Date(b.dueDate).getTime() : Infinity;
@@ -302,19 +373,22 @@ const BillPayPage = () => {
     .filter(c => {
       if (!isPaid(c)) return false;
       if (timeframeDays == null) return true;
-      if (!c.paidDate) return true;
-      const days = (Date.now() - new Date(c.paidDate).getTime()) / 86400000;
+      // use whichever close-date exists (paid for manual, reviewed for autopay)
+      const closeDate = c.paidDate || c.reviewedDate;
+      if (!closeDate) return true;
+      const days = (Date.now() - new Date(closeDate).getTime()) / 86400000;
       return days <= timeframeDays;
     })
     .sort((a, b) => {
-      const da = a.paidDate ? new Date(a.paidDate).getTime() : 0;
-      const db = b.paidDate ? new Date(b.paidDate).getTime() : 0;
+      const da = new Date(a.paidDate || a.reviewedDate || 0).getTime();
+      const db = new Date(b.paidDate || b.reviewedDate || 0).getTime();
       return db - da;
     });
 
-  const openCompanies = readyToPay;
+  // For the dashboard/strips: all open money-out (manual + autopay).
+  const openCompanies = openBills;
 
-  // Split ready-to-pay into past-due (action!) vs the rest.
+  // Split manual ready-to-pay into past-due vs the rest.
   const now = new Date();
   const pastDue = readyToPay.filter(c => c.dueDate && new Date(c.dueDate) < now);
   const upcomingToPay = readyToPay.filter(c => !(c.dueDate && new Date(c.dueDate) < now));
@@ -409,6 +483,9 @@ const BillPayPage = () => {
                 <AttentionStrip companies={openCompanies} />
                 <NextBillDue companies={openCompanies} />
 
+                {/* Upcoming cashflow — what's leaving the accounts in 30 days */}
+                <UpcomingStrip companies={openCompanies} />
+
                 {/* ── 1. PAST DUE — top priority, loud ── */}
                 {pastDue.length > 0 && (
                   <>
@@ -447,13 +524,33 @@ const BillPayPage = () => {
                   </div>
                 )}
 
-                {/* ── 3. BILLS TO CONFIRM (email-ingested, lower urgency than paying) ── */}
+                {/* ── 3. ON AUTOPAY — needs review (drafts on its own) ── */}
+                {autopayToReview.length > 0 && (
+                  <>
+                    <div className="flex items-center gap-2" style={{ marginBottom: '4px' }}>
+                      <Repeat style={{ width: '18px', height: '18px', color: '#7c3aed' }} />
+                      <h2 className="font-semibold text-slate-900" style={{ fontSize: '18px' }}>
+                        On Autopay — needs review <span className="text-slate-400 font-normal">({autopayToReview.length})</span>
+                      </h2>
+                    </div>
+                    <p className="text-slate-400" style={{ fontSize: '13px', marginBottom: '12px' }}>
+                      These draft automatically. Reviewing just confirms someone checked the charge — it doesn't change processing.
+                    </p>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', marginBottom: '32px' }}>
+                      {autopayToReview.map(company => (
+                        <ServiceCompanyCard key={company.id} company={company} onRefresh={fetchCompanies} onPay={handleLogPayment} propertyName={showPropertyTags ? homeName(company.homeId) : null} homes={homes} />
+                      ))}
+                    </div>
+                  </>
+                )}
+
+                {/* ── 4. BILLS TO CONFIRM (email-ingested) ── */}
                 <PendingReviewSection onConfirmed={fetchCompanies} />
 
-                {/* ── 4. PAID history list ── */}
+                {/* ── 5. ALL SET — paid (manual) + reviewed (autopay) ── */}
                 <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3" style={{ marginBottom: '12px' }}>
                   <h2 className="font-semibold text-slate-900" style={{ fontSize: '18px' }}>
-                    Paid <span className="text-slate-400 font-normal">({paidBills.length})</span>
+                    All Set <span className="text-slate-400 font-normal">({paidBills.length})</span>
                   </h2>
                   <div className="flex items-center gap-1 bg-white border border-slate-200 rounded-xl" style={{ padding: '4px' }}>
                     {TIMEFRAMES.map(tf => (
@@ -469,7 +566,7 @@ const BillPayPage = () => {
                 </div>
                 {paidBills.length === 0 ? (
                   <div className="bg-white text-center text-slate-400" style={{ borderRadius: '10px', border: '1px solid #e2e8f0', padding: '24px', fontSize: '14px' }}>
-                    No paid bills in this period.
+                    Nothing here yet for this period.
                   </div>
                 ) : (
                   <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
