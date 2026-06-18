@@ -23,11 +23,16 @@ import UtilityCompanyListing from '@/components/UtilityCompanyListing.jsx';
 import PendingReviewSection from '@/components/PendingReviewSection.jsx';
 import UploadBillButton from '@/components/UploadBillButton.jsx';
 
-// How long a paid bill stays visible (greyed) in My Bills before it ages out.
-const PAID_VISIBLE_DAYS = 45;
+// Time-frame options for how far back the paid/history section reaches.
+const TIMEFRAMES = [
+  { label: '45 days', days: 45 },
+  { label: '90 days', days: 90 },
+  { label: '180 days', days: 180 },
+  { label: 'All', days: null },
+];
 
 // ═══════════════════════════════════════════════════════════════════════
-// BILLS DUE SUMMARY BANNER — preserved exactly
+// BILLS DUE SUMMARY BANNER
 // ═══════════════════════════════════════════════════════════════════════
 
 const BillsDueSummary = ({ companies, onPay }) => {
@@ -269,8 +274,8 @@ const NextBillDue = ({ companies }) => {
         <p className="text-slate-400 font-medium uppercase tracking-wide" style={{ fontSize: '11px', marginBottom: '2px' }}>Next Bill Due</p>
         <p className="font-semibold text-slate-900" style={{ fontSize: '15px' }}>{next.companyName}</p>
         <p className="text-slate-400" style={{ fontSize: '13px' }}>
-          Due in {daysUntil} day{daysUntil !== 1 ? 's' : ''} · {new Date(next.dueDate).toLocaleDateString('en-US', { month: 'long', day: 'numeric' })}
-          {next.amount && ` · $${parseFloat(next.amount).toFixed(2)}`}
+          Due in {daysUntil} day{daysUntil !== 1 ? 's' : ''} . {new Date(next.dueDate).toLocaleDateString('en-US', { month: 'long', day: 'numeric' })}
+          {next.amount && ` . $${parseFloat(next.amount).toFixed(2)}`}
         </p>
       </div>
       {next.paymentLink && (
@@ -298,19 +303,13 @@ const BillPayPage = () => {
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [prefillData, setPrefillData] = useState(null);
   const [historyRefreshTrigger, setHistoryRefreshTrigger] = useState(0);
+  const [timeframeDays, setTimeframeDays] = useState(90); // default 90; null = All
   const utilityListingRef = useRef(null);
-
-  // Map of companyName(lowercased) → most recent payment date, built from
-  // payment_history. This is how we know a bill is "paid" without any new
-  // status field on service_companies.
-  const [paidMap, setPaidMap] = useState({});
 
   const fetchCompanies = async () => {
     if (!currentUser) return;
     try {
       setIsLoading(true);
-
-      // 1) bills
       const records = await pb.collection('service_companies').getFullList({
         batch: 500, filter: `ownerId="${currentUser.id}"`, sort: 'companyName', $autoCancel: false
       });
@@ -320,23 +319,6 @@ const BillPayPage = () => {
         if (!seenNames.has(record.companyName)) { seenNames.add(record.companyName); uniqueRecords.push(record); }
       }
       setCompanies(uniqueRecords);
-
-      // 2) payment history → newest paid date per company name
-      try {
-        const payments = await pb.collection('payment_history').getFullList({
-          batch: 500, filter: `ownerId="${currentUser.id}"`, sort: '-datePaid', $autoCancel: false
-        });
-        const map = {};
-        for (const p of payments) {
-          const key = (p.companyName || '').toLowerCase();
-          if (!key) continue;
-          // first seen wins because list is sorted newest-first
-          if (!map[key]) map[key] = p.datePaid;
-        }
-        setPaidMap(map);
-      } catch {
-        setPaidMap({});
-      }
     } catch {
       toast({ title: 'Failed to load bills', variant: 'destructive' });
     } finally {
@@ -353,34 +335,45 @@ const BillPayPage = () => {
         companyName: company.companyName, datePaid: new Date().toISOString(),
         amount: company.amount || null, accountUsed: selectedHome?.name || 'Default Account', ownerId: currentUser.id
       }, { $autoCancel: false });
-      toast({ title: '✅ Payment Logged', description: `Recorded payment to ${company.companyName}` });
       setHistoryRefreshTrigger(prev => prev + 1);
     } catch {
-      toast({ title: 'Failed to log payment', variant: 'destructive' });
+      // non-fatal: the bill is still marked paid even if history logging fails
     }
   };
 
-  // Is this bill paid, and was it paid within the visible window?
-  const getPaidInfo = (company) => {
-    const key = (company.companyName || '').toLowerCase();
-    const paidDate = paidMap[key];
-    if (!paidDate) return { isPaid: false, paidDate: null, withinWindow: false };
-    const days = (Date.now() - new Date(paidDate).getTime()) / 86400000;
-    return { isPaid: true, paidDate, withinWindow: days <= PAID_VISIBLE_DAYS };
-  };
-
-  // Bills shown in the grid: everything not paid, plus bills paid within the
-  // last PAID_VISIBLE_DAYS (those show greyed). Older-paid bills age out.
-  const visibleCompanies = companies.filter(c => {
-    const { isPaid, withinWindow } = getPaidInfo(c);
-    return !isPaid || withinWindow;
-  });
-
-  // For banners/stats, only the bills that still need paying.
-  const openCompanies = companies.filter(c => !getPaidInfo(c).isPaid);
-
   const handleOpenAddCustom = () => { setPrefillData(null); setIsAddModalOpen(true); };
   const handleSelectDirectoryCompany = (company) => { setPrefillData(company); setIsAddModalOpen(true); };
+
+  // ── Split bills by status ──
+  // Ready to pay = confirmed (or anything not paid and not still pending_review).
+  // Paid = status 'paid', shown greyed as history, filtered by the timeframe.
+  const isPaid = (c) => c.status === 'paid';
+
+  const readyToPay = companies
+    .filter(c => !isPaid(c) && c.status !== 'pending_review')
+    .sort((a, b) => {
+      // soonest due date first; undated go last
+      const da = a.dueDate ? new Date(a.dueDate).getTime() : Infinity;
+      const db = b.dueDate ? new Date(b.dueDate).getTime() : Infinity;
+      return da - db;
+    });
+
+  const paidBills = companies
+    .filter(c => {
+      if (!isPaid(c)) return false;
+      if (timeframeDays == null) return true;          // 'All'
+      if (!c.paidDate) return true;                    // no date -> keep visible
+      const days = (Date.now() - new Date(c.paidDate).getTime()) / 86400000;
+      return days <= timeframeDays;
+    })
+    .sort((a, b) => {
+      const da = a.paidDate ? new Date(a.paidDate).getTime() : 0;
+      const db = b.paidDate ? new Date(b.paidDate).getTime() : 0;
+      return db - da; // most recently paid first
+    });
+
+  // Dashboards/banners use only the bills that still need paying.
+  const openCompanies = readyToPay;
 
   return (
     <div className="min-h-screen bg-slate-50 pb-20">
@@ -401,7 +394,7 @@ const BillPayPage = () => {
             <div>
               <h1 className="font-semibold text-slate-900" style={{ fontSize: '28px', lineHeight: '1.2' }}>Bill Pay</h1>
               <p className="text-slate-400" style={{ fontSize: '14px', marginTop: '2px' }}>
-                {selectedHome?.name ? `${selectedHome.name} · ` : ''}Stay ahead of every due date.
+                {selectedHome?.name ? `${selectedHome.name} . ` : ''}Stay ahead of every due date.
               </p>
             </div>
           </div>
@@ -441,8 +434,8 @@ const BillPayPage = () => {
           {/* ── My Bills Tab ── */}
           <TabsContent value="dashboard" className="mt-0">
             {isLoading ? (
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                {[1,2,3,4,5,6].map(i => <div key={i} className="h-48 rounded-xl bg-slate-100 animate-pulse" />)}
+              <div className="space-y-3">
+                {[1,2,3,4,5].map(i => <div key={i} className="h-16 rounded-xl bg-slate-100 animate-pulse" />)}
               </div>
             ) : companies.length === 0 ? (
               <div className="bg-white text-center" style={{ borderRadius: '12px', border: '2px dashed #e2e8f0', padding: '48px 20px' }}>
@@ -470,41 +463,65 @@ const BillPayPage = () => {
                 <PendingReviewSection onConfirmed={fetchCompanies} />
                 {/* Next Bill Due — open bills only */}
                 <NextBillDue companies={openCompanies} />
-
                 {/* Bills Due Banner — open bills only */}
                 <BillsDueSummary companies={openCompanies} onPay={handleLogPayment} />
-
                 {/* Quick Stats — open bills only */}
                 <QuickStats companies={openCompanies} />
-
                 {/* Two column: Category Breakdown + Annual Summary — open bills only */}
                 <div className="grid grid-cols-1 lg:grid-cols-2 gap-6" style={{ marginBottom: '24px' }}>
                   <CategoryBreakdown companies={openCompanies} />
                   <AnnualSpendSummary companies={openCompanies} />
                 </div>
 
-                {/* All Bills */}
-                <div className="flex items-center justify-between" style={{ marginBottom: '16px' }}>
-                  <h2 className="font-semibold text-slate-900" style={{ fontSize: '18px' }}>All Bills</h2>
+                {/* ── Ready to Pay list ── */}
+                <div className="flex items-center justify-between" style={{ marginBottom: '12px' }}>
+                  <h2 className="font-semibold text-slate-900" style={{ fontSize: '18px' }}>
+                    Ready to Pay <span className="text-slate-400 font-normal">({readyToPay.length})</span>
+                  </h2>
                   <button onClick={handleOpenAddCustom} className="flex items-center gap-1 font-semibold hover:opacity-70 transition-opacity" style={{ color: '#1e3a5f', fontSize: '13px' }}>
                     <Plus style={{ width: '14px', height: '14px' }} /> Add Bill
                   </button>
                 </div>
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
-                  {visibleCompanies.map(company => {
-                    const { isPaid, paidDate } = getPaidInfo(company);
-                    return (
-                      <ServiceCompanyCard
-                        key={company.id}
-                        company={company}
-                        onRefresh={fetchCompanies}
-                        onPay={handleLogPayment}
-                        isPaid={isPaid}
-                        paidDate={paidDate}
-                      />
-                    );
-                  })}
+                {readyToPay.length === 0 ? (
+                  <div className="bg-white text-center text-slate-400" style={{ borderRadius: '10px', border: '1px solid #e2e8f0', padding: '24px', fontSize: '14px', marginBottom: '32px' }}>
+                    Nothing to pay right now. You're all caught up.
+                  </div>
+                ) : (
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', marginBottom: '32px' }}>
+                    {readyToPay.map(company => (
+                      <ServiceCompanyCard key={company.id} company={company} onRefresh={fetchCompanies} onPay={handleLogPayment} />
+                    ))}
+                  </div>
+                )}
+
+                {/* ── Paid history list ── */}
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3" style={{ marginBottom: '12px' }}>
+                  <h2 className="font-semibold text-slate-900" style={{ fontSize: '18px' }}>
+                    Paid <span className="text-slate-400 font-normal">({paidBills.length})</span>
+                  </h2>
+                  <div className="flex items-center gap-1 bg-white border border-slate-200 rounded-xl" style={{ padding: '4px' }}>
+                    {TIMEFRAMES.map(tf => (
+                      <button key={tf.label} onClick={() => setTimeframeDays(tf.days)}
+                        className="rounded-lg transition-all font-medium"
+                        style={{ padding: '5px 12px', fontSize: '12px',
+                          background: timeframeDays === tf.days ? '#1e3a5f' : 'transparent',
+                          color: timeframeDays === tf.days ? '#fff' : '#64748b' }}>
+                        {tf.label}
+                      </button>
+                    ))}
+                  </div>
                 </div>
+                {paidBills.length === 0 ? (
+                  <div className="bg-white text-center text-slate-400" style={{ borderRadius: '10px', border: '1px solid #e2e8f0', padding: '24px', fontSize: '14px' }}>
+                    No paid bills in this period.
+                  </div>
+                ) : (
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                    {paidBills.map(company => (
+                      <ServiceCompanyCard key={company.id} company={company} onRefresh={fetchCompanies} onPay={handleLogPayment} />
+                    ))}
+                  </div>
+                )}
               </>
             )}
           </TabsContent>
