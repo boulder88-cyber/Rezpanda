@@ -20,7 +20,7 @@ import ServiceCompanyCard from '@/components/ServiceCompanyCard.jsx';
 import PaymentHistoryTab from '@/components/PaymentHistoryTab.jsx';
 import UtilityCompanyListing from '@/components/UtilityCompanyListing.jsx';
 import PendingReviewSection from '@/components/PendingReviewSection.jsx';
-import UploadBillButton from '@/components/UploadBillButton.jsx';
+import AddBillButton from '@/components/AddBillButton.jsx';
 
 // Time-frame options for how far back the paid/history section reaches.
 const TIMEFRAMES = [
@@ -287,8 +287,47 @@ const AnnualSpendSummary = ({ companies }) => {
 };
 
 // ═══════════════════════════════════════════════════════════════════════
-// MAIN PAGE
+// PROPERTY GROUP — used in All-Properties mode to batch a flat bill list
+// under per-property headers with a subtotal, instead of one long list.
+// Keeps the all-properties view legible (sectional > convenient).
 // ═══════════════════════════════════════════════════════════════════════
+
+const PropertyGroupedList = ({ companies, homeName, renderCard }) => {
+  // Bucket bills by homeId; undated/unassigned go under a clear catch-all.
+  const groups = {};
+  for (const c of companies) {
+    const key = c.homeId || '__unassigned__';
+    if (!groups[key]) groups[key] = [];
+    groups[key].push(c);
+  }
+  const keys = Object.keys(groups);
+
+  return (
+    <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
+      {keys.map(key => {
+        const bills = groups[key];
+        const subtotal = bills.reduce((sum, c) => sum + (parseFloat(c.amount) || 0), 0);
+        const label = key === '__unassigned__'
+          ? 'Unassigned'
+          : (homeName(key) || 'Property');
+        return (
+          <div key={key}>
+            <div className="flex items-center justify-between" style={{ marginBottom: '8px' }}>
+              <span className="font-semibold text-slate-700" style={{ fontSize: '13px', textTransform: 'uppercase', letterSpacing: '0.03em' }}>
+                {label} <span className="text-slate-400 font-normal">({bills.length})</span>
+              </span>
+              <span className="font-bold text-slate-900" style={{ fontSize: '13px' }}>${subtotal.toFixed(2)}</span>
+            </div>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+              {bills.map(renderCard)}
+            </div>
+          </div>
+        );
+      })}
+    </div>
+  );
+};
+
 
 const BillPayPage = () => {
   const { currentUser } = useAuth();
@@ -427,15 +466,15 @@ const BillPayPage = () => {
             <div>
               <h1 className="font-semibold text-slate-900" style={{ fontSize: '24px', lineHeight: '1.2' }}>Bill Pay</h1>
               <p className="text-slate-400" style={{ fontSize: '13px', marginTop: '2px' }}>
-                {selectedHome?.name ? `${selectedHome.name} · ` : ''}Stay ahead of every due date.
+                {allProperties
+                  ? `All properties · `
+                  : (selectedHome?.name ? `${selectedHome.name} · ` : '')}
+                Stay ahead of every due date.
               </p>
             </div>
           </div>
           <div className="flex items-center gap-3">
-            <button onClick={handleOpenAddCustom} className="flex items-center gap-2 font-semibold text-white hover:opacity-90 transition-all rounded-xl" style={{ background: '#1e3a5f', padding: '10px 20px', fontSize: '14px' }}>
-              <Plus style={{ width: '16px', height: '16px' }} /> Add Bill
-            </button>
-            <UploadBillButton onUploaded={fetchCompanies} />
+            <AddBillButton onUploaded={fetchCompanies} onAddManual={handleOpenAddCustom} />
           </div>
         </div>
       </div>
@@ -527,6 +566,16 @@ const BillPayPage = () => {
                 {upcomingToPay.length === 0 ? (
                   <div className="bg-white text-center text-slate-400" style={{ borderRadius: '10px', border: '1px solid #e2e8f0', padding: '24px', fontSize: '14px', marginBottom: '32px' }}>
                     Nothing upcoming to pay. You're all caught up.
+                  </div>
+                ) : showPropertyTags ? (
+                  <div style={{ marginBottom: '32px' }}>
+                    <PropertyGroupedList
+                      companies={upcomingToPay}
+                      homeName={homeName}
+                      renderCard={(company) => (
+                        <ServiceCompanyCard key={company.id} company={company} onRefresh={fetchCompanies} onPay={handleLogPayment} propertyName={null} homes={homes} />
+                      )}
+                    />
                   </div>
                 ) : (
                   <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', marginBottom: '32px' }}>
