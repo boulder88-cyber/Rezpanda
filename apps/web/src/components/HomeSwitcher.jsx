@@ -12,12 +12,12 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu.jsx';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog.jsx';
-import { Home, Plus, ChevronDown, Building } from 'lucide-react';
+import { Home, Plus, ChevronDown, Building, Layers } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast.js';
 import PropertyFormModal from '@/components/PropertyFormModal.jsx';
 
 const HomeSwitcher = () => {
-  const { homes, selectedHome, switchHome, addHome, refreshHomes } = useHome();
+  const { homes, selectedHome, allProperties, switchHome, viewAllProperties, addHome, refreshHomes } = useHome();
   const { toast } = useToast();
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
   const [isPropertyModalOpen, setIsPropertyModalOpen] = useState(false);
@@ -44,10 +44,13 @@ const HomeSwitcher = () => {
 
   const handlePropertyCreated = async (newProperty) => {
     await refreshHomes();
-    // If the new property is compatible with the homes list, we can switch to it.
-    // Since the prompt asks to select the newly created property, we pass it to switchHome.
     switchHome(newProperty);
   };
+
+  // What the trigger button shows.
+  const triggerLabel = allProperties
+    ? 'All Properties'
+    : (selectedHome ? (selectedHome.name || selectedHome.address) : 'Select a Property');
 
   return (
     <>
@@ -55,10 +58,10 @@ const HomeSwitcher = () => {
         <DropdownMenuTrigger asChild>
           <Button variant="outline" className="w-[240px] justify-between bg-white border-slate-200">
             <div className="flex items-center gap-2 truncate">
-              <Home className="w-4 h-4 text-blue-600" />
-              <span className="truncate font-medium">
-                {selectedHome ? (selectedHome.name || selectedHome.address) : 'Select a Property'}
-              </span>
+              {allProperties
+                ? <Layers className="w-4 h-4 text-blue-600" />
+                : <Home className="w-4 h-4 text-blue-600" />}
+              <span className="truncate font-medium">{triggerLabel}</span>
             </div>
             <ChevronDown className="w-4 h-4 opacity-50" />
           </Button>
@@ -66,11 +69,29 @@ const HomeSwitcher = () => {
         <DropdownMenuContent className="w-[240px]">
           <DropdownMenuLabel>Your Portfolio</DropdownMenuLabel>
           <DropdownMenuSeparator />
+
+          {/* All Properties — only meaningful with more than one home */}
+          {homes.length > 1 && (
+            <>
+              <DropdownMenuItem
+                onClick={() => viewAllProperties()}
+                className={`cursor-pointer ${allProperties ? 'bg-blue-50 text-blue-700' : ''}`}
+              >
+                <Layers className="w-4 h-4 mr-2 opacity-70" />
+                <div className="flex flex-col">
+                  <span>All Properties</span>
+                  <span className="text-xs opacity-70">See every property at once</span>
+                </div>
+              </DropdownMenuItem>
+              <DropdownMenuSeparator />
+            </>
+          )}
+
           {homes.map((home) => (
             <DropdownMenuItem
               key={home.id}
               onClick={() => switchHome(home)}
-              className={`cursor-pointer ${selectedHome?.id === home.id ? 'bg-blue-50 text-blue-700' : ''}`}
+              className={`cursor-pointer ${!allProperties && selectedHome?.id === home.id ? 'bg-blue-50 text-blue-700' : ''}`}
             >
               <Building className="w-4 h-4 mr-2 opacity-70" />
               <div className="flex flex-col">
@@ -127,10 +148,10 @@ const HomeSwitcher = () => {
         </DialogContent>
       </Dialog>
 
-      <PropertyFormModal 
-        isOpen={isPropertyModalOpen} 
-        onClose={() => setIsPropertyModalOpen(false)} 
-        onSuccess={handlePropertyCreated} 
+      <PropertyFormModal
+        isOpen={isPropertyModalOpen}
+        onClose={() => setIsPropertyModalOpen(false)}
+        onSuccess={handlePropertyCreated}
       />
     </>
   );
