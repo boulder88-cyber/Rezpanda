@@ -105,10 +105,6 @@ const HomeSwitcher = () => {
             <Plus className="w-4 h-4 mr-2" />
             Add New Home
           </DropdownMenuItem>
-          <DropdownMenuItem onClick={() => setIsPropertyModalOpen(true)} className="cursor-pointer text-emerald-600">
-            <Plus className="w-4 h-4 mr-2" />
-            Add your first property
-          </DropdownMenuItem>
         </DropdownMenuContent>
       </DropdownMenu>
 
