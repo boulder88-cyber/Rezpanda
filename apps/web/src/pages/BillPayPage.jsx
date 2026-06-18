@@ -222,7 +222,7 @@ const AnnualSpendSummary = ({ companies }) => {
 
 const BillPayPage = () => {
   const { currentUser } = useAuth();
-  const { selectedHome } = useHome();
+  const { selectedHome, homes, allProperties } = useHome();
   const { toast } = useToast();
 
   const [activeTab, setActiveTab] = useState('dashboard');
@@ -233,6 +233,12 @@ const BillPayPage = () => {
   const [historyRefreshTrigger, setHistoryRefreshTrigger] = useState(0);
   const [timeframeDays, setTimeframeDays] = useState(90); // default 90; null = All
   const utilityListingRef = useRef(null);
+
+  // Quick lookup: homeId → home name, for property tags on rows.
+  const homeName = (id) => {
+    const h = (homes || []).find(x => x.id === id);
+    return h ? (h.name || h.address || 'Property') : null;
+  };
 
   const fetchCompanies = async () => {
     if (!currentUser) return;
@@ -275,7 +281,16 @@ const BillPayPage = () => {
   // ── Split bills by status ──
   const isPaid = (c) => c.status === 'paid';
 
-  const readyToPay = companies
+  // Property scope: in all-properties mode, show every bill. Otherwise show
+  // only the selected home's bills — plus any bill with no homeId yet (so
+  // un-assigned bills don't vanish before you've had a chance to tag them).
+  const propertyFiltered = companies.filter(c => {
+    if (allProperties) return true;
+    if (!selectedHome) return true;
+    return c.homeId === selectedHome.id || !c.homeId;
+  });
+
+  const readyToPay = propertyFiltered
     .filter(c => !isPaid(c) && c.status !== 'pending_review')
     .sort((a, b) => {
       const da = a.dueDate ? new Date(a.dueDate).getTime() : Infinity;
@@ -283,7 +298,7 @@ const BillPayPage = () => {
       return da - db;
     });
 
-  const paidBills = companies
+  const paidBills = propertyFiltered
     .filter(c => {
       if (!isPaid(c)) return false;
       if (timeframeDays == null) return true;
@@ -303,6 +318,9 @@ const BillPayPage = () => {
   const now = new Date();
   const pastDue = readyToPay.filter(c => c.dueDate && new Date(c.dueDate) < now);
   const upcomingToPay = readyToPay.filter(c => !(c.dueDate && new Date(c.dueDate) < now));
+
+  // Show property tags on rows when viewing all properties (and >1 home).
+  const showPropertyTags = allProperties && (homes || []).length > 1;
 
   return (
     <div className="min-h-screen bg-slate-50 pb-20">
@@ -402,7 +420,7 @@ const BillPayPage = () => {
                     </div>
                     <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', marginBottom: '32px' }}>
                       {pastDue.map(company => (
-                        <ServiceCompanyCard key={company.id} company={company} onRefresh={fetchCompanies} onPay={handleLogPayment} />
+                        <ServiceCompanyCard key={company.id} company={company} onRefresh={fetchCompanies} onPay={handleLogPayment} propertyName={showPropertyTags ? homeName(company.homeId) : null} homes={homes} />
                       ))}
                     </div>
                   </>
@@ -424,7 +442,7 @@ const BillPayPage = () => {
                 ) : (
                   <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', marginBottom: '32px' }}>
                     {upcomingToPay.map(company => (
-                      <ServiceCompanyCard key={company.id} company={company} onRefresh={fetchCompanies} onPay={handleLogPayment} />
+                      <ServiceCompanyCard key={company.id} company={company} onRefresh={fetchCompanies} onPay={handleLogPayment} propertyName={showPropertyTags ? homeName(company.homeId) : null} homes={homes} />
                     ))}
                   </div>
                 )}
@@ -456,7 +474,7 @@ const BillPayPage = () => {
                 ) : (
                   <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
                     {paidBills.map(company => (
-                      <ServiceCompanyCard key={company.id} company={company} onRefresh={fetchCompanies} onPay={handleLogPayment} />
+                      <ServiceCompanyCard key={company.id} company={company} onRefresh={fetchCompanies} onPay={handleLogPayment} propertyName={showPropertyTags ? homeName(company.homeId) : null} homes={homes} />
                     ))}
                   </div>
                 )}
