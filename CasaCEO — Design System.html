@@ -1,0 +1,268 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>CasaCEO — Design System</title>
+<style>
+  :root {
+    /* ── Brand ── */
+    --navy:        #1e3a5f;  /* primary: buttons, headers, key text */
+    --navy-hover:  #182f4d;  /* darker navy for button hover */
+    --gold:        #c9a96e;  /* accent: warmth, used sparingly */
+    --gold-soft:   #f3ecdd;  /* gold tint: rare highlight backgrounds */
+
+    /* ── Warm-neutral surfaces (replaces cold slate-gray) ── */
+    --bg:          #faf8f4;  /* page background — warm off-white, NOT slate */
+    --surface:     #ffffff;  /* cards sit on top of --bg */
+    --border:      #e9e4db;  /* warm hairline border (replaces #e2e8f0) */
+    --border-soft: #f1ece3;  /* inner dividers */
+
+    /* ── Text ── */
+    --ink:         #1f2733;  /* primary text — warm near-black, not pure */
+    --ink-soft:    #5b6472;  /* secondary text / labels */
+    --ink-faint:   #95a0ae;  /* captions, placeholders, "all set" */
+
+    /* ── Status (locked earlier) ── */
+    --status-red:    #dc2626;  /* overdue */
+    --status-amber:  #f59e0b;  /* needs paying */
+    --status-green:  #059669;  /* handled / autopay */
+    --status-grey:   #cbd5e1;  /* paid / history */
+
+    /* ── Shape & depth ── */
+    --radius-sm:  8px;   /* inputs, small chips */
+    --radius:     12px;  /* cards, buttons */
+    --radius-lg:  16px;  /* modals, big containers */
+    --shadow:     0 1px 3px rgba(31,39,51,0.06);
+    --shadow-lift: 0 4px 16px rgba(31,39,51,0.08);
+
+    --font: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: var(--font);
+    background: var(--bg);
+    color: var(--ink);
+    line-height: 1.55;
+    padding: 48px 24px 80px;
+  }
+  .wrap { max-width: 860px; margin: 0 auto; }
+
+  header.doc { margin-bottom: 40px; }
+  header.doc .eyebrow {
+    font-size: 12px; font-weight: 700; letter-spacing: 0.08em;
+    text-transform: uppercase; color: var(--gold);
+  }
+  header.doc h1 { font-size: 34px; color: var(--navy); margin: 6px 0 8px; letter-spacing: -0.02em; }
+  header.doc p { color: var(--ink-soft); font-size: 15px; max-width: 60ch; }
+
+  section { margin-bottom: 44px; }
+  section > h2 {
+    font-size: 13px; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase;
+    color: var(--navy); padding-bottom: 8px; border-bottom: 2px solid var(--gold);
+    display: inline-block; margin-bottom: 18px;
+  }
+  .lead { color: var(--ink-soft); font-size: 14px; margin-bottom: 18px; max-width: 64ch; }
+
+  /* swatches */
+  .swatches { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px,1fr)); gap: 12px; }
+  .swatch {
+    background: var(--surface); border: 1px solid var(--border);
+    border-radius: var(--radius); overflow: hidden; box-shadow: var(--shadow);
+  }
+  .swatch .chip { height: 64px; }
+  .swatch .meta { padding: 10px 12px; }
+  .swatch .name { font-size: 13px; font-weight: 600; color: var(--ink); }
+  .swatch .hex { font-size: 12px; color: var(--ink-faint); font-family: ui-monospace, monospace; }
+  .swatch .use { font-size: 11px; color: var(--ink-soft); margin-top: 3px; }
+
+  /* generic card for examples */
+  .card {
+    background: var(--surface); border: 1px solid var(--border);
+    border-radius: var(--radius); box-shadow: var(--shadow); padding: 18px 20px;
+  }
+  .stack { display: flex; flex-direction: column; gap: 14px; }
+  .row { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
+
+  /* buttons */
+  .btn {
+    border: none; border-radius: var(--radius); font-weight: 600; font-size: 14px;
+    padding: 10px 20px; cursor: pointer; font-family: var(--font);
+  }
+  .btn-primary { background: var(--navy); color: #fff; }
+  .btn-secondary { background: var(--surface); color: var(--navy); border: 1px solid var(--navy); }
+  .btn-quiet { background: transparent; color: var(--ink-soft); border: 1px solid var(--border); }
+  .btn-link { background: none; border: none; color: var(--ink-faint); text-decoration: underline; text-underline-offset: 2px; font-size: 13px; cursor: pointer; }
+
+  /* status bar demo */
+  .status-row {
+    background: var(--surface); border: 1px solid var(--border);
+    border-radius: var(--radius); padding: 12px 16px; display: flex; align-items: center; gap: 10px;
+  }
+  .status-row .label { font-size: 13px; color: var(--ink-soft); }
+  .status-row .who { font-weight: 600; color: var(--ink); }
+
+  /* label / pill */
+  .pill {
+    font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.03em;
+    border-radius: 6px; padding: 2px 8px; display: inline-flex; align-items: center; gap: 4px;
+  }
+
+  table.rules { width: 100%; border-collapse: collapse; font-size: 13px; }
+  table.rules td { padding: 8px 12px; border-bottom: 1px solid var(--border-soft); vertical-align: top; }
+  table.rules td:first-child { font-weight: 600; color: var(--navy); white-space: nowrap; width: 30%; }
+  table.rules td:last-child { color: var(--ink-soft); }
+
+  .note { font-size: 13px; color: var(--ink-soft); background: var(--gold-soft); border-radius: var(--radius-sm); padding: 12px 14px; border-left: 3px solid var(--gold); }
+  code { font-family: ui-monospace, monospace; font-size: 12px; background: var(--border-soft); padding: 1px 5px; border-radius: 4px; color: var(--navy); }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <header class="doc">
+    <div class="eyebrow">CasaCEO</div>
+    <h1>Design System</h1>
+    <p>The source of truth for how CasaCEO looks and feels. Every page builds from this so nothing improvises. The feeling we're after: <strong>calm, trustworthy, a place that's mine</strong> — capable software that still feels like it's about a home, not a bank.</p>
+  </header>
+
+  <!-- COLOR -->
+  <section>
+    <h2>Color</h2>
+    <p class="lead">Navy anchors seriousness. Warm neutrals replace the old cold gray (that grayness was the bug). Gold is the warmth-carrier — used <strong>sparingly</strong>, like a seasoning, never a sauce.</p>
+
+    <div class="swatches">
+      <div class="swatch"><div class="chip" style="background:#1e3a5f"></div><div class="meta"><div class="name">Navy</div><div class="hex">#1e3a5f</div><div class="use">Primary buttons, headers, key text</div></div></div>
+      <div class="swatch"><div class="chip" style="background:#c9a96e"></div><div class="meta"><div class="name">Gold</div><div class="hex">#c9a96e</div><div class="use">Accent — sparingly</div></div></div>
+      <div class="swatch"><div class="chip" style="background:#faf8f4; border-bottom:1px solid #e9e4db"></div><div class="meta"><div class="name">Page background</div><div class="hex">#faf8f4</div><div class="use">Warm off-white (NOT slate)</div></div></div>
+      <div class="swatch"><div class="chip" style="background:#ffffff; border-bottom:1px solid #e9e4db"></div><div class="meta"><div class="name">Surface</div><div class="hex">#ffffff</div><div class="use">Cards on the background</div></div></div>
+      <div class="swatch"><div class="chip" style="background:#e9e4db"></div><div class="meta"><div class="name">Border</div><div class="hex">#e9e4db</div><div class="use">Warm hairlines</div></div></div>
+      <div class="swatch"><div class="chip" style="background:#1f2733"></div><div class="meta"><div class="name">Ink</div><div class="hex">#1f2733</div><div class="use">Primary text</div></div></div>
+      <div class="swatch"><div class="chip" style="background:#5b6472"></div><div class="meta"><div class="name">Ink soft</div><div class="hex">#5b6472</div><div class="use">Secondary text, labels</div></div></div>
+      <div class="swatch"><div class="chip" style="background:#95a0ae"></div><div class="meta"><div class="name">Ink faint</div><div class="hex">#95a0ae</div><div class="use">Captions, "all set"</div></div></div>
+    </div>
+
+    <div class="note" style="margin-top:18px;">The single biggest change from today: page backgrounds move off cold slate (<code>#f8fafc</code>) onto warm <code>#faf8f4</code>. Small shift, big difference in feeling. Borders warm from <code>#e2e8f0</code> to <code>#e9e4db</code>.</div>
+  </section>
+
+  <!-- STATUS COLORS -->
+  <section>
+    <h2>Status colors</h2>
+    <p class="lead">Locked. These mean the same thing everywhere — never reused for decoration.</p>
+    <div class="swatches">
+      <div class="swatch"><div class="chip" style="background:#dc2626"></div><div class="meta"><div class="name">Red</div><div class="hex">#dc2626</div><div class="use">Overdue</div></div></div>
+      <div class="swatch"><div class="chip" style="background:#f59e0b"></div><div class="meta"><div class="name">Amber</div><div class="hex">#f59e0b</div><div class="use">Needs paying</div></div></div>
+      <div class="swatch"><div class="chip" style="background:#059669"></div><div class="meta"><div class="name">Green</div><div class="hex">#059669</div><div class="use">Handled / autopay</div></div></div>
+      <div class="swatch"><div class="chip" style="background:#cbd5e1"></div><div class="meta"><div class="name">Grey</div><div class="hex">#cbd5e1</div><div class="use">Paid / history</div></div></div>
+    </div>
+  </section>
+
+  <!-- TYPE -->
+  <section>
+    <h2>Type</h2>
+    <p class="lead">One system font stack — fast, native, no web-font loading delay (speed reads as quality). Personality comes from <em>weight and size</em>, not exotic fonts.</p>
+    <div class="card stack">
+      <div><div style="font-size:34px; font-weight:600; color:var(--navy); letter-spacing:-0.02em;">Page title</div><div class="hex" style="color:var(--ink-faint); font-size:12px;">34px · weight 600 · navy</div></div>
+      <div><div style="font-size:18px; font-weight:600; color:var(--ink);">Section heading</div><div class="hex" style="color:var(--ink-faint); font-size:12px;">18px · weight 600</div></div>
+      <div><div style="font-size:13px; font-weight:700; letter-spacing:0.05em; text-transform:uppercase; color:var(--ink-soft);">Eyebrow / label</div><div class="hex" style="color:var(--ink-faint); font-size:12px;">13px · weight 700 · uppercase · tracked</div></div>
+      <div><div style="font-size:15px; color:var(--ink);">Body text — what people read. Comfortable, calm, 1.55 line height.</div><div class="hex" style="color:var(--ink-faint); font-size:12px;">15px · weight 400</div></div>
+      <div><div style="font-size:12px; color:var(--ink-faint);">Caption / helper text</div><div class="hex" style="color:var(--ink-faint); font-size:12px;">12px · ink-faint</div></div>
+    </div>
+  </section>
+
+  <!-- BUTTONS -->
+  <section>
+    <h2>Buttons</h2>
+    <p class="lead">One primary action per view. Everything else steps down. An action keeps its name through the whole flow — "Mark as Paid" produces "Marked paid," never a surprise.</p>
+    <div class="card">
+      <div class="row">
+        <button class="btn btn-primary">Primary action</button>
+        <button class="btn btn-secondary">Secondary</button>
+        <button class="btn btn-quiet">Quiet / cancel</button>
+        <button class="btn-link">Inline undo</button>
+      </div>
+      <table class="rules" style="margin-top:18px;">
+        <tr><td>Primary</td><td>Solid navy, white text. The one main thing to do. Rounded <code>12px</code>.</td></tr>
+        <tr><td>Secondary</td><td>White with navy outline + navy text. A real but lesser action.</td></tr>
+        <tr><td>Quiet</td><td>Transparent, soft border, muted text. Cancel, dismiss, "not now."</td></tr>
+        <tr><td>Inline link</td><td>Underlined faint text. Low-stakes reversible actions like Undo.</td></tr>
+      </table>
+    </div>
+  </section>
+
+  <!-- LABELS vs BUTTONS -->
+  <section>
+    <h2>Label vs. button — the difference</h2>
+    <p class="lead">A label <em>tells you a state</em> (you can't click it). A button <em>does something</em> (you can). Keeping these visually distinct is what stops a page feeling confusing.</p>
+    <div class="card stack">
+      <div class="row">
+        <span class="pill" style="background:#f5f3ff; color:#7c3aed;">Autopay</span>
+        <span class="pill" style="background:#eef2f8; color:#1e3a5f;">Beach House</span>
+        <span style="font-size:13px; color:var(--ink-faint);">← labels: rounded chips, muted, no shadow, not clickable</span>
+      </div>
+      <div class="row">
+        <button class="btn btn-primary" style="padding:8px 16px; font-size:13px;">Pay Bill</button>
+        <span style="font-size:13px; color:var(--ink-faint);">← button: solid, has affordance, clearly tappable</span>
+      </div>
+    </div>
+  </section>
+
+  <!-- CARDS / SHAPE -->
+  <section>
+    <h2>Cards &amp; shape</h2>
+    <p class="lead">Soft &amp; rounded — friendly, approachable. Cards are white on the warm background, hairline border, very soft shadow. The status accent rides the left edge.</p>
+    <div class="stack">
+      <div class="status-row" style="border-left:4px solid var(--status-amber);">
+        <span class="who">City Water</span><span class="label">Due Jun 24 · $58.40</span>
+        <button class="btn btn-primary" style="margin-left:auto; padding:8px 16px; font-size:13px;">Pay Bill</button>
+      </div>
+      <div class="status-row" style="border-left:4px solid var(--status-grey); opacity:0.75;">
+        <span class="who">Xfinity</span><span class="label">Paid · Jun 2</span>
+        <span style="margin-left:auto; display:flex; align-items:center; gap:8px;"><span style="font-size:13px; color:var(--ink-faint);">All set</span><button class="btn-link">Undo</button></span>
+      </div>
+    </div>
+    <table class="rules" style="margin-top:18px;">
+      <tr><td>Card radius</td><td><code>12px</code> (cards, buttons) · <code>16px</code> modals · <code>8px</code> inputs &amp; chips</td></tr>
+      <tr><td>Border</td><td>1px <code>#e9e4db</code> warm hairline</td></tr>
+      <tr><td>Shadow</td><td>Barely there: <code>0 1px 3px rgba(31,39,51,0.06)</code></td></tr>
+      <tr><td>Status accent</td><td>4px bar on the left edge, in the status color</td></tr>
+    </table>
+  </section>
+
+  <!-- SPACING -->
+  <section>
+    <h2>Spacing &amp; layout</h2>
+    <table class="rules">
+      <tr><td>Rhythm</td><td>Multiples of 4. Common steps: 4 · 8 · 12 · 16 · 24 · 32px</td></tr>
+      <tr><td>Card padding</td><td>18–20px inside cards</td></tr>
+      <tr><td>Section gap</td><td>24–32px between major sections</td></tr>
+      <tr><td>Page width</td><td>Content maxes around 1100px, centered</td></tr>
+      <tr><td>One primary</td><td>One primary (navy) button per view. More than one = none stands out.</td></tr>
+    </table>
+  </section>
+
+  <!-- WORDING -->
+  <section>
+    <h2>Wording</h2>
+    <p class="lead">Words are part of the design. Plain, active, and named for what the person controls — never for how the system is built.</p>
+    <table class="rules">
+      <tr><td>Plain over clever</td><td>"Forward by email," not "Email ingestion." "All set," not "Reconciled."</td></tr>
+      <tr><td>Active &amp; consistent</td><td>A button says what happens: "Mark as Paid" → toast "Marked paid." Same word throughout.</td></tr>
+      <tr><td>Empty states invite</td><td>"Add your first bill and never miss a due date" — a door, not a dead end.</td></tr>
+      <tr><td>Errors direct</td><td>Say what happened and what to do. No apologizing, no vagueness.</td></tr>
+      <tr><td>Sentence case</td><td>Buttons and headings in sentence case, not Title Case Everywhere.</td></tr>
+    </table>
+  </section>
+
+  <!-- PRINCIPLES -->
+  <section>
+    <h2>The through-line</h2>
+    <div class="note" style="border-left-color:var(--navy); background:#eef2f8;">
+      Every choice passes one test: <strong>does it keep the page simple, calm, and trustworthy — or busier?</strong> Consistency reads as quality; clutter reads as a team that couldn't decide. Spend boldness in one place (the gold), keep everything around it quiet. A great 3-tile product beats a mediocre 6-module one.
+    </div>
+  </section>
+
+</div>
+</body>
+</html>
