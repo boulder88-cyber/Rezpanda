@@ -33,7 +33,7 @@ const PendingReviewSection = ({ onConfirmed }) => {
 
   // Which row is currently expanded for editing, plus its working draft.
   const [editingId, setEditingId] = useState(null);
-  const [draft, setDraft] = useState({ companyName: '', amount: '', dueDate: '', category: '', homeId: '' });
+  const [draft, setDraft] = useState({ companyName: '', amount: '', dueDate: '', category: '', homeId: '', paymentType: 'Manual' });
 
   const fetchPending = async () => {
     if (!currentUser) return;
@@ -66,12 +66,13 @@ const PendingReviewSection = ({ onConfirmed }) => {
       category: bill.category ?? '',
       // default to the bill's existing home, else the currently-selected home
       homeId: bill.homeId || (selectedHome ? selectedHome.id : ''),
+      paymentType: bill.paymentType || 'Manual',
     });
   };
 
   const cancelReview = () => {
     setEditingId(null);
-    setDraft({ companyName: '', amount: '', dueDate: '', category: '', homeId: '' });
+    setDraft({ companyName: '', amount: '', dueDate: '', category: '', homeId: '', paymentType: 'Manual' });
   };
 
   const updateDraft = (field, value) => {
@@ -123,6 +124,7 @@ const PendingReviewSection = ({ onConfirmed }) => {
       };
       if (amountValue !== undefined) payload.amount = amountValue;
       if (draft.homeId) payload.homeId = draft.homeId;
+      if (draft.paymentType) payload.paymentType = draft.paymentType;
 
       await pb.collection('service_companies').update(bill.id, payload, { $autoCancel: false });
       toast({ title: '✅ Bill confirmed', description: `${trimmedName} added to your bills.` });
@@ -273,6 +275,17 @@ const PendingReviewSection = ({ onConfirmed }) => {
                         </select>
                       </div>
                     )}
+                    <div>
+                      <label style={fieldLabel}>How it's paid</label>
+                      <select
+                        value={draft.paymentType}
+                        onChange={(e) => updateDraft('paymentType', e.target.value)}
+                        style={fieldInput}>
+                        <option value="Manual">Manual</option>
+                        <option value="Autopay (card)">Autopay (card)</option>
+                        <option value="Autopay (bank)">Autopay (bank)</option>
+                      </select>
+                    </div>
                   </div>
 
                   {/* "What we saw" — the original parsed values, for reference.
