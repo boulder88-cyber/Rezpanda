@@ -21,6 +21,7 @@ import PaymentHistoryTab from '@/components/PaymentHistoryTab.jsx';
 import UtilityCompanyListing from '@/components/UtilityCompanyListing.jsx';
 import PendingReviewSection from '@/components/PendingReviewSection.jsx';
 import AddBillButton from '@/components/AddBillButton.jsx';
+import CashNeedsTab from '@/components/CashNeedsTab.jsx';
 
 // Time-frame options for how far back the paid/history section reaches.
 const TIMEFRAMES = [
@@ -491,6 +492,7 @@ const BillPayPage = () => {
           <div className="flex gap-1 bg-white border border-slate-200 rounded-2xl w-fit shadow-sm" style={{ padding: '6px', marginBottom: '24px' }}>
             {[
               { key: 'dashboard', label: 'My Bills', icon: LayoutGrid },
+              { key: 'cashneeds', label: 'Cash Needs', icon: TrendingDown },
               { key: 'analysis', label: 'Analysis', icon: BarChart2 },
               { key: 'directory', label: 'Directory', icon: BookOpen },
               { key: 'history', label: 'History', icon: CreditCard },
@@ -640,6 +642,17 @@ const BillPayPage = () => {
                   </div>
                 )}
               </>
+            )}
+          </TabsContent>
+
+          {/* ── Cash Needs Tab ── */}
+          <TabsContent value="cashneeds" className="mt-0">
+            {companies.length === 0 ? (
+              <div className="bg-white text-center text-slate-400" style={{ borderRadius: '12px', border: '1px solid #e9e4db', padding: '40px', fontSize: '14px' }}>
+                Add some bills to see what's coming.
+              </div>
+            ) : (
+              <CashNeedsTab companies={propertyFiltered} homes={homes} homeName={homeName} />	
             )}
           </TabsContent>
 
