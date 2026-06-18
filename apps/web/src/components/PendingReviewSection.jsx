@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import pb from '@/lib/pocketbaseClient.js';
 import { useAuth } from '@/contexts/AuthContext.jsx';
+import { useHome } from '@/contexts/HomeContext.jsx';
 import { useToast } from '@/hooks/use-toast.js';
 import { Sparkles, Check, Calendar, Tag, Pencil, X } from 'lucide-react';
 
@@ -24,6 +25,7 @@ import { Sparkles, Check, Calendar, Tag, Pencil, X } from 'lucide-react';
 
 const PendingReviewSection = ({ onConfirmed }) => {
   const { currentUser } = useAuth();
+  const { homes, selectedHome } = useHome();
   const { toast } = useToast();
   const [pending, setPending] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -31,7 +33,7 @@ const PendingReviewSection = ({ onConfirmed }) => {
 
   // Which row is currently expanded for editing, plus its working draft.
   const [editingId, setEditingId] = useState(null);
-  const [draft, setDraft] = useState({ companyName: '', amount: '', dueDate: '', category: '' });
+  const [draft, setDraft] = useState({ companyName: '', amount: '', dueDate: '', category: '', homeId: '' });
 
   const fetchPending = async () => {
     if (!currentUser) return;
@@ -62,12 +64,14 @@ const PendingReviewSection = ({ onConfirmed }) => {
       // <input type="date"> wants YYYY-MM-DD; slice an ISO/date string safely.
       dueDate: bill.dueDate ? String(bill.dueDate).slice(0, 10) : '',
       category: bill.category ?? '',
+      // default to the bill's existing home, else the currently-selected home
+      homeId: bill.homeId || (selectedHome ? selectedHome.id : ''),
     });
   };
 
   const cancelReview = () => {
     setEditingId(null);
-    setDraft({ companyName: '', amount: '', dueDate: '', category: '' });
+    setDraft({ companyName: '', amount: '', dueDate: '', category: '', homeId: '' });
   };
 
   const updateDraft = (field, value) => {
@@ -118,6 +122,7 @@ const PendingReviewSection = ({ onConfirmed }) => {
         status: 'confirmed',
       };
       if (amountValue !== undefined) payload.amount = amountValue;
+      if (draft.homeId) payload.homeId = draft.homeId;
 
       await pb.collection('service_companies').update(bill.id, payload, { $autoCancel: false });
       toast({ title: '✅ Bill confirmed', description: `${trimmedName} added to your bills.` });
@@ -254,6 +259,20 @@ const PendingReviewSection = ({ onConfirmed }) => {
                         placeholder="e.g. Internet, Utilities"
                       />
                     </div>
+                    {(homes || []).length > 0 && (
+                      <div>
+                        <label style={fieldLabel}>Property</label>
+                        <select
+                          value={draft.homeId}
+                          onChange={(e) => updateDraft('homeId', e.target.value)}
+                          style={fieldInput}>
+                          <option value="">— Choose property —</option>
+                          {homes.map(h => (
+                            <option key={h.id} value={h.id}>{h.name || h.address || 'Property'}</option>
+                          ))}
+                        </select>
+                      </div>
+                    )}
                   </div>
 
                   {/* "What we saw" — the original parsed values, for reference.
@@ -310,4 +329,3 @@ const PendingReviewSection = ({ onConfirmed }) => {
 };
 
 export default PendingReviewSection;
-
