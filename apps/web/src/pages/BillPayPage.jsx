@@ -37,20 +37,25 @@ const TIMEFRAMES = [
 
 const SummaryStrip = ({ companies }) => {
   const today = new Date();
+  const in7 = new Date(today.getTime() + 7 * 24 * 60 * 60 * 1000);
   const totalDue = companies.reduce((sum, c) => sum + (parseFloat(c.amount) || 0), 0);
   const overdue = companies.filter(c => c.dueDate && new Date(c.dueDate) < today).length;
   const providers = companies.length;
-  const quickPay = companies.filter(c => c.paymentLink).length;
+  const dueThisWeek = companies.filter(c => {
+    if (!c.dueDate) return false;
+    const d = new Date(c.dueDate);
+    return d >= today && d <= in7;
+  }).length;
 
   const stats = [
     { label: 'Total Due', value: `$${totalDue.toFixed(0)}`, color: '#1e3a5f' },
     { label: 'Overdue', value: overdue, color: overdue > 0 ? '#dc2626' : '#059669' },
-    { label: 'Providers', value: providers, color: '#7c3aed' },
-    { label: 'Quick Pay Ready', value: quickPay, color: '#059669' },
+    { label: 'Due This Week', value: dueThisWeek, color: dueThisWeek > 0 ? '#f59e0b' : '#059669' },
+    { label: 'Providers', value: providers, color: '#5b6472' },
   ];
 
   return (
-    <div className="bg-white grid grid-cols-2 sm:grid-cols-4" style={{ borderRadius: '12px', border: '1px solid #e2e8f0', boxShadow: '0 1px 3px rgba(0,0,0,0.06)', marginBottom: '16px', overflow: 'hidden' }}>
+    <div className="bg-white grid grid-cols-2 sm:grid-cols-4" style={{ borderRadius: '12px', border: '1px solid #e9e4db', boxShadow: '0 1px 3px rgba(0,0,0,0.06)', marginBottom: '16px', overflow: 'hidden' }}>
       {stats.map((s, i) => (
         <div key={i} style={{ padding: '14px 18px', borderRight: i < 3 ? '1px solid #f1f5f9' : 'none', borderBottom: i < 2 ? '1px solid #f1f5f9' : 'none' }} className="sm:border-b-0">
           <p className="text-slate-400 font-medium uppercase tracking-wide" style={{ fontSize: '10px', marginBottom: '2px' }}>{s.label}</p>
@@ -219,7 +224,7 @@ const CategoryBreakdown = ({ companies }) => {
     { name: 'Internet', icon: Wifi, color: '#7c3aed', bg: '#f5f3ff', keywords: ['internet', 'cable', 'comcast', 'att', 'verizon', 'xfinity'] },
     { name: 'Insurance', icon: Shield, color: '#059669', bg: '#ecfdf5', keywords: ['insurance', 'allstate', 'state farm', 'geico', 'progressive'] },
     { name: 'Auto', icon: Car, color: '#2563eb', bg: '#eff6ff', keywords: ['auto', 'car', 'vehicle', 'loan'] },
-    { name: 'Other', icon: CreditCard, color: '#64748b', bg: '#f8fafc', keywords: [] },
+    { name: 'Other', icon: CreditCard, color: '#64748b', bg: '#faf8f4', keywords: [] },
   ];
 
   const getCategoryTotal = (cat) => {
@@ -235,7 +240,7 @@ const CategoryBreakdown = ({ companies }) => {
   const total = companies.reduce((sum, c) => sum + (parseFloat(c.amount) || 0), 0);
 
   return (
-    <div className="bg-white" style={{ borderRadius: '12px', border: '1px solid #e2e8f0', padding: '20px', boxShadow: '0 1px 3px rgba(0,0,0,0.06)' }}>
+    <div className="bg-white" style={{ borderRadius: '12px', border: '1px solid #e9e4db', padding: '20px', boxShadow: '0 1px 3px rgba(0,0,0,0.06)' }}>
       <h3 className="font-semibold text-slate-900" style={{ fontSize: '16px', marginBottom: '16px' }}>Spending by Category</h3>
       <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
         {categories.map((cat, i) => {
@@ -276,7 +281,7 @@ const AnnualSpendSummary = ({ companies }) => {
         { label: 'Annual Projection', value: `$${annual.toLocaleString()}`, sub: 'Based on current bills', color: '#059669' },
         { label: 'Avg per Bill', value: companies.length > 0 ? `$${(monthly / companies.length).toFixed(0)}` : '$0', sub: `Across ${companies.length} providers`, color: '#7c3aed' },
       ].map((s, i) => (
-        <div key={i} className="bg-white" style={{ borderRadius: '12px', border: '1px solid #e2e8f0', padding: '16px', boxShadow: '0 1px 3px rgba(0,0,0,0.06)' }}>
+        <div key={i} className="bg-white" style={{ borderRadius: '12px', border: '1px solid #e9e4db', padding: '16px', boxShadow: '0 1px 3px rgba(0,0,0,0.06)' }}>
           <p className="text-slate-400 font-medium uppercase tracking-wide" style={{ fontSize: '11px', marginBottom: '6px' }}>{s.label}</p>
           <p className="font-extrabold" style={{ fontSize: '26px', lineHeight: 1, color: s.color }}>{s.value}</p>
           <p className="text-slate-400" style={{ fontSize: '12px', marginTop: '4px' }}>{s.sub}</p>
@@ -508,7 +513,7 @@ const BillPayPage = () => {
                 {[1,2,3,4,5].map(i => <div key={i} className="h-16 rounded-xl bg-slate-100 animate-pulse" />)}
               </div>
             ) : companies.length === 0 ? (
-              <div className="bg-white text-center" style={{ borderRadius: '12px', border: '2px dashed #e2e8f0', padding: '48px 20px' }}>
+              <div className="bg-white text-center" style={{ borderRadius: '12px', border: '2px dashed #e9e4db', padding: '48px 20px' }}>
                 <div className="flex items-center justify-center mx-auto" style={{ width: '64px', height: '64px', borderRadius: '16px', background: '#eff6ff', marginBottom: '16px' }}>
                   <CreditCard style={{ width: '28px', height: '28px', color: '#2563eb' }} />
                 </div>
@@ -529,10 +534,8 @@ const BillPayPage = () => {
               </div>
             ) : (
               <>
-                {/* Condensed dashboard strip — action-relevant context first */}
+                {/* Quick glance: the four stats. */}
                 <SummaryStrip companies={openCompanies} />
-                <AttentionStrip companies={openCompanies} />
-                <NextBillDue companies={openCompanies} />
 
                 {/* Upcoming cashflow — what's leaving the accounts in 30 days */}
                 <UpcomingStrip companies={openCompanies} />
@@ -564,7 +567,7 @@ const BillPayPage = () => {
                   </button>
                 </div>
                 {upcomingToPay.length === 0 ? (
-                  <div className="bg-white text-center text-slate-400" style={{ borderRadius: '10px', border: '1px solid #e2e8f0', padding: '24px', fontSize: '14px', marginBottom: '32px' }}>
+                  <div className="bg-white text-center text-slate-400" style={{ borderRadius: '10px', border: '1px solid #e9e4db', padding: '24px', fontSize: '14px', marginBottom: '32px' }}>
                     Nothing upcoming to pay. You're all caught up.
                   </div>
                 ) : showPropertyTags ? (
@@ -626,7 +629,7 @@ const BillPayPage = () => {
                   </div>
                 </div>
                 {paidBills.length === 0 ? (
-                  <div className="bg-white text-center text-slate-400" style={{ borderRadius: '10px', border: '1px solid #e2e8f0', padding: '24px', fontSize: '14px' }}>
+                  <div className="bg-white text-center text-slate-400" style={{ borderRadius: '10px', border: '1px solid #e9e4db', padding: '24px', fontSize: '14px' }}>
                     Nothing here yet for this period.
                   </div>
                 ) : (
@@ -643,7 +646,7 @@ const BillPayPage = () => {
           {/* ── Analysis Tab ── */}
           <TabsContent value="analysis" className="mt-0">
             {companies.length === 0 ? (
-              <div className="bg-white text-center text-slate-400" style={{ borderRadius: '12px', border: '1px solid #e2e8f0', padding: '40px', fontSize: '14px' }}>
+              <div className="bg-white text-center text-slate-400" style={{ borderRadius: '12px', border: '1px solid #e9e4db', padding: '40px', fontSize: '14px' }}>
                 Add some bills to see your spending analysis.
               </div>
             ) : (
@@ -656,7 +659,7 @@ const BillPayPage = () => {
 
           {/* ── Directory Tab ── */}
           <TabsContent value="directory" className="mt-0">
-            <div className="bg-white" style={{ borderRadius: '12px', border: '1px solid #e2e8f0', padding: '24px', boxShadow: '0 1px 3px rgba(0,0,0,0.06)' }}>
+            <div className="bg-white" style={{ borderRadius: '12px', border: '1px solid #e9e4db', padding: '24px', boxShadow: '0 1px 3px rgba(0,0,0,0.06)' }}>
               <div style={{ marginBottom: '16px' }}>
                 <h2 className="font-semibold text-slate-900" style={{ fontSize: '18px', marginBottom: '4px' }}>Provider Directory</h2>
                 <p className="text-slate-400" style={{ fontSize: '14px' }}>Find common providers and link them instantly — electric, water, internet, insurance, and more.</p>
@@ -667,7 +670,7 @@ const BillPayPage = () => {
 
           {/* ── History Tab ── */}
           <TabsContent value="history" className="mt-0">
-            <div className="bg-white" style={{ borderRadius: '12px', border: '1px solid #e2e8f0', overflow: 'hidden', boxShadow: '0 1px 3px rgba(0,0,0,0.06)' }}>
+            <div className="bg-white" style={{ borderRadius: '12px', border: '1px solid #e9e4db', overflow: 'hidden', boxShadow: '0 1px 3px rgba(0,0,0,0.06)' }}>
               <PaymentHistoryTab refreshTrigger={historyRefreshTrigger} />
             </div>
           </TabsContent>
