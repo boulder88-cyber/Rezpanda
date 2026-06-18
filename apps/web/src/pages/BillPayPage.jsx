@@ -299,6 +299,11 @@ const BillPayPage = () => {
 
   const openCompanies = readyToPay;
 
+  // Split ready-to-pay into past-due (action!) vs the rest.
+  const now = new Date();
+  const pastDue = readyToPay.filter(c => c.dueDate && new Date(c.dueDate) < now);
+  const upcomingToPay = readyToPay.filter(c => !(c.dueDate && new Date(c.dueDate) < now));
+
   return (
     <div className="min-h-screen bg-slate-50 pb-20">
       <Helmet><title>Bill Pay — CasaCEO</title></Helmet>
@@ -381,36 +386,53 @@ const BillPayPage = () => {
               </div>
             ) : (
               <>
-                {/* Pending Review (email-ingested bills) */}
-                <PendingReviewSection onConfirmed={fetchCompanies} />
-
-                {/* Condensed dashboard strip */}
+                {/* Condensed dashboard strip — action-relevant context first */}
                 <SummaryStrip companies={openCompanies} />
                 <AttentionStrip companies={openCompanies} />
                 <NextBillDue companies={openCompanies} />
 
-                {/* ── Ready to Pay list ── */}
+                {/* ── 1. PAST DUE — top priority, loud ── */}
+                {pastDue.length > 0 && (
+                  <>
+                    <div className="flex items-center gap-2" style={{ marginBottom: '12px' }}>
+                      <AlertCircle style={{ width: '18px', height: '18px', color: '#dc2626' }} />
+                      <h2 className="font-semibold" style={{ fontSize: '18px', color: '#dc2626' }}>
+                        Past Due <span className="font-normal" style={{ color: '#f87171' }}>({pastDue.length})</span>
+                      </h2>
+                    </div>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', marginBottom: '32px' }}>
+                      {pastDue.map(company => (
+                        <ServiceCompanyCard key={company.id} company={company} onRefresh={fetchCompanies} onPay={handleLogPayment} />
+                      ))}
+                    </div>
+                  </>
+                )}
+
+                {/* ── 2. READY TO PAY (upcoming / undated) ── */}
                 <div className="flex items-center justify-between" style={{ marginBottom: '12px' }}>
                   <h2 className="font-semibold text-slate-900" style={{ fontSize: '18px' }}>
-                    Ready to Pay <span className="text-slate-400 font-normal">({readyToPay.length})</span>
+                    Ready to Pay <span className="text-slate-400 font-normal">({upcomingToPay.length})</span>
                   </h2>
                   <button onClick={handleOpenAddCustom} className="flex items-center gap-1 font-semibold hover:opacity-70 transition-opacity" style={{ color: '#1e3a5f', fontSize: '13px' }}>
                     <Plus style={{ width: '14px', height: '14px' }} /> Add Bill
                   </button>
                 </div>
-                {readyToPay.length === 0 ? (
+                {upcomingToPay.length === 0 ? (
                   <div className="bg-white text-center text-slate-400" style={{ borderRadius: '10px', border: '1px solid #e2e8f0', padding: '24px', fontSize: '14px', marginBottom: '32px' }}>
-                    Nothing to pay right now. You're all caught up.
+                    Nothing upcoming to pay. You're all caught up.
                   </div>
                 ) : (
                   <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', marginBottom: '32px' }}>
-                    {readyToPay.map(company => (
+                    {upcomingToPay.map(company => (
                       <ServiceCompanyCard key={company.id} company={company} onRefresh={fetchCompanies} onPay={handleLogPayment} />
                     ))}
                   </div>
                 )}
 
-                {/* ── Paid history list ── */}
+                {/* ── 3. BILLS TO CONFIRM (email-ingested, lower urgency than paying) ── */}
+                <PendingReviewSection onConfirmed={fetchCompanies} />
+
+                {/* ── 4. PAID history list ── */}
                 <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3" style={{ marginBottom: '12px' }}>
                   <h2 className="font-semibold text-slate-900" style={{ fontSize: '18px' }}>
                     Paid <span className="text-slate-400 font-normal">({paidBills.length})</span>
