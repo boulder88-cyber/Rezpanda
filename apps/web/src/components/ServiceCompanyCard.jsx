@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Button } from '@/components/ui/button.jsx';
-import { ExternalLink, Edit2, Trash2, Building, CheckCircle2 } from 'lucide-react';
+import { ExternalLink, Edit2, Trash2, Building, CheckCircle2, Repeat } from 'lucide-react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog.jsx';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog.jsx';
 import AddServiceCompanyForm from './AddServiceCompanyForm.jsx';
@@ -10,23 +10,46 @@ import { useToast } from '@/hooks/use-toast.js';
 // ═══════════════════════════════════════════════════════════════════════
 // SERVICE COMPANY ROW
 //
-// A single bill rendered as a consistent LIST ROW (not a card). Status-driven:
-//   • status "confirmed" (and not paid) = Ready to Pay -> shows Pay Bill / Mark Paid
-//   • status "paid"                      = greyed history row with Paid . date
+// Status + paymentType drive behavior:
+//   • Manual, not paid        -> "Pay Bill" -> did-you-pay -> status:paid + paidDate
+//   • Autopay, not reviewed   -> "Mark Reviewed" -> status:paid + reviewedDate
+//                                (a human acknowledgment; does NOT move money)
+//   • status "paid"           -> "All Set" history row, labeled honestly:
+//                                  manual  -> "Paid <date>"
+//                                  autopay -> "Autopay . Reviewed <date>"
 //
-// Marking paid writes status:'paid' + paidDate to the bill itself, AND logs to
-// payment_history (via onPay) so the History tab stays populated.
+// Marking paid/reviewed also logs to payment_history (via onPay) so History
+// stays populated. "All Set" means the user's part is done — for autopay the
+// actual bank draft may still lag a few days, which is why it's not "Paid".
 // ═══════════════════════════════════════════════════════════════════════
 
-const ServiceCompanyCard = ({ company, onRefresh, onPay }) => {
+const isAutopay = (c) => c.paymentType === 'Autopay (card)' || c.paymentType === 'Autopay (bank)';
+
+const ServiceCompanyCard = ({ company, onRefresh, onPay, propertyName = null, homes = [] }) => {
   const { toast } = useToast();
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
   const [awaitingConfirm, setAwaitingConfirm] = useState(false);
   const [isMarking, setIsMarking] = useState(false);
+  const [isAssigning, setIsAssigning] = useState(false);
 
   const isPaid = company.status === 'paid';
+  const autopay = isAutopay(company);
+
+  // Backfill: assign this bill to a property (for bills missing homeId).
+  const handleAssignHome = async (homeId) => {
+    if (!homeId) return;
+    setIsAssigning(true);
+    try {
+      await pb.collection('service_companies').update(company.id, { homeId }, { $autoCancel: false });
+      if (onRefresh) onRefresh();
+    } catch {
+      toast({ title: 'Could not set property', variant: 'destructive' });
+    } finally {
+      setIsAssigning(false);
+    }
+  };
 
   const handleDelete = async () => {
     setIsDeleting(true);
@@ -43,7 +66,7 @@ const ServiceCompanyCard = ({ company, onRefresh, onPay }) => {
     }
   };
 
-  // Step 1: open utility site (if we have a link), then ask "did you pay?".
+  // Manual step 1: open utility site (if any), then ask "did you pay?".
   const handlePayClick = () => {
     if (company.paymentLink) {
       window.open(company.paymentLink, '_blank', 'noopener,noreferrer');
@@ -51,7 +74,7 @@ const ServiceCompanyCard = ({ company, onRefresh, onPay }) => {
     setAwaitingConfirm(true);
   };
 
-  // Step 2: confirm -> stamp status:'paid' + paidDate on the bill, log payment.
+  // Manual step 2: confirm -> status:paid + paidDate, log payment.
   const handleConfirmPaid = async () => {
     setIsMarking(true);
     try {
@@ -60,7 +83,7 @@ const ServiceCompanyCard = ({ company, onRefresh, onPay }) => {
         { status: 'paid', paidDate: new Date().toISOString() },
         { $autoCancel: false }
       );
-      if (onPay) await onPay(company);   // keep payment_history populated
+      if (onPay) await onPay(company);
       setAwaitingConfirm(false);
       toast({ title: '✅ Marked paid', description: `${company.companyName} cleared.` });
       if (onRefresh) onRefresh();
@@ -71,18 +94,35 @@ const ServiceCompanyCard = ({ company, onRefresh, onPay }) => {
     }
   };
 
+  // Autopay: "Mark Reviewed" -> status:paid + reviewedDate. A human looked at
+  // it and it's correct. Does NOT change processing; money drafts on its own.
+  const handleMarkReviewed = async () => {
+    setIsMarking(true);
+    try {
+      await pb.collection('service_companies').update(
+        company.id,
+        { status: 'paid', reviewedDate: new Date().toISOString() },
+        { $autoCancel: false }
+      );
+      if (onPay) await onPay(company);
+      toast({ title: '✅ Reviewed', description: `${company.companyName} checked — autopay will draft on its own.` });
+      if (onRefresh) onRefresh();
+    } catch {
+      toast({ title: 'Could not mark reviewed', variant: 'destructive' });
+    } finally {
+      setIsMarking(false);
+    }
+  };
+
   const getDomain = (url) => {
     try { return new URL(url).hostname.replace('www.', ''); }
     catch (e) { return url; }
   };
 
-  const paidLabel = company.paidDate
-    ? new Date(company.paidDate).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })
-    : null;
-
-  const dueLabel = company.dueDate
-    ? new Date(company.dueDate).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })
-    : null;
+  const fmt = (d) => d ? new Date(d).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) : null;
+  const paidLabel = fmt(company.paidDate);
+  const reviewedLabel = fmt(company.reviewedDate);
+  const dueLabel = fmt(company.dueDate);
 
   return (
     <>
@@ -107,19 +147,52 @@ const ServiceCompanyCard = ({ company, onRefresh, onPay }) => {
             {company.companyName}
           </p>
           <div className="flex flex-wrap items-center gap-x-4 gap-y-1" style={{ marginTop: '2px' }}>
+            {propertyName && (
+              <span className="font-medium" style={{ fontSize: '11px', color: '#1e3a5f', background: '#eef2f8', borderRadius: '6px', padding: '1px 8px' }}>
+                {propertyName}
+              </span>
+            )}
+            {!company.homeId && homes && homes.length > 0 && (
+              <select
+                value=""
+                disabled={isAssigning}
+                onChange={(e) => handleAssignHome(e.target.value)}
+                style={{ fontSize: '11px', color: '#64748b', border: '1px dashed #cbd5e1', borderRadius: '6px', padding: '1px 6px', background: '#fff' }}
+              >
+                <option value="">Set property…</option>
+                {homes.map(h => (
+                  <option key={h.id} value={h.id}>{h.name || h.address || 'Property'}</option>
+                ))}
+              </select>
+            )}
+            {autopay && (
+              <span className="flex items-center gap-1 font-medium" style={{ fontSize: '11px', color: '#7c3aed', background: '#f5f3ff', borderRadius: '6px', padding: '1px 8px' }}>
+                <Repeat style={{ width: '11px', height: '11px' }} />
+                {company.paymentType}
+              </span>
+            )}
             {company.category && (
               <span className="text-slate-400" style={{ fontSize: '12px' }}>{company.category}</span>
             )}
             {dueLabel && !isPaid && (
-              <span className="text-slate-500" style={{ fontSize: '12px' }}>Due {dueLabel}</span>
-            )}
-            {isPaid && paidLabel && (
-              <span className="flex items-center gap-1 font-medium" style={{ color: '#059669', fontSize: '12px' }}>
-                <CheckCircle2 style={{ width: '13px', height: '13px' }} />
-                Paid . {paidLabel}
+              <span className="text-slate-500" style={{ fontSize: '12px' }}>
+                {autopay ? `Drafts ~${dueLabel}` : `Due ${dueLabel}`}
               </span>
             )}
-            {company.paymentLink && !isPaid && (
+            {/* All Set labels — honest per type */}
+            {isPaid && autopay && (
+              <span className="flex items-center gap-1 font-medium" style={{ color: '#7c3aed', fontSize: '12px' }}>
+                <CheckCircle2 style={{ width: '13px', height: '13px' }} />
+                Autopay · Reviewed{reviewedLabel ? ` ${reviewedLabel}` : ''}{dueLabel ? ` · drafts ~${dueLabel}` : ''}
+              </span>
+            )}
+            {isPaid && !autopay && (
+              <span className="flex items-center gap-1 font-medium" style={{ color: '#059669', fontSize: '12px' }}>
+                <CheckCircle2 style={{ width: '13px', height: '13px' }} />
+                Paid{paidLabel ? ` · ${paidLabel}` : ''}
+              </span>
+            )}
+            {company.paymentLink && !isPaid && !autopay && (
               <a href={company.paymentLink} target="_blank" rel="noopener noreferrer"
                 className="flex items-center gap-1 text-slate-400 hover:text-slate-600 transition-colors" style={{ fontSize: '12px' }}
                 onClick={(e) => e.stopPropagation()}>
@@ -136,9 +209,14 @@ const ServiceCompanyCard = ({ company, onRefresh, onPay }) => {
         </div>
 
         {/* Action area */}
-        <div className="flex items-center gap-2 flex-shrink-0" style={{ minWidth: '180px', justifyContent: 'flex-end' }}>
+        <div className="flex items-center gap-2 flex-shrink-0" style={{ minWidth: '190px', justifyContent: 'flex-end' }}>
           {isPaid ? (
-            <span className="font-medium" style={{ color: '#94a3b8', fontSize: '13px' }}>Cleared</span>
+            <span className="font-medium" style={{ color: '#94a3b8', fontSize: '13px' }}>All set</span>
+          ) : autopay ? (
+            // Autopay: the action is to REVIEW, not pay.
+            <Button size="sm" className="font-semibold" style={{ background: '#7c3aed' }} disabled={isMarking} onClick={handleMarkReviewed}>
+              {isMarking ? 'Saving…' : 'Mark Reviewed'}
+            </Button>
           ) : awaitingConfirm ? (
             <>
               <Button variant="outline" size="sm" disabled={isMarking} onClick={() => setAwaitingConfirm(false)}>
