@@ -3,7 +3,7 @@
 // Receive a forwarded bill via SendGrid Inbound Parse.
 // SendGrid POSTs multipart form-data to this route when an email arrives at
 // the receiving domain (bills.casaceo.com). We:
-//   1. Identify the owner from the "to" address: inbox+<userId>@bills.casaceo.com
+//   1. Identify the owner from the "to" address: ceo+<userId>@bills.casaceo.com
 //   2. Prefer a PDF/image attachment; fall back to the email text body
 //   3. Extract structured data via Claude (same as the upload hook)
 //   4. Save as a pending_review bill with source="email", owned by <userId>
@@ -37,8 +37,8 @@ routerAdd("POST", "/casaceo/inbound-email", (e) => {
   const body = info.body || {};
  
   // ---- 1. Identify the owner from the "to" address ----------------------
-  // "to" can look like:  Name <inbox+abc123@bills.casaceo.com>
-  // or just:             inbox+abc123@bills.casaceo.com
+  // "to" can look like:  Name <ceo+abc123@bills.casaceo.com>
+  // or just:             ceo+abc123@bills.casaceo.com
   const toRaw = body.to ? String(body.to) : "";
   let userId = "";
   try {
