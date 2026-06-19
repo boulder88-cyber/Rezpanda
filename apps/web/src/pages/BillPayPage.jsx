@@ -539,9 +539,6 @@ const BillPayPage = () => {
                 {/* Quick glance: the four stats. */}
                 <SummaryStrip companies={openCompanies} />
 
-                {/* Upcoming cashflow — what's leaving the accounts in 30 days */}
-                <UpcomingStrip companies={openCompanies} />
-
                 {/* ── 1. PAST DUE — top priority, loud ── */}
                 {pastDue.length > 0 && (
                   <>
