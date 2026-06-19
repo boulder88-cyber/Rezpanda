@@ -194,7 +194,7 @@ const PillarsSection = () => (
 // ═══════════════════════════════════════════════════════════════════
 
 const HowItWorksSection = () => (
-  <section style={{ background: '#fff', padding: '90px 24px', borderTop: `1px solid ${LINE}` }}>
+  <section style={{ background: PAPER, padding: '90px 24px', borderTop: `1px solid ${LINE}` }}>
     <div style={{ maxWidth: '1000px', margin: '0 auto' }}>
       <FadeIn>
         <div style={{ textAlign: 'center', marginBottom: '54px' }}>
@@ -207,7 +207,7 @@ const HowItWorksSection = () => (
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: '20px' }}>
         {STEPS.map((s, i) => (
           <FadeIn key={i} delay={i * 110}>
-            <div style={{ background: PAPER, border: `1px solid ${LINE}`, borderRadius: '16px', padding: '30px 26px', height: '100%' }}>
+            <div style={{ background: '#fff', border: `1px solid ${LINE}`, borderRadius: '16px', padding: '30px 26px', height: '100%' }}>
               <div style={{ fontFamily: serif, fontSize: '30px', fontWeight: 600, color: SKY, lineHeight: 1, marginBottom: '16px' }}>{s.n}</div>
               <h3 style={{ fontFamily: sans, fontSize: '17px', fontWeight: 700, color: INK, marginBottom: '8px' }}>{s.title}</h3>
               <p style={{ fontFamily: sans, fontSize: '14px', lineHeight: 1.65, color: STONE }}>{s.desc}</p>
@@ -230,7 +230,7 @@ const PERSONAS = [
 ];
 
 const PersonasSection = () => (
-  <section style={{ background: PAPER, padding: '88px 24px', borderTop: `1px solid ${LINE}` }}>
+  <section style={{ background: '#fff', padding: '88px 24px', borderTop: `1px solid ${LINE}` }}>
     <div style={{ maxWidth: '1100px', margin: '0 auto' }}>
       <FadeIn>
         <div style={{ textAlign: 'center', marginBottom: '50px' }}>
@@ -243,7 +243,7 @@ const PersonasSection = () => (
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '20px' }}>
         {PERSONAS.map((p, i) => (
           <FadeIn key={i} delay={i * 90}>
-            <div style={{ background: '#fff', border: `1px solid ${LINE}`, borderRadius: '16px', padding: '28px', height: '100%', position: 'relative', overflow: 'hidden' }}>
+            <div style={{ background: PAPER, border: `1px solid ${LINE}`, borderRadius: '16px', padding: '28px', height: '100%', position: 'relative', overflow: 'hidden' }}>
               <div style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '3px', background: p.accent }} />
               <h3 style={{ fontFamily: serif, fontSize: '20px', fontWeight: 600, color: INK, marginBottom: '12px', letterSpacing: '-0.01em' }}>{p.tag}</h3>
               <p style={{ fontFamily: sans, fontSize: '14.5px', lineHeight: 1.65, color: STONE }}>{p.desc}</p>
@@ -345,8 +345,8 @@ const MarketingHomePage = () => (
   <SiteLayout seo={{ title: 'CasaCEO — Everything your home needs, in one calm place' }} fullWidth>
     <HeroSection />
     <PillarsSection />
-    <HowItWorksSection />
     <PersonasSection />
+    <HowItWorksSection />
     <ReassureSection />
     <TestimonialSection />
     <CTASection />
