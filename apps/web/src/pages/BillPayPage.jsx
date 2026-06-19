@@ -216,7 +216,7 @@ const NextBillDue = ({ companies }) => {
 };
 
 // ═══════════════════════════════════════════════════════════════════════
-// ANALYSIS — Category Breakdown + Annual Spend (lives in its own tab)
+// OVERVIEW — Category Breakdown + Annual Spend (lives in its own tab)
 // ═══════════════════════════════════════════════════════════════════════
 
 const CategoryBreakdown = ({ companies }) => {
@@ -476,7 +476,7 @@ const BillPayPage = () => {
                 {allProperties
                   ? `All properties · `
                   : (selectedHome?.name ? `${selectedHome.name} · ` : '')}
-                Stay ahead of every due date.
+                Every bill for your home — and anything else worth keeping in one place.
               </p>
             </div>
           </div>
@@ -494,7 +494,7 @@ const BillPayPage = () => {
             {[
               { key: 'dashboard', label: 'My Bills', icon: LayoutGrid },
               { key: 'cashneeds', label: 'Cash Needs', icon: TrendingDown },
-              { key: 'analysis', label: 'Analysis', icon: BarChart2 },
+              { key: 'overview', label: 'Overview', icon: BarChart2 },
               { key: 'directory', label: 'Providers', icon: BookOpen },
               { key: 'history', label: 'History', icon: CreditCard },
             ].map(tab => {
@@ -521,8 +521,8 @@ const BillPayPage = () => {
                   <CreditCard style={{ width: '28px', height: '28px', color: '#2563eb' }} />
                 </div>
                 <p className="font-semibold text-slate-900" style={{ fontSize: '20px', marginBottom: '8px' }}>No bills added yet.</p>
-                <p className="text-slate-400" style={{ fontSize: '14px', marginBottom: '24px', maxWidth: '400px', margin: '0 auto 24px' }}>
-                  Stay ahead of due dates — add your first bill and never miss a payment again.
+                <p className="text-slate-400" style={{ fontSize: '14px', marginBottom: '24px', maxWidth: '420px', margin: '0 auto 24px' }}>
+                  Add your first bill and never miss a due date — home bills first, plus anything else worth keeping in one place.
                 </p>
                 <div className="flex flex-col sm:flex-row items-center justify-center gap-3">
                   <button onClick={() => setActiveTab('directory')} className="flex items-center gap-2 font-semibold text-white hover:opacity-90 transition-all rounded-xl"
@@ -654,11 +654,11 @@ const BillPayPage = () => {
             )}
           </TabsContent>
 
-          {/* ── Analysis Tab ── */}
-          <TabsContent value="analysis" className="mt-0">
+          {/* ── Overview Tab ── */}
+          <TabsContent value="overview" className="mt-0">
             {companies.length === 0 ? (
               <div className="bg-white text-center text-slate-400" style={{ borderRadius: '12px', border: '1px solid #e9e4db', padding: '40px', fontSize: '14px' }}>
-                Add some bills to see your spending analysis.
+                Add some bills to see your spending overview.
               </div>
             ) : (
               <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
@@ -678,7 +678,7 @@ const BillPayPage = () => {
             <div className="bg-white" style={{ borderRadius: '12px', border: '1px solid #e9e4db', padding: '24px', boxShadow: '0 1px 3px rgba(0,0,0,0.06)' }}>
               <div style={{ marginBottom: '16px' }}>
                 <h2 className="font-semibold text-slate-900" style={{ fontSize: '18px', marginBottom: '4px' }}>Provider Directory</h2>
-                <p className="text-slate-400" style={{ fontSize: '14px' }}>Find common providers and link them instantly — electric, water, internet, insurance, and more.</p>
+                <p className="text-slate-400" style={{ fontSize: '14px' }}>Connect any provider that sends you a bill — utilities, insurance, subscriptions, and more.</p>
               </div>
               <UtilityCompanyListing ref={utilityListingRef} onSelectCompany={handleSelectDirectoryCompany} />
             </div>
