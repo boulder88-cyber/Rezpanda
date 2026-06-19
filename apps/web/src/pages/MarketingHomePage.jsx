@@ -71,20 +71,20 @@ const FadeIn = ({ children, delay = 0 }) => {
 const PILLARS = [
   {
     icon: CreditCard,
-    label: 'Home Bill Pay+',
-    desc: 'Your whole recurring money-out picture in one place — utilities, mortgage, property taxes, insurance premiums, and subscriptions. The plus means it\u2019ll catch your non-home bills too, if you want.',
+    label: 'Bill Pay+',
+    desc: 'Your whole recurring money-out picture in one place — home first, plus anything else worth keeping together. Utilities, mortgage, property taxes, insurance, subscriptions — and, if you want, the personal and medical bills too. All sorted automatically by provider and due date.',
     status: 'Available now',
   },
   {
     icon: Wrench,
     label: 'Maintenance',
-    desc: 'Keep your home healthy without keeping it all in your head — recurring upkeep, seasonal tasks, the vendors you trust, and what\u2019s still under warranty when something breaks.',
+    desc: 'Simple recurring reminders for the things that keep a home healthy — filters, gutters, seasonal tasks, and service visits. No spreadsheets, no mental load.',
     status: 'Available now',
   },
   {
     icon: FileText,
     label: 'Documents',
-    desc: 'Every important paper in one findable place — deeds, closing papers, insurance policies, warranties, and receipts. The moment you need it, it\u2019s there.',
+    desc: 'Every important paper in one findable place — deeds, closing papers, insurance policies, warranties, receipts. Not a filing cabinet — just the things that matter, all there when you need them.',
     status: 'Coming soon',
   },
 ];
@@ -114,13 +114,13 @@ const HeroSection = () => (
     </div>
     <div style={{ maxWidth: '860px', margin: '0 auto', textAlign: 'center', position: 'relative', zIndex: 1 }}>
       <span style={{ display: 'inline-flex', alignItems: 'center', gap: '7px', fontFamily: sans, fontSize: '13px', fontWeight: 600, color: '#BBD0EC', background: 'rgba(62,107,168,0.22)', border: '1px solid rgba(62,107,168,0.4)', borderRadius: '999px', padding: '6px 16px', marginBottom: '24px' }}>
-        The calm way to run your home
+        Everything your home needs, in one place
       </span>
       <h1 style={{ fontFamily: serif, fontSize: 'clamp(2.5rem, 5.6vw, 4rem)', fontWeight: 600, color: '#fff', lineHeight: 1.08, letterSpacing: '-0.015em', marginBottom: '22px' }}>
-        Everything your home needs,<br />in one calm place.
+        Home admin, made calm.
       </h1>
       <p style={{ fontFamily: sans, fontSize: '19px', lineHeight: 1.65, color: 'rgba(255,255,255,0.74)', maxWidth: '560px', margin: '0 auto 38px' }}>
-        Your bills, your upkeep, and your documents — organized in one calm place, and finally easy to stay on top of.
+        Your bills, your upkeep, and your documents — organized in one place, and finally easy to stay on top of.
       </p>
       <div style={{ display: 'flex', gap: '12px', justifyContent: 'center', flexWrap: 'wrap', marginBottom: '30px' }}>
         <Link to="/signup" style={{ display: 'inline-flex', alignItems: 'center', gap: '8px', fontFamily: sans, padding: '15px 30px', borderRadius: '11px', background: '#fff', color: INK, fontSize: '15px', fontWeight: 700, textDecoration: 'none', transition: 'transform 0.15s' }}
@@ -260,8 +260,12 @@ const PersonasSection = () => (
 // ═══════════════════════════════════════════════════════════════════
 
 const ReassureSection = () => (
-  <section style={{ background: '#fff', padding: '60px 24px', borderTop: `1px solid ${LINE}` }}>
-    <div style={{ maxWidth: '900px', margin: '0 auto', display: 'flex', flexWrap: 'wrap', gap: '28px', justifyContent: 'center' }}>
+  <section style={{ background: '#fff', padding: '72px 24px', borderTop: `1px solid ${LINE}` }}>
+    <div style={{ maxWidth: '900px', margin: '0 auto' }}>
+      <FadeIn>
+        <p style={{ fontFamily: sans, fontSize: '12px', fontWeight: 700, color: SKY, letterSpacing: '0.16em', textTransform: 'uppercase', textAlign: 'center', marginBottom: '36px' }}>Why CasaCEO</p>
+      </FadeIn>
+      <div style={{ display: 'flex', flexWrap: 'wrap', gap: '28px', justifyContent: 'center' }}>
       {[
         { icon: Bell, label: 'Gentle reminders', sub: 'Before a due date, never after.' },
         { icon: ShieldCheck, label: 'Private by default', sub: 'Your home\u2019s records are yours alone.' },
@@ -280,6 +284,7 @@ const ReassureSection = () => (
           </div>
         );
       })}
+      </div>
     </div>
   </section>
 );
