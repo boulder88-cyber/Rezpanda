@@ -495,7 +495,7 @@ const BillPayPage = () => {
               { key: 'dashboard', label: 'My Bills', icon: LayoutGrid },
               { key: 'cashneeds', label: 'Cash Needs', icon: TrendingDown },
               { key: 'analysis', label: 'Analysis', icon: BarChart2 },
-              { key: 'directory', label: 'Directory', icon: BookOpen },
+              { key: 'directory', label: 'Providers', icon: BookOpen },
               { key: 'history', label: 'History', icon: CreditCard },
             ].map(tab => {
               const Icon = tab.icon;
@@ -527,7 +527,7 @@ const BillPayPage = () => {
                 <div className="flex flex-col sm:flex-row items-center justify-center gap-3">
                   <button onClick={() => setActiveTab('directory')} className="flex items-center gap-2 font-semibold text-white hover:opacity-90 transition-all rounded-xl"
                     style={{ background: '#1e3a5f', padding: '12px 24px', fontSize: '14px' }}>
-                    <Search style={{ width: '16px', height: '16px' }} /> Browse Directory
+                    <Search style={{ width: '16px', height: '16px' }} /> Browse Providers
                   </button>
                   <button onClick={handleOpenAddCustom} className="flex items-center gap-2 font-semibold text-slate-700 border border-slate-200 hover:bg-slate-50 transition-all rounded-xl"
                     style={{ padding: '12px 24px', fontSize: '14px' }}>
