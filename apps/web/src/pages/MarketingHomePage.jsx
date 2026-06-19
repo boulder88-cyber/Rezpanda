@@ -2,22 +2,25 @@ import React, { useState, useEffect, useRef } from 'react';
 import { Link } from 'react-router-dom';
 import SiteLayout from './SiteLayout.jsx';
 import {
-  ArrowRight, CheckCircle2, CreditCard, FileText, Wrench,
-  ShieldCheck, BadgeCheck, Users, Bell, Heart, Star
+  ArrowRight, CheckCircle2, CreditCard, Wrench, FileText,
+  ShieldCheck, Bell, Heart, Star
 } from 'lucide-react';
 
 /*
-  CasaCEO — Marketing Home (warmed home-OS)
+  CasaCEO — Marketing Home (warmed home-OS, 3 pillars)
   --------------------------------------------------------------------------
   Subject: a home management platform — the calm place to run everything
-  your home needs. Bill pay is ONE of six modules, not the headline.
-  Kept the bones of the prior navy home-OS page, but warmed the palette,
-  cut the asset/ROI/dashboard coldness, and wrote plainer, human copy.
+  your home needs. Built on THREE pillars, not a flat list of features:
 
-  Six must-have modules, equal weight:
-    Home Bill Pay+ · Documents · Maintenance · Insurance · Warranty · Vendors
+    Home Bill Pay+ · Maintenance · Documents
+
+  Everything else (insurance, warranty, vendors, mortgage, taxes…) lives
+  inside one of the three as an example sub-item, not its own headline.
   The "+" on Bill Pay quietly carries the bonus that it catches non-home
   bills too — without making the whole page about bills.
+
+  Kept the bones of the prior navy home-OS page, but warmed the palette,
+  cut the asset/ROI/dashboard coldness, and wrote plainer, human copy.
 
   Tokens:
     Ink   #1C3553  warmed navy — brand anchor + headlines
@@ -62,45 +65,27 @@ const FadeIn = ({ children, delay = 0 }) => {
 };
 
 // ═══════════════════════════════════════════════════════════════════
-// DATA — the six must-have modules, equal weight
+// DATA — three pillars. Everything else folds in as an example sub-item.
 // ═══════════════════════════════════════════════════════════════════
 
-const MODULES = [
+const PILLARS = [
   {
     icon: CreditCard,
     label: 'Home Bill Pay+',
-    desc: "Every home bill in one place — and the plus means it'll catch your other bills too, if you want. Forward, snap, or upload; CasaCEO sorts by provider and due date.",
+    desc: 'Your whole recurring money-out picture in one place — utilities, mortgage, property taxes, insurance premiums, and subscriptions. The plus means it\u2019ll catch your non-home bills too, if you want.',
+    status: 'Available now',
+  },
+  {
+    icon: Wrench,
+    label: 'Maintenance',
+    desc: 'Keep your home healthy without keeping it all in your head — recurring upkeep, seasonal tasks, the vendors you trust, and what\u2019s still under warranty when something breaks.',
     status: 'Available now',
   },
   {
     icon: FileText,
     label: 'Documents',
-    desc: 'Deeds, warranties, receipts, closing papers, and policies — kept together and easy to find the moment you need them.',
+    desc: 'Every important paper in one findable place — deeds, closing papers, insurance policies, warranties, and receipts. The moment you need it, it\u2019s there.',
     status: 'Coming soon',
-  },
-  {
-    icon: Wrench,
-    label: 'Maintenance',
-    desc: 'Recurring reminders for the things that keep a home healthy — filters, gutters, service visits — so nothing gets forgotten.',
-    status: 'Available now',
-  },
-  {
-    icon: ShieldCheck,
-    label: 'Insurance',
-    desc: 'Keep policies, renewal dates, and coverage details in one spot, so you always know what you have and when it lapses.',
-    status: 'On the roadmap',
-  },
-  {
-    icon: BadgeCheck,
-    label: 'Warranty',
-    desc: 'Track what\u2019s still covered — appliances, systems, the roof — and never pay for a repair a warranty would have covered.',
-    status: 'On the roadmap',
-  },
-  {
-    icon: Users,
-    label: 'Vendors',
-    desc: 'The plumber, the lawn crew, the electrician you trust — saved and ready, with the history of who did what.',
-    status: 'On the roadmap',
   },
 ];
 
@@ -135,7 +120,7 @@ const HeroSection = () => (
         Everything your home needs,<br />in one calm place.
       </h1>
       <p style={{ fontFamily: sans, fontSize: '19px', lineHeight: 1.65, color: 'rgba(255,255,255,0.74)', maxWidth: '560px', margin: '0 auto 38px' }}>
-        Bills, documents, maintenance, insurance, warranties, and the people you trust to keep it all running — organized, and finally easy to stay on top of.
+        Your bills, your upkeep, and your documents — organized in one calm place, and finally easy to stay on top of.
       </p>
       <div style={{ display: 'flex', gap: '12px', justifyContent: 'center', flexWrap: 'wrap', marginBottom: '30px' }}>
         <Link to="/signup" style={{ display: 'inline-flex', alignItems: 'center', gap: '8px', fontFamily: sans, padding: '15px 30px', borderRadius: '11px', background: '#fff', color: INK, fontSize: '15px', fontWeight: 700, textDecoration: 'none', transition: 'transform 0.15s' }}
@@ -159,41 +144,41 @@ const HeroSection = () => (
 );
 
 // ═══════════════════════════════════════════════════════════════════
-// MODULES — six, equal weight
+// PILLARS — three, equal weight; everything else folds inside them
 // ═══════════════════════════════════════════════════════════════════
 
-const ModulesSection = () => (
+const PillarsSection = () => (
   <section style={{ background: PAPER, padding: '90px 24px' }}>
-    <div style={{ maxWidth: '1180px', margin: '0 auto' }}>
+    <div style={{ maxWidth: '1100px', margin: '0 auto' }}>
       <FadeIn>
         <div style={{ textAlign: 'center', marginBottom: '56px' }}>
           <p style={{ fontFamily: sans, fontSize: '12px', fontWeight: 700, color: SKY, letterSpacing: '0.16em', textTransform: 'uppercase', marginBottom: '14px' }}>What CasaCEO does</p>
           <h2 style={{ fontFamily: serif, fontSize: 'clamp(1.85rem, 4vw, 2.6rem)', fontWeight: 600, color: INK, letterSpacing: '-0.015em', marginBottom: '16px' }}>
-            Six things every home needs to stay in order.
+            Three ways to keep your home in order.
           </h2>
           <p style={{ fontFamily: sans, fontSize: '17px', color: STONE, maxWidth: '540px', margin: '0 auto', lineHeight: 1.6 }}>
-            Use one, use all six. CasaCEO stays simple and grows with you — nothing you don\u2019t need gets in the way.
+            Use one, use all three. CasaCEO stays simple and grows with you — nothing you don\u2019t need gets in the way.
           </p>
         </div>
       </FadeIn>
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '20px' }}>
-        {MODULES.map((m, i) => {
+        {PILLARS.map((m, i) => {
           const Icon = m.icon;
           const s = STATUS_STYLE[m.status];
           return (
-            <FadeIn key={i} delay={(i % 3) * 80}>
-              <div style={{ background: '#fff', border: `1px solid ${LINE}`, borderRadius: '16px', padding: '28px', height: '100%', transition: 'box-shadow 0.2s, transform 0.2s' }}
+            <FadeIn key={i} delay={i * 90}>
+              <div style={{ background: '#fff', border: `1px solid ${LINE}`, borderRadius: '16px', padding: '30px', height: '100%', transition: 'box-shadow 0.2s, transform 0.2s' }}
                 onMouseEnter={e => { e.currentTarget.style.boxShadow = '0 14px 34px -18px rgba(28,53,83,0.4)'; e.currentTarget.style.transform = 'translateY(-2px)'; }}
                 onMouseLeave={e => { e.currentTarget.style.boxShadow = 'none'; e.currentTarget.style.transform = 'none'; }}>
                 <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '18px' }}>
-                  <div style={{ width: '48px', height: '48px', borderRadius: '12px', background: SAND, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                    <Icon style={{ width: '23px', height: '23px', color: INK }} />
+                  <div style={{ width: '50px', height: '50px', borderRadius: '13px', background: SAND, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                    <Icon style={{ width: '24px', height: '24px', color: INK }} />
                   </div>
                   <span style={{ fontFamily: sans, fontSize: '11px', fontWeight: 700, color: s.color, background: s.bg, borderRadius: '999px', padding: '4px 11px', letterSpacing: '0.02em' }}>
                     {m.status}
                   </span>
                 </div>
-                <h3 style={{ fontFamily: serif, fontSize: '21px', fontWeight: 600, color: INK, marginBottom: '10px', letterSpacing: '-0.01em' }}>{m.label}</h3>
+                <h3 style={{ fontFamily: serif, fontSize: '22px', fontWeight: 600, color: INK, marginBottom: '10px', letterSpacing: '-0.01em' }}>{m.label}</h3>
                 <p style={{ fontFamily: sans, fontSize: '14.5px', lineHeight: 1.65, color: STONE }}>{m.desc}</p>
               </div>
             </FadeIn>
@@ -359,7 +344,7 @@ const CTASection = () => (
 const MarketingHomePage = () => (
   <SiteLayout seo={{ title: 'CasaCEO — Everything your home needs, in one calm place' }} fullWidth>
     <HeroSection />
-    <ModulesSection />
+    <PillarsSection />
     <HowItWorksSection />
     <PersonasSection />
     <ReassureSection />
