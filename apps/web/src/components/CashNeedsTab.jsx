@@ -29,6 +29,8 @@ const WINDOWS = [
 ];
 
 const isAuto = (c) => c.paymentType === 'Autopay (card)' || c.paymentType === 'Autopay (bank)';
+const isCard = (c) => c.paymentType === 'Autopay (card)';
+const isBankAuto = (c) => c.paymentType === 'Autopay (bank)';
 const money = (n) => `$${(parseFloat(n) || 0).toFixed(2)}`;
 const money0 = (n) => `$${(parseFloat(n) || 0).toFixed(0)}`;
 
@@ -50,8 +52,10 @@ const CashNeedsTab = ({ companies = [], homes = [], homeName = () => null }) => 
     .sort((a, b) => new Date(a.dueDate) - new Date(b.dueDate));
 
   const total = outflows.reduce((s, c) => s + (parseFloat(c.amount) || 0), 0);
-  const autoTotal = outflows.filter(isAuto).reduce((s, c) => s + (parseFloat(c.amount) || 0), 0);
-  const manualTotal = total - autoTotal;
+  const cardTotal = outflows.filter(isCard).reduce((s, c) => s + (parseFloat(c.amount) || 0), 0);
+  const bankAutoTotal = outflows.filter(isBankAuto).reduce((s, c) => s + (parseFloat(c.amount) || 0), 0);
+  const manualTotal = outflows.filter(c => !isAuto(c)).reduce((s, c) => s + (parseFloat(c.amount) || 0), 0);
+  const cashNowTotal = bankAutoTotal + manualTotal; // leaves the bank this period; card is paid later
 
   // Overdue is its own urgent fact, independent of the window.
   const overdue = companies
@@ -80,7 +84,9 @@ const CashNeedsTab = ({ companies = [], homes = [], homeName = () => null }) => 
     return {
       tone: 'calm',
       icon: TrendingDown,
-      text: `About ${money0(total)} leaving your accounts over the ${windowLabel.toLowerCase()}, based on what you've added.`,
+      text: cardTotal > 0
+        ? `About ${money0(total)} in bills over the ${windowLabel.toLowerCase()} — ${money0(cashNowTotal)} leaves your accounts, ${money0(cardTotal)} goes on a card.`
+        : `About ${money0(total)} leaving your accounts over the ${windowLabel.toLowerCase()}, based on what you've added.`,
     };
   })();
 
@@ -139,11 +145,12 @@ const CashNeedsTab = ({ companies = [], homes = [], homeName = () => null }) => 
         {/* running total */}
         <div className="flex items-baseline gap-2" style={{ marginBottom: '4px' }}>
           <span className="font-extrabold" style={{ fontSize: '30px', color: '#1e3a5f', lineHeight: 1 }}>{money(total)}</span>
-          <span style={{ fontSize: '13px', color: '#95a0ae' }}>over the {windowLabel.toLowerCase()}</span>
+          <span style={{ fontSize: '13px', color: '#95a0ae' }}>total over the {windowLabel.toLowerCase()}</span>
         </div>
         {total > 0 && (
           <p style={{ fontSize: '12px', color: '#5b6472', marginBottom: '16px' }}>
-            {money0(autoTotal)} drafts automatically · {money0(manualTotal)} needs you to pay
+            {money0(bankAutoTotal)} drafts from bank · {money0(manualTotal)} needs you to pay
+            {cardTotal > 0 && <> · {money0(cardTotal)} on a card <span style={{ color: '#95a0ae' }}>(paid later)</span></>}
           </p>
         )}
 
@@ -156,17 +163,22 @@ const CashNeedsTab = ({ companies = [], homes = [], homeName = () => null }) => 
           <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
             {outflows.map(c => {
               const auto = isAuto(c);
+              const card = isCard(c);
               const d = new Date(c.dueDate).toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+              const tag = card
+                ? { text: 'Card', color: '#534ab7', bg: '#eeedfe', icon: true }
+                : auto
+                ? { text: 'Auto', color: '#059669', bg: '#ecfdf5', icon: true }
+                : { text: 'Manual', color: '#b45309', bg: '#fffbeb', icon: false };
               return (
                 <div key={c.id} className="flex items-center justify-between" style={{ padding: '8px 0', borderBottom: '1px solid #f1ece3' }}>
                   <div className="flex items-center gap-3 min-w-0">
                     <span className="font-medium flex items-center gap-1 flex-shrink-0" style={{
                       fontSize: '10px', textTransform: 'uppercase', letterSpacing: '0.03em',
                       borderRadius: '5px', padding: '2px 7px', minWidth: '58px', justifyContent: 'center',
-                      color: auto ? '#059669' : '#b45309',
-                      background: auto ? '#ecfdf5' : '#fffbeb',
+                      color: tag.color, background: tag.bg,
                     }}>
-                      {auto ? <><Repeat style={{ width: '10px', height: '10px' }} /> Auto</> : 'Manual'}
+                      {tag.icon ? <><Repeat style={{ width: '10px', height: '10px' }} /> {tag.text}</> : tag.text}
                     </span>
                     <span className="font-medium truncate" style={{ fontSize: '14px', color: '#1f2733' }}>{c.companyName}</span>
                     {showByProperty && homeName(c.homeId) && (
@@ -176,7 +188,7 @@ const CashNeedsTab = ({ companies = [], homes = [], homeName = () => null }) => 
                     )}
                   </div>
                   <div className="flex items-center gap-3 flex-shrink-0">
-                    <span style={{ fontSize: '12px', color: '#95a0ae' }}>{auto ? `drafts ~${d}` : `due ${d}`}</span>
+                    <span style={{ fontSize: '12px', color: '#95a0ae' }}>{card ? `~${d} (card)` : auto ? `drafts ~${d}` : `due ${d}`}</span>
                     <span className="font-semibold" style={{ fontSize: '14px', color: '#1f2733', minWidth: '70px', textAlign: 'right' }}>{money(c.amount)}</span>
                   </div>
                 </div>
@@ -189,12 +201,21 @@ const CashNeedsTab = ({ companies = [], homes = [], homeName = () => null }) => 
       {/* ── 3. Breakdown ── */}
       {outflows.length > 0 && (
         <div className={`grid grid-cols-1 ${showByProperty ? 'lg:grid-cols-2' : ''} gap-4`}>
-          {/* Auto vs Manual */}
+          {/* How it pulls */}
           <div style={{ ...cardStyle, padding: '18px 20px' }}>
             <h4 className="font-semibold" style={{ fontSize: '13px', color: '#1f2733', marginBottom: '14px' }}>How it pulls</h4>
-            <Bar label="Drafts automatically" sub="autopay — happens on its own" amount={autoTotal} total={total} color="#059669" />
+            <Bar label="Drafts from bank" sub="autopay — cash now" amount={bankAutoTotal} total={total} color="#059669" />
             <div style={{ height: '10px' }} />
-            <Bar label="Needs you to pay" sub="manual — you have to act" amount={manualTotal} total={total} color="#f59e0b" />
+            <Bar label="Needs you to pay" sub="manual — cash now" amount={manualTotal} total={total} color="#f59e0b" />
+            {cardTotal > 0 && (
+              <>
+                <div style={{ height: '10px' }} />
+                <Bar label="On a credit card" sub="not cash now — paid later" amount={cardTotal} total={total} color="#7c5cff" />
+              </>
+            )}
+            <p style={{ fontSize: '11px', color: '#95a0ae', marginTop: '12px', paddingTop: '10px', borderTop: '1px solid #f1ece3' }}>
+              {money0(cashNowTotal)} actually leaves your accounts this period. Card charges are paid later when your card bill comes due.
+            </p>
           </div>
 
           {/* By property */}
