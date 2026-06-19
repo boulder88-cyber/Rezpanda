@@ -24,7 +24,7 @@ import { Plus, Upload, PencilLine, Mail, Loader2, ChevronDown, Copy, Check } fro
 //
 // The forwarding address is COMPUTED, not stored: the inbound-email hook
 // attributes a forwarded bill to its owner by reading the "+<userId>" piece
-// of the to-address (inbox+<userId>@bills.casaceo.com). So we just format the
+// of the to-address (ceo+<userId>@bills.casaceo.com). So we just format the
 // current user's id — no backend call, no stored field.
 //
 // The upload logic is lifted from the old UploadBillButton so ingestion
@@ -34,7 +34,7 @@ import { Plus, Upload, PencilLine, Mail, Loader2, ChevronDown, Copy, Check } fro
 
 // Must match the to-address pattern the inbound-email hook parses.
 const FORWARD_DOMAIN = 'bills.casaceo.com';
-const buildForwardAddress = (userId) => userId ? `inbox+${userId}@${FORWARD_DOMAIN}` : '';
+const buildForwardAddress = (userId) => userId ? `ceo+${userId}@${FORWARD_DOMAIN}` : '';
 
 const AddBillButton = ({ onUploaded, onAddManual }) => {
   const { currentUser } = useAuth();
