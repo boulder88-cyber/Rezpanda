@@ -144,7 +144,7 @@ const CashNeedsTab = ({ companies = [], homes = [], homeName = () => null }) => 
 
         {/* running total */}
         <div className="flex items-baseline gap-2" style={{ marginBottom: '4px' }}>
-          <span className="font-extrabold" style={{ fontSize: '30px', color: '#1e3a5f', lineHeight: 1 }}>{money(total)}</span>
+          <span className="font-extrabold" style={{ fontSize: '30px', color: '#1e3a5f', lineHeight: 1 }}>{money0(total)}</span>
           <span style={{ fontSize: '13px', color: '#95a0ae' }}>total over the {windowLabel.toLowerCase()}</span>
         </div>
         {total > 0 && (
