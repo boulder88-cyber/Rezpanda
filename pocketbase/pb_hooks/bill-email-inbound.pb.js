@@ -188,6 +188,11 @@ routerAdd("POST", "/casaceo/inbound-email", (e) => {
     record.set("source", "email");
     record.set("parsed_raw", parsed);
     record.set("ownerId", userId);
+
+    // Store the raw sender ("from") so the biller-connect feature can tell
+    // whether a bill arrived directly from the utility's own domain
+    // (connected) vs forwarded from the user's consumer email (not yet).
+    record.set("senderAddress", body.from ? String(body.from) : "");
  
     // attach the original file, if we used one
     if (usedAttachment) {
