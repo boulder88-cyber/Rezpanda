@@ -11,7 +11,7 @@ import {
   Plus, CreditCard, LayoutGrid, Search, BookOpen,
   AlertCircle, CheckCircle2, Clock, DollarSign, Zap,
   Bell, ChevronRight, Download, BarChart2,
-  Droplets, Wifi, Car, Shield, TrendingDown, Repeat
+  Droplets, Wifi, Car, Shield, TrendingDown, Repeat, Package
 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast.js';
 
@@ -23,6 +23,12 @@ import PendingReviewSection from '@/components/PendingReviewSection.jsx';
 import AddBillButton from '@/components/AddBillButton.jsx';
 import CashNeedsTab from '@/components/CashNeedsTab.jsx';
 import BillerConnectChecklist from '@/components/BillerConnectChecklist.jsx';
+
+// The label for the no-property bucket. Bills that aren't tied to any home
+// (car, phone, subscriptions) live here so they still get tracked, grouped,
+// and counted. This is a BILL-PAY-LOCAL concept — deliberately NOT a home in
+// the global HomeSwitcher, which stays purely about properties.
+const OTHER_BILLS_LABEL = 'Other bills';
 
 // Time-frame options for how far back the paid/history section reaches.
 const TIMEFRAMES = [
@@ -70,9 +76,6 @@ const SummaryStrip = ({ companies }) => {
 
 // ═══════════════════════════════════════════════════════════════════════
 // UPCOMING DRAFTS / DUE STRIP
-// Cashflow heads-up: everything leaving the accounts in the next 30 days,
-// with a running total. Autopay items are flagged because they pull whether
-// or not the account is ready — the user needs to ensure funds are available.
 // ═══════════════════════════════════════════════════════════════════════
 
 const UpcomingStrip = ({ companies }) => {
@@ -295,32 +298,39 @@ const AnnualSpendSummary = ({ companies }) => {
 
 // ═══════════════════════════════════════════════════════════════════════
 // PROPERTY GROUP — used in All-Properties mode to batch a flat bill list
-// under per-property headers with a subtotal, instead of one long list.
-// Keeps the all-properties view legible (sectional > convenient).
+// under per-property headers with a subtotal. The no-property bills group
+// under the "Other bills" header (was "Unassigned").
 // ═══════════════════════════════════════════════════════════════════════
 
+const OTHER_KEY = '__other__';
+
 const PropertyGroupedList = ({ companies, homeName, renderCard }) => {
-  // Bucket bills by homeId; undated/unassigned go under a clear catch-all.
+  // Bucket bills by homeId; no-home bills go under the Other-bills catch-all.
   const groups = {};
   for (const c of companies) {
-    const key = c.homeId || '__unassigned__';
+    const key = c.homeId || OTHER_KEY;
     if (!groups[key]) groups[key] = [];
     groups[key].push(c);
   }
-  const keys = Object.keys(groups);
+  // Order keys so real properties come first and "Other bills" sits last.
+  const keys = Object.keys(groups).sort((a, b) => {
+    if (a === OTHER_KEY) return 1;
+    if (b === OTHER_KEY) return -1;
+    return 0;
+  });
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
       {keys.map(key => {
         const bills = groups[key];
         const subtotal = bills.reduce((sum, c) => sum + (parseFloat(c.amount) || 0), 0);
-        const label = key === '__unassigned__'
-          ? 'Unassigned'
-          : (homeName(key) || 'Property');
+        const isOther = key === OTHER_KEY;
+        const label = isOther ? OTHER_BILLS_LABEL : (homeName(key) || 'Property');
         return (
           <div key={key}>
             <div className="flex items-center justify-between" style={{ marginBottom: '8px' }}>
-              <span className="font-semibold text-slate-700" style={{ fontSize: '13px', textTransform: 'uppercase', letterSpacing: '0.03em' }}>
+              <span className="font-semibold flex items-center gap-1.5" style={{ fontSize: '13px', textTransform: 'uppercase', letterSpacing: '0.03em', color: isOther ? '#5b6472' : '#334155' }}>
+                {isOther && <Package style={{ width: '13px', height: '13px', color: '#95a0ae' }} />}
                 {label} <span className="text-slate-400 font-normal">({bills.length})</span>
               </span>
               <span className="font-bold text-slate-900" style={{ fontSize: '13px' }}>${subtotal.toFixed(2)}</span>
@@ -331,6 +341,40 @@ const PropertyGroupedList = ({ companies, homeName, renderCard }) => {
           </div>
         );
       })}
+    </div>
+  );
+};
+
+// ═══════════════════════════════════════════════════════════════════════
+// SCOPE TOGGLE — Bill-Pay-local control: This property / All properties /
+// Other bills. Local to this page; does NOT touch the global HomeSwitcher.
+// ═══════════════════════════════════════════════════════════════════════
+
+const ScopeToggle = ({ scope, setScope, selectedHome, multiHome }) => {
+  const options = [];
+  // "This property" only makes sense when a real home is selected.
+  if (selectedHome) {
+    options.push({ key: 'property', label: selectedHome.name || selectedHome.address || 'This property' });
+  }
+  if (multiHome) {
+    options.push({ key: 'all', label: 'All properties' });
+  }
+  options.push({ key: 'other', label: OTHER_BILLS_LABEL });
+
+  // Nothing to toggle if there's only one option.
+  if (options.length <= 1) return null;
+
+  return (
+    <div className="flex items-center gap-1 bg-white border border-slate-200 rounded-xl flex-wrap" style={{ padding: '4px' }}>
+      {options.map(o => (
+        <button key={o.key} onClick={() => setScope(o.key)}
+          className="rounded-lg transition-all font-medium truncate"
+          style={{ padding: '6px 12px', fontSize: '12px', maxWidth: '180px',
+            background: scope === o.key ? '#1e3a5f' : 'transparent',
+            color: scope === o.key ? '#fff' : '#64748b' }}>
+          {o.label}
+        </button>
+      ))}
     </div>
   );
 };
@@ -349,6 +393,26 @@ const BillPayPage = () => {
   const [historyRefreshTrigger, setHistoryRefreshTrigger] = useState(0);
   const [timeframeDays, setTimeframeDays] = useState(90); // default 90; null = All
   const utilityListingRef = useRef(null);
+
+  const multiHome = (homes || []).length > 1;
+
+  // ── Bill-Pay-local scope ──
+  // 'property' = selected home's bills · 'all' = every property · 'other' =
+  // the no-property "Other bills" bucket. Seeded from the GLOBAL context
+  // (allProperties) so switching the property selector still feels right, but
+  // owned locally so "Other bills" never leaks into the global HomeSwitcher.
+  const [scope, setScope] = useState(allProperties && multiHome ? 'all' : 'property');
+
+  // Keep local scope in step with the global property selector: if the user
+  // flips the global All-Properties switch, mirror it; if they pick a real
+  // home, drop back to 'property'. (Doesn't override a deliberate 'other'.)
+  useEffect(() => {
+    setScope(prev => {
+      if (prev === 'other') return prev; // respect an explicit Other-bills choice
+      if (allProperties && multiHome) return 'all';
+      return 'property';
+    });
+  }, [allProperties, multiHome]);
 
   // Quick lookup: homeId → home name, for property tags on rows.
   const homeName = (id) => {
@@ -397,13 +461,20 @@ const BillPayPage = () => {
   // ── Split bills by status ──
   const isPaid = (c) => c.status === 'paid';
   const isAuto = (c) => c.paymentType === 'Autopay (card)' || c.paymentType === 'Autopay (bank)';
+  const hasNoHome = (c) => !c.homeId;
 
-  // Property scope: in all-properties mode, show every bill. Otherwise show
-  // only the selected home's bills — plus any bill with no homeId yet.
+  // ── Property scope (LOCAL) ──
+  //   'other'    → only bills with no home (the Other-bills bucket)
+  //   'all'      → every bill across properties AND the no-home bucket
+  //   'property' → the selected home's bills ONLY (no-home bills are NOT
+  //                mixed in here — they have their own 'other' scope, which
+  //                fixes the old leak where !homeId bills showed on a single
+  //                property). If no real home is selected, fall back to all.
   const propertyFiltered = companies.filter(c => {
-    if (allProperties) return true;
+    if (scope === 'other') return hasNoHome(c);
+    if (scope === 'all') return true;
     if (!selectedHome) return true;
-    return c.homeId === selectedHome.id || !c.homeId;
+    return c.homeId === selectedHome.id;
   });
 
   // Not-yet-closed bills (excludes pending_review and paid).
@@ -431,7 +502,6 @@ const BillPayPage = () => {
     .filter(c => {
       if (!isPaid(c)) return false;
       if (timeframeDays == null) return true;
-      // use whichever close-date exists (paid for manual, reviewed for autopay)
       const closeDate = c.paidDate || c.reviewedDate;
       if (!closeDate) return true;
       const days = (Date.now() - new Date(closeDate).getTime()) / 86400000;
@@ -451,8 +521,11 @@ const BillPayPage = () => {
   const pastDue = readyToPay.filter(c => c.dueDate && new Date(c.dueDate) < now);
   const upcomingToPay = readyToPay.filter(c => !(c.dueDate && new Date(c.dueDate) < now));
 
-  // Show property tags on rows when viewing all properties (and >1 home).
-  const showPropertyTags = allProperties && (homes || []).length > 1;
+  // Show property tags / grouped headers only in the 'all' scope with >1 home.
+  const showPropertyTags = scope === 'all' && multiHome;
+
+  // Friendly count of no-home bills, for the toggle/empty hints.
+  const otherCount = companies.filter(c => hasNoHome(c) && !isPaid(c) && c.status !== 'pending_review').length;
 
   return (
     <div className="min-h-screen bg-slate-50 pb-20">
@@ -473,7 +546,9 @@ const BillPayPage = () => {
             <div>
               <h1 className="font-semibold text-slate-900" style={{ fontSize: '24px', lineHeight: '1.2' }}>Bill Pay</h1>
               <p className="text-slate-400" style={{ fontSize: '13px', marginTop: '2px' }}>
-                {allProperties
+                {scope === 'other'
+                  ? `${OTHER_BILLS_LABEL} · `
+                  : scope === 'all'
                   ? `All properties · `
                   : (selectedHome?.name ? `${selectedHome.name} · ` : '')}
                 Every bill for your home — and anything else worth keeping in one place.
@@ -489,24 +564,30 @@ const BillPayPage = () => {
       <div className="max-w-7xl mx-auto" style={{ padding: '0 32px' }}>
         <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
 
-          {/* Tab Bar */}
-          <div className="flex gap-1 bg-white border border-slate-200 rounded-2xl w-fit shadow-sm" style={{ padding: '6px', marginBottom: '24px' }}>
-            {[
-              { key: 'dashboard', label: 'My Bills', icon: LayoutGrid },
-              { key: 'cashneeds', label: 'Cash Needs', icon: TrendingDown },
-              { key: 'overview', label: 'Overview', icon: BarChart2 },
-              { key: 'directory', label: 'Providers', icon: BookOpen },
-              { key: 'history', label: 'History', icon: CreditCard },
-            ].map(tab => {
-              const Icon = tab.icon;
-              return (
-                <button key={tab.key} onClick={() => setActiveTab(tab.key)}
-                  className="flex items-center gap-2 rounded-xl transition-all font-medium"
-                  style={{ padding: '8px 16px', fontSize: '13px', background: activeTab === tab.key ? '#1e3a5f' : 'transparent', color: activeTab === tab.key ? 'white' : '#64748b' }}>
-                  <Icon style={{ width: '14px', height: '14px' }} /> {tab.label}
-                </button>
-              );
-            })}
+          {/* Tab Bar + local scope toggle */}
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3" style={{ marginBottom: '24px' }}>
+            <div className="flex gap-1 bg-white border border-slate-200 rounded-2xl w-fit shadow-sm" style={{ padding: '6px' }}>
+              {[
+                { key: 'dashboard', label: 'My Bills', icon: LayoutGrid },
+                { key: 'cashneeds', label: 'Cash Needs', icon: TrendingDown },
+                { key: 'overview', label: 'Overview', icon: BarChart2 },
+                { key: 'directory', label: 'Providers', icon: BookOpen },
+                { key: 'history', label: 'History', icon: CreditCard },
+              ].map(tab => {
+                const Icon = tab.icon;
+                return (
+                  <button key={tab.key} onClick={() => setActiveTab(tab.key)}
+                    className="flex items-center gap-2 rounded-xl transition-all font-medium"
+                    style={{ padding: '8px 16px', fontSize: '13px', background: activeTab === tab.key ? '#1e3a5f' : 'transparent', color: activeTab === tab.key ? 'white' : '#64748b' }}>
+                    <Icon style={{ width: '14px', height: '14px' }} /> {tab.label}
+                  </button>
+                );
+              })}
+            </div>
+            {/* Scope toggle only on the data tabs (not Providers/History). */}
+            {(activeTab === 'dashboard' || activeTab === 'cashneeds' || activeTab === 'overview') && (
+              <ScopeToggle scope={scope} setScope={setScope} selectedHome={selectedHome} multiHome={multiHome} />
+            )}
           </div>
 
           {/* ── My Bills Tab ── */}
@@ -537,6 +618,16 @@ const BillPayPage = () => {
               </div>
             ) : (
               <>
+                {/* When viewing the Other-bills bucket, a small context line. */}
+                {scope === 'other' && (
+                  <div className="flex items-center gap-2" style={{ background: '#faf8f4', border: '1px solid #e9e4db', borderRadius: '10px', padding: '10px 16px', marginBottom: '16px' }}>
+                    <Package style={{ width: '16px', height: '16px', color: '#5b6472' }} />
+                    <p className="text-slate-600" style={{ fontSize: '13px' }}>
+                      Bills not tied to a property — car, phone, subscriptions, and anything else worth keeping in one place.
+                    </p>
+                  </div>
+                )}
+
                 {/* Quick glance: the four stats. */}
                 <SummaryStrip companies={openCompanies} />
 
@@ -650,7 +741,7 @@ const BillPayPage = () => {
                 Add some bills to see what's coming.
               </div>
             ) : (
-              <CashNeedsTab companies={propertyFiltered} homes={homes} homeName={homeName} />	
+              <CashNeedsTab companies={propertyFiltered} homes={homes} homeName={homeName} scope={scope} otherBillsLabel={OTHER_BILLS_LABEL} />
             )}
           </TabsContent>
 
