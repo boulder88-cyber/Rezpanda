@@ -189,14 +189,15 @@ const ServiceCompanyCard = ({ company, onRefresh, onPay, propertyName = null, ho
                 {propertyName}
               </span>
             )}
-            {!company.homeId && homes && homes.length > 0 && (
+            {!company.homeId && homes && homes.length > 1 && (
               <select
                 value=""
                 disabled={isAssigning}
                 onChange={(e) => handleAssignHome(e.target.value)}
-                style={{ fontSize: '11px', color: '#64748b', border: '1px dashed #cbd5e1', borderRadius: '6px', padding: '1px 6px', background: '#fff' }}
+                title="This bill isn't assigned to a property yet"
+                style={{ fontSize: '11px', color: '#b45309', fontWeight: 500, border: '1px solid #f59e0b', borderRadius: '6px', padding: '1px 6px', background: '#fffbeb' }}
               >
-                <option value="">Set property…</option>
+                <option value="">Unassigned · pick a property</option>
                 {homes.map(h => (
                   <option key={h.id} value={h.id}>{h.name || h.address || 'Property'}</option>
                 ))}
