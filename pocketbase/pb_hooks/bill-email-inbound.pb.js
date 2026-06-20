@@ -104,67 +104,26 @@ routerAdd("POST", "/casaceo/inbound-email", (e) => {
       // SendGrid names uploaded files attachment1, attachment2, ...
       // Find the first one that is a PDF or image.
       const files = e.findUploadedFiles("attachment1");
-
-      // ===== TEMP DIAGNOSTIC — REMOVE AFTER ENCODER FIX =====
-      // Reports what this PocketBase build exposes so we can write the
-      // base64 encoder against the real API instead of guessing.
-      try {
-        const probe = {
-          attachmentCount: attachmentCount,
-          foundFiles: files ? files.length : 0,
-        };
-        if (files && files.length > 0) {
-          const pf = files[0];
-          probe.file_keys = Object.keys(pf);
-          probe.file_proto_keys = Object.getOwnPropertyNames(Object.getPrototypeOf(pf) || {});
-          probe.contentType = pf.contentType || null;
-          probe.name = pf.name || null;
-          probe.size = pf.size || null;
-          probe.has_reader = typeof pf.reader !== "undefined";
-          probe.reader_type = typeof pf.reader;
-        }
-        probe.has_$filesystem = typeof $filesystem !== "undefined";
-        if (typeof $filesystem !== "undefined") {
-          probe.$filesystem_keys = Object.getOwnPropertyNames($filesystem);
-        }
-        probe.has_$security = typeof $security !== "undefined";
-        if (typeof $security !== "undefined") {
-          probe.$security_keys = Object.getOwnPropertyNames($security);
-          probe.has_base64Encode = typeof $security.base64Encode === "function";
-        }
-        probe.has_toString_global = typeof toString === "function";
-        probe.has_toBytes_global = typeof toBytes === "function";
-        probe.has_readFile = typeof readFile === "function";
-        probe.has_$app_newFilesystem = !!($app && typeof $app.newFilesystem === "function");
-        console.log("INBOUND_PROBE " + JSON.stringify(probe));
-        return e.json(200, { diagnostic: true, probe: probe });
-      } catch (probeErr) {
-        console.log("INBOUND_PROBE_ERROR " + String(probeErr));
-        return e.json(200, { diagnostic: true, probeError: String(probeErr) });
-      }
-      // ===== END TEMP DIAGNOSTIC =====
-
       if (files && files.length > 0) {
         const f = files[0];
-        const fileType = f.contentType || "";
- 
-        // Read the uploaded file's bytes and base64-encode them.
-        // goja has no btoa/Buffer; $filesystem + toString isn't base64,
-        // so we read bytes and encode manually. This is the most likely
-        // spot to need a tweak after a real test — see note at bottom.
-        const reader = f.reader; // PocketBase exposes a reader on the uploaded file
-        const bytes = $filesystem.fileFromBytes
-          ? null
-          : null;
- 
-        // Use PocketBase's helper to get raw bytes, then base64 them.
+        // This build reports contentType as null on inbound files, so we
+        // detect type from the filename extension instead.
+        const fname = (f.name || f.originalName || "").toLowerCase();
+        const isPdf = fname.indexOf(".pdf") !== -1;
+        const isPng = fname.indexOf(".png") !== -1;
+        const isJpg = fname.indexOf(".jpg") !== -1 || fname.indexOf(".jpeg") !== -1;
+
+        // Read the uploaded file's bytes and base64-encode them with a
+        // pure-JS encoder (this build has no $security.base64Encode).
         const raw = readUploadedFileAsBase64(f);
- 
+
         if (raw) {
-          if (fileType === "application/pdf") {
+          if (isPdf) {
             mediaBlock = { type: "document", source: { type: "base64", media_type: "application/pdf", data: raw } };
-          } else if (fileType.indexOf("image/") === 0) {
-            mediaBlock = { type: "image", source: { type: "base64", media_type: fileType, data: raw } };
+          } else if (isPng) {
+            mediaBlock = { type: "image", source: { type: "base64", media_type: "image/png", data: raw } };
+          } else if (isJpg) {
+            mediaBlock = { type: "image", source: { type: "base64", media_type: "image/jpeg", data: raw } };
           }
           if (mediaBlock) usedAttachment = true;
         }
@@ -290,27 +249,52 @@ routerAdd("POST", "/casaceo/inbound-email", (e) => {
  
 // ---------------------------------------------------------------------------
 // Helper: read an uploaded file's bytes and return a base64 string.
-// goja lacks btoa/Buffer, so this is the fragile part of the inbound flow.
-// If real-PDF tests fail at the encoding step, this function is where to look.
+// This build has NO $security.base64Encode (confirmed by probe), so we read
+// the file's raw bytes via the global toBytes(reader) and encode them with a
+// pure-JS base64 encoder (verified correct against known vectors).
 // ---------------------------------------------------------------------------
+function bytesToBase64(bytes) {
+  const chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/";
+  let result = "";
+  let i = 0;
+  const len = bytes.length;
+  while (i < len) {
+    const b1 = bytes[i++] & 0xff;
+    const b2 = i < len ? bytes[i++] & 0xff : NaN;
+    const b3 = i < len ? bytes[i++] & 0xff : NaN;
+    const e1 = b1 >> 2;
+    const e2 = ((b1 & 3) << 4) | (b2 >> 4);
+    const e3 = isNaN(b2) ? 64 : (((b2 & 15) << 2) | (b3 >> 6));
+    const e4 = isNaN(b3) ? 64 : (b3 & 63);
+    result += chars.charAt(e1) + chars.charAt(e2) +
+      (e3 === 64 ? "=" : chars.charAt(e3)) +
+      (e4 === 64 ? "=" : chars.charAt(e4));
+  }
+  return result;
+}
+
 function readUploadedFileAsBase64(uploadedFile) {
   try {
-    // PocketBase exposes the underlying bytes via the file's reader.
-    // $filesystem.fileFromMultipart / reader APIs vary slightly by version;
-    // this uses the bytes-then-encode path that works on goja.
     const f = uploadedFile;
     const reader = f.reader;
-    const content = reader ? toString(reader) : "";
-    if (!content) return "";
-    // toBytes gives a []byte; $security has a base64 helper in recent builds.
-    const bytes = toBytes(content);
-    if ($security && typeof $security.base64Encode === "function") {
-      return $security.base64Encode(bytes);
+    if (!reader) return "";
+
+    // toBytes(reader) drains the reader to a []byte in this PocketBase JSVM.
+    // The result is array-like (has .length and indexable bytes).
+    let bytes = null;
+    try {
+      bytes = toBytes(reader);
+    } catch (e1) {
+      bytes = null;
     }
-    // Fallback: some builds expose base64 on $os or a global. If neither
-    // exists, this returns "" and the route falls back to text-body parsing.
-    return "";
+
+    if (!bytes || typeof bytes.length !== "number" || bytes.length === 0) {
+      return "";
+    }
+
+    return bytesToBase64(bytes);
   } catch (err) {
+    console.log("READ_FILE_BASE64_ERROR " + String(err));
     return "";
   }
 }
