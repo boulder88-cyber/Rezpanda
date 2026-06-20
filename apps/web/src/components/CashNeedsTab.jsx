@@ -34,7 +34,7 @@ const isBankAuto = (c) => c.paymentType === 'Autopay (bank)';
 const money = (n) => `$${(parseFloat(n) || 0).toFixed(2)}`;
 const money0 = (n) => `$${(parseFloat(n) || 0).toFixed(0)}`;
 
-const CashNeedsTab = ({ companies = [], homes = [], homeName = () => null }) => {
+const CashNeedsTab = ({ companies = [], homes = [], homeName = () => null, scope = 'all', otherBillsLabel = 'Other bills' }) => {
   const [windowDays, setWindowDays] = useState(30);
 
   const today = new Date();
@@ -95,22 +95,31 @@ const CashNeedsTab = ({ companies = [], homes = [], homeName = () => null }) => 
   const toneBorder = { red: '#fecaca', green: '#a7f3d0', calm: '#c7d7eb' };
   const RIcon = reassurance.icon;
 
-  const showByProperty = (homes || []).length > 1;
+  // Only show the by-property breakdown when there's more than one property
+  // AND we're not scoped to the Other-bills bucket (where every bill is, by
+  // definition, no-property — so a by-property split is meaningless).
+  const showByProperty = (homes || []).length > 1 && scope !== 'other';
 
-  // by-property grouping for the breakdown
+  // by-property grouping for the breakdown. No-home bills surface under the
+  // Other-bills label.
   const byProperty = (() => {
     const groups = {};
     for (const c of outflows) {
-      const key = c.homeId || '__unassigned__';
+      const key = c.homeId || '__other__';
       groups[key] = (groups[key] || 0) + (parseFloat(c.amount) || 0);
     }
     return Object.entries(groups)
       .map(([key, amt]) => ({
         key,
-        label: key === '__unassigned__' ? 'Unassigned' : (homeName(key) || 'Property'),
+        label: key === '__other__' ? otherBillsLabel : (homeName(key) || 'Property'),
         amt,
       }))
-      .sort((a, b) => b.amt - a.amt);
+      .sort((a, b) => {
+        // keep Other bills last
+        if (a.key === '__other__') return 1;
+        if (b.key === '__other__') return -1;
+        return b.amt - a.amt;
+      });
   })();
 
   const cardStyle = { background: '#fff', border: '1px solid #e9e4db', borderRadius: '12px', boxShadow: '0 1px 3px rgba(31,39,51,0.06)' };
@@ -233,10 +242,7 @@ const CashNeedsTab = ({ companies = [], homes = [], homeName = () => null }) => 
         </div>
       )}
 
-      {/* footer note — sets the boundary AND admits this is only as complete
-          as what's been entered. Adaptive: if bills are missing due dates,
-          say so specifically (those won't show on the timeline); otherwise
-          give the gentle general caveat. Either way, no false comfort. */}
+      {/* footer note */}
       {(() => {
         const undated = companies
           .filter(c => c.status !== 'paid' && c.status !== 'pending_review')
