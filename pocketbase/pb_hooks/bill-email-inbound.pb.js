@@ -189,6 +189,13 @@ routerAdd("POST", "/casaceo/inbound-email", (e) => {
     record.set("parsed_raw", parsed);
     record.set("ownerId", userId);
 
+    // No property is set here on purpose. The hook can't know which property
+    // an emailed bill belongs to, so we write an explicit empty homeId rather
+    // than leaving the field absent. This gives the Review step one reliable
+    // "unattributed" signal (matches the form's empty-string convention), so
+    // the user assigns the property when they confirm the bill.
+    record.set("homeId", "");
+
     // Store the raw sender ("from") so the biller-connect feature can tell
     // whether a bill arrived directly from the utility's own domain
     // (connected) vs forwarded from the user's consumer email (not yet).
