@@ -136,8 +136,10 @@ routerAdd("POST", "/casaceo/inbound-email", (e) => {
         probe.has_toBytes_global = typeof toBytes === "function";
         probe.has_readFile = typeof readFile === "function";
         probe.has_$app_newFilesystem = !!($app && typeof $app.newFilesystem === "function");
+        console.log("INBOUND_PROBE " + JSON.stringify(probe));
         return e.json(200, { diagnostic: true, probe: probe });
       } catch (probeErr) {
+        console.log("INBOUND_PROBE_ERROR " + String(probeErr));
         return e.json(200, { diagnostic: true, probeError: String(probeErr) });
       }
       // ===== END TEMP DIAGNOSTIC =====
