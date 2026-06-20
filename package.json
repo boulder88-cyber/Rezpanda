@@ -1,5 +1,9 @@
 {
   "name": "casaceo",
   "version": "1.0.0",
-  "private": true
+  "private": true,
+  "dependencies": {
+    "busboy": "^1.6.0",
+    "mailparser": "^3.9.11"
+  }
 }
