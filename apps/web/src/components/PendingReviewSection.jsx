@@ -64,8 +64,13 @@ const PendingReviewSection = ({ onConfirmed }) => {
       // <input type="date"> wants YYYY-MM-DD; slice an ISO/date string safely.
       dueDate: bill.dueDate ? String(bill.dueDate).slice(0, 10) : '',
       category: bill.category ?? '',
-      // default to the bill's existing home, else the currently-selected home
-      homeId: bill.homeId || (selectedHome ? selectedHome.id : ''),
+      // Property pre-fill:
+      //  • Bill already has a home → keep it.
+      //  • Single-home user        → default to that home (nothing to choose).
+      //  • Multi-home, no home yet  → leave BLANK on purpose, so the user makes
+      //    a real choice (a property, or a deliberate "Unassigned") rather than
+      //    us silently pre-picking the selected home and baking in a guess.
+      homeId: bill.homeId || (!multiHome && singleHomeId ? singleHomeId : ''),
       paymentType: bill.paymentType || 'Manual',
     });
   };
@@ -79,11 +84,36 @@ const PendingReviewSection = ({ onConfirmed }) => {
     setDraft(prev => ({ ...prev, [field]: value }));
   };
 
+  // Is there a real property choice to make? With a single home there's
+  // nothing to choose, so we attach silently and never gate. The gate only
+  // earns its keep when the user actually has more than one property.
+  const multiHome = (homes || []).length > 1;
+  const singleHomeId = (homes || []).length === 1 ? homes[0].id : '';
+
   // Confirm-as-is: trust the parse, just flip status. (Good parses.)
   const handleConfirm = async (bill) => {
+    // Decide which property this bill belongs to.
+    //  • Already has one        → keep it.
+    //  • Single-home user       → attach that home silently.
+    //  • Multi-home + no home    → can't confirm blind; open Review so the
+    //    user picks a property. (This is the "surface in review" promise.)
+    let homeIdToUse = bill.homeId || '';
+    if (!homeIdToUse && !multiHome && singleHomeId) {
+      homeIdToUse = singleHomeId;
+    }
+    if (!homeIdToUse && multiHome) {
+      startReview(bill);
+      toast({ title: 'Where does this bill belong?', description: 'Pick a property — or “Leave unassigned for now” if you’re not sure yet.' });
+      return;
+    }
+
     setConfirmingId(bill.id);
     try {
-      await pb.collection('service_companies').update(bill.id, { status: 'confirmed' }, { $autoCancel: false });
+      const payload = { status: 'confirmed' };
+      // Only write homeId when we're actually setting/attaching one, so we
+      // never blank out an existing value.
+      if (homeIdToUse && homeIdToUse !== bill.homeId) payload.homeId = homeIdToUse;
+      await pb.collection('service_companies').update(bill.id, payload, { $autoCancel: false });
       toast({ title: '✅ Bill confirmed', description: `${bill.companyName} added to your bills.` });
       setPending(prev => prev.filter(b => b.id !== bill.id));
       if (onConfirmed) onConfirmed();
@@ -114,6 +144,20 @@ const PendingReviewSection = ({ onConfirmed }) => {
       amountValue = parsed;
     }
 
+    // Property gate. Single-home users auto-attach (nothing to choose).
+    // Multi-home users must make a real choice: a property, or a deliberate
+    // "Leave unassigned for now" (the __unassigned__ sentinel). Only an
+    // untouched blank is blocked — that's the accidental-guess case.
+    const choseUnassigned = draft.homeId === '__unassigned__';
+    let homeIdToUse = (draft.homeId && !choseUnassigned) ? draft.homeId : '';
+    if (!homeIdToUse && !choseUnassigned && !multiHome && singleHomeId) {
+      homeIdToUse = singleHomeId;
+    }
+    if (!homeIdToUse && !choseUnassigned && multiHome) {
+      toast({ title: 'Choose where this bill belongs', description: 'Pick a property, or “Leave unassigned for now” if you’re not sure yet.', variant: 'destructive' });
+      return;
+    }
+
     setConfirmingId(bill.id);
     try {
       const payload = {
@@ -123,7 +167,10 @@ const PendingReviewSection = ({ onConfirmed }) => {
         status: 'confirmed',
       };
       if (amountValue !== undefined) payload.amount = amountValue;
-      if (draft.homeId) payload.homeId = draft.homeId;
+      // Write a real property when we have one. On a deliberate unassign, write
+      // empty so it's truthfully unplaced (and overrides any stale homeId).
+      if (homeIdToUse) payload.homeId = homeIdToUse;
+      else if (choseUnassigned) payload.homeId = '';
       if (draft.paymentType) payload.paymentType = draft.paymentType;
 
       await pb.collection('service_companies').update(bill.id, payload, { $autoCancel: false });
@@ -188,6 +235,11 @@ const PendingReviewSection = ({ onConfirmed }) => {
                       <span className="flex items-center gap-1 text-slate-500" style={{ fontSize: '13px' }}>
                         <Tag style={{ width: '13px', height: '13px' }} />
                         {bill.category}
+                      </span>
+                    )}
+                    {multiHome && !bill.homeId && (
+                      <span className="flex items-center gap-1 font-medium" style={{ fontSize: '12px', color: '#b45309', background: '#fef3c7', borderRadius: '6px', padding: '1px 8px' }}>
+                        Pick a property
                       </span>
                     )}
                   </div>
@@ -261,18 +313,41 @@ const PendingReviewSection = ({ onConfirmed }) => {
                         placeholder="e.g. Internet, Utilities"
                       />
                     </div>
-                    {(homes || []).length > 0 && (
+                    {multiHome && (
                       <div>
-                        <label style={fieldLabel}>Property</label>
+                        <label style={fieldLabel}>
+                          Belongs to {!draft.homeId && <span style={{ color: '#dc2626' }}>• needed</span>}
+                        </label>
                         <select
                           value={draft.homeId}
                           onChange={(e) => updateDraft('homeId', e.target.value)}
-                          style={fieldInput}>
-                          <option value="">— Choose property —</option>
-                          {homes.map(h => (
-                            <option key={h.id} value={h.id}>{h.name || h.address || 'Property'}</option>
-                          ))}
+                          style={{ ...fieldInput, border: draft.homeId ? fieldInput.border : '1px solid #dc2626' }}>
+                          <option value="">— Choose —</option>
+                          <optgroup label="Properties">
+                            {homes.map(h => (
+                              <option key={h.id} value={h.id}>{h.name || h.address || 'Property'}</option>
+                            ))}
+                          </optgroup>
+                          {/* People land here next: a bill will be able to
+                              belong to a person ("Mom") as well as a property.
+                              Disabled until the people collection exists. */}
+                          <optgroup label="People">
+                            <option value="__person__" disabled>A person (coming soon)</option>
+                          </optgroup>
+                          {/* Deliberate "I can't place this yet". Confirms the
+                              bill with no property (homeId stays empty) so it
+                              isn't a lingering to-do, but it's an explicit choice
+                              — not an accidental blank — and stays flagged as
+                              unassigned in My Bills to place later. */}
+                          <optgroup label="Not sure yet">
+                            <option value="__unassigned__">Leave unassigned for now</option>
+                          </optgroup>
                         </select>
+                        {draft.homeId === '__unassigned__' && (
+                          <p style={{ fontSize: '11px', color: '#b45309', marginTop: '4px' }}>
+                            It'll stay flagged as unassigned so you can place it later.
+                          </p>
+                        )}
                       </div>
                     )}
                     <div>
