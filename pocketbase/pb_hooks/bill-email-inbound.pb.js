@@ -104,6 +104,44 @@ routerAdd("POST", "/casaceo/inbound-email", (e) => {
       // SendGrid names uploaded files attachment1, attachment2, ...
       // Find the first one that is a PDF or image.
       const files = e.findUploadedFiles("attachment1");
+
+      // ===== TEMP DIAGNOSTIC — REMOVE AFTER ENCODER FIX =====
+      // Reports what this PocketBase build exposes so we can write the
+      // base64 encoder against the real API instead of guessing.
+      try {
+        const probe = {
+          attachmentCount: attachmentCount,
+          foundFiles: files ? files.length : 0,
+        };
+        if (files && files.length > 0) {
+          const pf = files[0];
+          probe.file_keys = Object.keys(pf);
+          probe.file_proto_keys = Object.getOwnPropertyNames(Object.getPrototypeOf(pf) || {});
+          probe.contentType = pf.contentType || null;
+          probe.name = pf.name || null;
+          probe.size = pf.size || null;
+          probe.has_reader = typeof pf.reader !== "undefined";
+          probe.reader_type = typeof pf.reader;
+        }
+        probe.has_$filesystem = typeof $filesystem !== "undefined";
+        if (typeof $filesystem !== "undefined") {
+          probe.$filesystem_keys = Object.getOwnPropertyNames($filesystem);
+        }
+        probe.has_$security = typeof $security !== "undefined";
+        if (typeof $security !== "undefined") {
+          probe.$security_keys = Object.getOwnPropertyNames($security);
+          probe.has_base64Encode = typeof $security.base64Encode === "function";
+        }
+        probe.has_toString_global = typeof toString === "function";
+        probe.has_toBytes_global = typeof toBytes === "function";
+        probe.has_readFile = typeof readFile === "function";
+        probe.has_$app_newFilesystem = !!($app && typeof $app.newFilesystem === "function");
+        return e.json(200, { diagnostic: true, probe: probe });
+      } catch (probeErr) {
+        return e.json(200, { diagnostic: true, probeError: String(probeErr) });
+      }
+      // ===== END TEMP DIAGNOSTIC =====
+
       if (files && files.length > 0) {
         const f = files[0];
         const fileType = f.contentType || "";
