@@ -151,8 +151,16 @@ routerAdd("POST", "/casaceo/inbound-email", (e) => {
     "Return ONLY a single JSON object, no prose, no markdown, no code fences. " +
     'Schema: {"companyName": string|null, "amount": number|null, "dueDate": "YYYY-MM-DD"|null, ' +
     '"category": one of ' + JSON.stringify(CATEGORIES) + '}. ' +
-    "Rules: use null if a field is genuinely absent. amount is the current amount due as a plain number. " +
-    "dueDate must be YYYY-MM-DD or null. Output only the JSON object.";
+    "Rules: use null only if a field is truly not present anywhere in the document. " +
+    "amount = the total current amount the customer must pay now. It may be labeled " +
+    "'Amount Due', 'Total Due', 'Total Amount Due', 'Please Pay', 'Pay This Amount', " +
+    "'Balance Due', 'Current Charges', 'New Charges', or appear in a payment/remittance " +
+    "stub near the bottom or in a summary box. Return it as a plain number with no " +
+    "currency symbol or commas (e.g. 1234.56). If several totals appear, prefer the one " +
+    "the customer is asked to pay by the due date, not the prior balance or a past-due subtotal. " +
+    "dueDate = the date payment is due, often labeled 'Due Date', 'Payment Due', 'Pay By', " +
+    "or 'Please Pay By'. Convert it to YYYY-MM-DD. If only a service period appears and no " +
+    "explicit due date, use null. Output only the JSON object.";
  
   // ---- 3. Call Claude ---------------------------------------------------
   let res;
