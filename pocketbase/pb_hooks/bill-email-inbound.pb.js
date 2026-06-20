@@ -66,6 +66,27 @@ routerAdd("POST", "/casaceo/inbound-email", (e) => {
   // ---- 2. Decide what to send Claude: attachment first, then text body --
   const subject = body.subject ? String(body.subject) : "";
   const textBody = body.text ? String(body.text) : "";
+  const htmlBody = body.html ? String(body.html) : "";
+
+  // SendGrid's auto-generated plain-text part often flattens or drops the
+  // amount/due-date when the bill was a styled HTML email ("PDF-quality"
+  // body). Strip tags from the HTML and use whichever version carries more
+  // signal, so the parser sees the real numbers instead of a thinned text part.
+  const htmlAsText = htmlBody
+    ? htmlBody
+        .replace(/<style[\s\S]*?<\/style>/gi, " ")
+        .replace(/<script[\s\S]*?<\/script>/gi, " ")
+        .replace(/<[^>]+>/g, " ")
+        .replace(/&nbsp;/gi, " ")
+        .replace(/&amp;/gi, "&")
+        .replace(/&lt;/gi, "<")
+        .replace(/&gt;/gi, ">")
+        .replace(/\s+/g, " ")
+        .trim()
+    : "";
+  // Prefer whichever body has more content; HTML-derived text usually wins
+  // for utility bills, but fall back to the plain text if HTML is absent.
+  const bestBody = htmlAsText.length > textBody.length ? htmlAsText : textBody;
  
   // SendGrid sends a count of attachments and an attachment-info JSON map.
   let attachmentCount = 0;
@@ -118,8 +139,8 @@ routerAdd("POST", "/casaceo/inbound-email", (e) => {
   if (mediaBlock) {
     userContent = [mediaBlock, { type: "text", text: "Extract the bill data from the attached file." }];
   } else {
-    // No usable attachment — use the email subject + body text.
-    const combined = ("Subject: " + subject + "\n\n" + textBody).trim();
+    // No usable attachment — use the email subject + best available body.
+    const combined = ("Subject: " + subject + "\n\n" + bestBody).trim();
     if (!combined) {
       return e.json(200, { ok: false, reason: "no attachment and empty body", userId: userId });
     }
@@ -200,6 +221,11 @@ routerAdd("POST", "/casaceo/inbound-email", (e) => {
     // whether a bill arrived directly from the utility's own domain
     // (connected) vs forwarded from the user's consumer email (not yet).
     record.set("senderAddress", body.from ? String(body.from) : "");
+
+    // Audit timestamp: when CasaCEO actually received and saved this bill.
+    // Server-set (not from email headers, which can be missing/forged), so
+    // it's a reliable "received at" record.
+    record.set("forwardedAt", new Date().toISOString());
  
     // attach the original file, if we used one
     if (usedAttachment) {
