@@ -328,12 +328,6 @@ const PendingReviewSection = ({ onConfirmed }) => {
                               <option key={h.id} value={h.id}>{h.name || h.address || 'Property'}</option>
                             ))}
                           </optgroup>
-                          {/* People land here next: a bill will be able to
-                              belong to a person ("Mom") as well as a property.
-                              Disabled until the people collection exists. */}
-                          <optgroup label="People">
-                            <option value="__person__" disabled>A person (coming soon)</option>
-                          </optgroup>
                           {/* Deliberate "I can't place this yet". Confirms the
                               bill with no property (homeId stays empty) so it
                               isn't a lingering to-do, but it's an explicit choice
