@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import pb from '@/lib/pocketbaseClient.js';
 import { useAuth } from '@/contexts/AuthContext.jsx';
+import { useHome } from '@/contexts/HomeContext.jsx';
 import { Input } from '@/components/ui/input.jsx';
 import { Button } from '@/components/ui/button.jsx';
 import { Label } from '@/components/ui/label.jsx';
@@ -9,40 +10,56 @@ import { useToast } from '@/hooks/use-toast.js';
 import { Loader2, Building2, Info } from 'lucide-react';
 
 const CATEGORIES = [
-  'Electric', 
-  'Gas', 
-  'Water', 
-  'Internet/Cable', 
-  'Phone', 
-  'Trash/Recycling', 
-  'Pest Control', 
+  'Electric',
+  'Gas',
+  'Water',
+  'Internet/Cable',
+  'Phone',
+  'Trash/Recycling',
+  'Pest Control',
   'Security',
   'Other'
 ];
 
 const AddServiceCompanyForm = ({ onSuccess, onCancel, onCompanyAdded, initialData = null }) => {
   const { currentUser } = useAuth();
+  const { selectedHome, homes } = useHome();
   const { toast } = useToast();
   const [isLoading, setIsLoading] = useState(false);
-  
+
+  // Are we editing an existing bill, or creating a new one?
+  const isEditing = Boolean(initialData && initialData.id);
+
+  // Only offer a property picker when there's a real choice to make.
+  const multiHome = Array.isArray(homes) && homes.length > 1;
+
   const [formData, setFormData] = useState({
     companyName: '',
     category: '',
-    paymentLink: ''
+    paymentLink: '',
+    homeId: ''
   });
 
-  // Update form data when initialData changes
+  // Seed the form when initialData changes.
+  // - Editing: keep the bill's existing homeId/category (don't clobber).
+  // - Creating: default homeId to the currently selected property.
   useEffect(() => {
     if (initialData) {
       setFormData({
         companyName: initialData.name || initialData.companyName || '',
         category: initialData.category || '',
-        paymentLink: initialData.payment_portal_url || initialData.paymentLink || ''
+        paymentLink: initialData.payment_portal_url || initialData.paymentLink || '',
+        homeId: initialData.homeId || (initialData.id ? '' : (selectedHome?.id || ''))
       });
     } else {
-      setFormData({ companyName: '', category: '', paymentLink: '' });
+      setFormData({
+        companyName: '',
+        category: '',
+        paymentLink: '',
+        homeId: selectedHome?.id || ''
+      });
     }
-  }, [initialData]);
+  }, [initialData, selectedHome]);
 
   const [errors, setErrors] = useState({});
 
@@ -82,12 +99,14 @@ const AddServiceCompanyForm = ({ onSuccess, onCancel, onCompanyAdded, initialDat
     }
   };
 
+  const handleHomeChange = (value) => {
+    setFormData(prev => ({ ...prev, homeId: value }));
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
-    console.log('[AddServiceCompanyForm] Form submission started. Current data:', formData);
 
     if (!validate()) {
-      console.warn('[AddServiceCompanyForm] Validation failed. Errors:', errors);
       return;
     }
 
@@ -96,7 +115,6 @@ const AddServiceCompanyForm = ({ onSuccess, onCancel, onCompanyAdded, initialDat
       return;
     }
 
-    console.log('[AddServiceCompanyForm] Validation passed.');
     setIsLoading(true);
 
     try {
@@ -106,57 +124,75 @@ const AddServiceCompanyForm = ({ onSuccess, onCancel, onCompanyAdded, initialDat
         finalUrl = 'https://' + finalUrl;
       }
 
+      // Base fields written on both create and edit.
       const dataToSave = {
         companyName: formData.companyName,
         paymentLink: finalUrl,
-        ownerId: currentUser.id
+        ownerId: currentUser.id,
       };
 
-      console.log('[AddServiceCompanyForm] Attempting to create service company with data:', dataToSave);
+      // Category: save it (previously collected but dropped on save).
+      // Only write when set, so we never overwrite an existing value with ''.
+      if (formData.category) {
+        dataToSave.category = formData.category;
+      }
 
-      // Create a new service company for the user's dashboard
-      const record = await pb.collection('service_companies').create(dataToSave, { $autoCancel: false });
-      
-      console.log('[AddServiceCompanyForm] Successfully created service company:', record);
-      
-      toast({ 
-        title: "Company added successfully",
-        description: `${record.companyName} has been added to your dashboard.`
+      // Property assignment:
+      //  - Creating: attach to the chosen/defaulted property.
+      //  - Editing: only write homeId if we actually have one, so we never
+      //    blank out a bill's existing property by saving an empty string.
+      if (formData.homeId) {
+        dataToSave.homeId = formData.homeId;
+      }
+
+      let record;
+      if (isEditing) {
+        record = await pb.collection('service_companies').update(initialData.id, dataToSave, { $autoCancel: false });
+      } else {
+        record = await pb.collection('service_companies').create(dataToSave, { $autoCancel: false });
+      }
+
+      toast({
+        title: isEditing ? "Bill updated" : "Company added successfully",
+        description: `${record.companyName} has been ${isEditing ? 'updated' : 'added to your dashboard'}.`
       });
-      
-      // Reset form fields after successful submission
-      setFormData({ companyName: '', category: '', paymentLink: '' });
+
+      // Reset form fields after a successful create (keep current-home default).
+      if (!isEditing) {
+        setFormData({ companyName: '', category: '', paymentLink: '', homeId: selectedHome?.id || '' });
+      }
       setErrors({});
-      
-      // Trigger the refresh callback for the listing component
+
       if (onCompanyAdded) {
         onCompanyAdded();
       }
-      
+
       if (onSuccess) {
         onSuccess();
       }
     } catch (error) {
-      console.error('[AddServiceCompanyForm] Error creating service company:', error);
-      toast({ 
-        title: "Error saving company", 
-        description: error.message || "An unexpected error occurred while saving.", 
-        variant: "destructive" 
+      console.error('[AddServiceCompanyForm] Error saving service company:', error);
+      toast({
+        title: "Error saving company",
+        description: error.message || "An unexpected error occurred while saving.",
+        variant: "destructive"
       });
     } finally {
       setIsLoading(false);
-      console.log('[AddServiceCompanyForm] Form submission process completed.');
     }
   };
 
   const isPreFilled = initialData && !initialData.id && initialData.name;
+
+  // Label for the home currently chosen — used in the single-home hint.
+  const homeLabel = (h) => (h ? (h.name || h.address || 'Property') : '');
 
   return (
     <form onSubmit={handleSubmit} className="space-y-5">
       <div className="bg-slate-50 dark:bg-slate-900/50 border border-slate-200 dark:border-slate-800 rounded-lg p-3 flex items-start gap-3 mb-2">
         <Info className="w-5 h-5 text-slate-500 shrink-0 mt-0.5" />
         <p className="text-sm text-slate-600 dark:text-slate-400">
-          Add a utility provider to your dashboard. This information will be available to help you connect to their payment portals.
+          Add a provider to your dashboard. This information helps you connect to their payment portals.
         </p>
       </div>
 
@@ -181,6 +217,27 @@ const AddServiceCompanyForm = ({ onSuccess, onCancel, onCompanyAdded, initialDat
         />
         {errors.companyName && <p className="text-sm text-red-500">{errors.companyName}</p>}
       </div>
+
+      {/* Property assignment.
+          - Multiple homes: show a picker, pre-selected to the current property.
+          - Single home: no picker (nothing to choose); the bill silently
+            defaults to that home via formData.homeId. */}
+      {multiHome && (
+        <div className="space-y-2">
+          <Label htmlFor="homeId">Property</Label>
+          <Select value={formData.homeId} onValueChange={handleHomeChange}>
+            <SelectTrigger>
+              <SelectValue placeholder="Select a property" />
+            </SelectTrigger>
+            <SelectContent>
+              {homes.map(h => (
+                <SelectItem key={h.id} value={h.id}>{homeLabel(h)}</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+          <p className="text-xs text-slate-400">You can reassign this later in review.</p>
+        </div>
+      )}
 
       <div className="space-y-2">
         <Label htmlFor="category">Category (Optional)</Label>
@@ -216,7 +273,7 @@ const AddServiceCompanyForm = ({ onSuccess, onCancel, onCompanyAdded, initialDat
         </Button>
         <Button type="submit" disabled={isLoading}>
           {isLoading && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
-          Save Company
+          {isEditing ? 'Save Changes' : 'Save Company'}
         </Button>
       </div>
     </form>
