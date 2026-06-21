@@ -350,32 +350,37 @@ const PropertyGroupedList = ({ companies, homeName, renderCard }) => {
 // Other bills. Local to this page; does NOT touch the global HomeSwitcher.
 // ═══════════════════════════════════════════════════════════════════════
 
-const ScopeToggle = ({ scope, setScope, selectedHome, multiHome }) => {
-  const options = [];
-  // "This property" only makes sense when a real home is selected.
-  if (selectedHome) {
-    options.push({ key: 'property', label: selectedHome.name || selectedHome.address || 'This property' });
-  }
-  if (multiHome) {
-    options.push({ key: 'all', label: 'All properties' });
-  }
-  options.push({ key: 'other', label: OTHER_BILLS_LABEL });
+// On a specific home, a quiet way to peek at the no-property "Other bills"
+// bucket and a clear way back. Property selection itself lives in the top
+// dropdown — this only surfaces the one bucket the dropdown can't express.
+// In All-Properties mode this renders nothing (everything's already shown,
+// grouped by bucket).
+const OtherBillsPeek = ({ scope, setScope, selectedHome, allProperties }) => {
+  if (allProperties) return null; // All Properties already includes Other bills
 
-  // Nothing to toggle if there's only one option.
-  if (options.length <= 1) return null;
+  const homeLabel = selectedHome ? (selectedHome.name || selectedHome.address || 'this property') : 'this property';
+
+  if (scope === 'other') {
+    return (
+      <div className="flex items-center gap-2 bg-white border border-slate-200 rounded-xl" style={{ padding: '6px 12px' }}>
+        <Package style={{ width: '14px', height: '14px', color: '#5b6472' }} />
+        <span className="font-medium" style={{ fontSize: '12px', color: '#1f2733' }}>Viewing: {OTHER_BILLS_LABEL}</span>
+        <button onClick={() => setScope('property')}
+          className="font-semibold hover:opacity-70 transition-opacity"
+          style={{ fontSize: '12px', color: '#1e3a5f' }}>
+          ← Back to {homeLabel}
+        </button>
+      </div>
+    );
+  }
 
   return (
-    <div className="flex items-center gap-1 bg-white border border-slate-200 rounded-xl flex-wrap" style={{ padding: '4px' }}>
-      {options.map(o => (
-        <button key={o.key} onClick={() => setScope(o.key)}
-          className="rounded-lg transition-all font-medium truncate"
-          style={{ padding: '6px 12px', fontSize: '12px', maxWidth: '180px',
-            background: scope === o.key ? '#1e3a5f' : 'transparent',
-            color: scope === o.key ? '#fff' : '#64748b' }}>
-          {o.label}
-        </button>
-      ))}
-    </div>
+    <button onClick={() => setScope('other')}
+      className="flex items-center gap-1.5 bg-white border border-slate-200 rounded-xl font-medium hover:border-slate-300 transition-colors"
+      style={{ padding: '7px 12px', fontSize: '12px', color: '#5b6472' }}>
+      <Package style={{ width: '14px', height: '14px' }} />
+      Other bills
+    </button>
   );
 };
 
@@ -404,13 +409,12 @@ const BillPayPage = () => {
   const [scope, setScope] = useState(allProperties && multiHome ? 'all' : 'property');
 
   // ── All-properties view preference ──
-  // When viewing every property at once, the user can read the list two ways:
-  //   'status'   = the natural sectioned layout (Past Due, Ready to Pay, …),
-  //                with a small property tag on each row. The default.
-  //   'property' = Ready-to-Pay bills grouped under per-property headers with
-  //                subtotals. Better when you think home-by-home.
-  // Only meaningful in 'all' scope; ignored otherwise.
-  const [groupBy, setGroupBy] = useState('status');
+  // In All-Properties mode the default is grouped-by-bucket (each property and
+  // Other bills under its own header) — that's the whole point of that mode.
+  // The toggle lets someone switch to a flat, status-sectioned read instead.
+  //   'property' = grouped under per-property/bucket headers (default in 'all')
+  //   'status'   = flat, sectioned by Past Due / Ready to Pay / …
+  const [groupBy, setGroupBy] = useState('property');
 
   // Keep local scope in step with the global property selector: if the user
   // flips the global All-Properties switch, mirror it; if they pick a real
@@ -596,17 +600,16 @@ const BillPayPage = () => {
                 );
               })}
             </div>
-            {/* Scope toggle only on the data tabs (not Providers/History). */}
+            {/* Toggle row on the data tabs (not Providers/History). */}
             {(activeTab === 'dashboard' || activeTab === 'cashneeds' || activeTab === 'overview') && (
-              <ScopeToggle scope={scope} setScope={setScope} selectedHome={selectedHome} multiHome={multiHome} />
+              <OtherBillsPeek scope={scope} setScope={setScope} selectedHome={selectedHome} allProperties={allProperties} />
             )}
-            {/* All-properties view preference: by status vs by property.
-                Only on My Bills, and only when actually viewing all properties. */}
+            {/* In All Properties on My Bills: how to organize the grouped view. */}
             {activeTab === 'dashboard' && scope === 'all' && multiHome && (
               <div className="flex items-center gap-1 bg-white border border-slate-200 rounded-xl" style={{ padding: '4px' }}>
                 {[
-                  { key: 'status', label: 'By status' },
                   { key: 'property', label: 'By property' },
+                  { key: 'status', label: 'By status' },
                 ].map(o => (
                   <button key={o.key} onClick={() => setGroupBy(o.key)}
                     className="rounded-lg transition-all font-medium"
