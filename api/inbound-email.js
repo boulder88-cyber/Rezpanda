@@ -261,8 +261,10 @@ export default async function handler(req, res) {
   try {
     parsed = await extractBillWithClaude(apiKey, content);
   } catch (err) {
+    console.error('CLAUDE_FAIL', String(err));
     return res.status(502).json({ error: 'Claude extraction failed', detail: String(err) });
   }
+  console.log('CLAUDE_OK', JSON.stringify(parsed));
 
   // Write to PocketBase.
   try {
@@ -291,6 +293,7 @@ export default async function handler(req, res) {
     const saved = await pbCreateBill(pbUrl, token, record);
     return res.status(200).json({ ok: true, saved: true, savedId: saved.id, usedAttachment, parsed });
   } catch (err) {
+    console.error('SAVE_FAIL', String(err));
     return res.status(500).json({ error: 'Failed to save record', detail: String(err) });
   }
 }
