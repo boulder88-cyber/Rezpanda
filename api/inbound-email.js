@@ -61,6 +61,27 @@ function readForm(req) {
 }
 
 // ── Extract structured content from the raw MIME email ─────────────────────
+// Recursively collect attachments, descending into message/rfc822 parts so
+// that a forward-of-a-forward (where the original bill + its PDF are nested as
+// an attached email) still surfaces the PDF/image. Depth-capped for safety.
+async function collectAttachments(parsed, depth) {
+  let results = [];
+  for (const att of parsed.attachments || []) {
+    const ct = (att.contentType || '').toLowerCase();
+    if (ct === 'message/rfc822' && depth < 3) {
+      try {
+        const inner = await simpleParser(att.content);
+        results = results.concat(await collectAttachments(inner, depth + 1));
+      } catch (e) {
+        // unparseable nested message — skip it
+      }
+    } else {
+      results.push(att);
+    }
+  }
+  return results;
+}
+
 async function extractFromEmail(rawMime) {
   const parsed = await simpleParser(rawMime);
 
@@ -76,10 +97,13 @@ async function extractFromEmail(rawMime) {
     : '';
   const bestBody = htmlAsText.length > text.length ? htmlAsText : text;
 
+  // Gather attachments recursively (handles nested forwarded emails).
+  const allAttachments = await collectAttachments(parsed, 0);
+
   // First usable PDF or image attachment becomes the media block for Claude.
   let mediaBlock = null;
   let attachmentName = null;
-  for (const att of parsed.attachments || []) {
+  for (const att of allAttachments) {
     const ct = (att.contentType || '').toLowerCase();
     const fn = (att.filename || '').toLowerCase();
     const isPdf = ct === 'application/pdf' || fn.endsWith('.pdf');
@@ -261,10 +285,8 @@ export default async function handler(req, res) {
   try {
     parsed = await extractBillWithClaude(apiKey, content);
   } catch (err) {
-    console.error('CLAUDE_FAIL', String(err));
     return res.status(502).json({ error: 'Claude extraction failed', detail: String(err) });
   }
-  console.log('CLAUDE_OK', JSON.stringify(parsed));
 
   // Write to PocketBase.
   try {
@@ -293,7 +315,6 @@ export default async function handler(req, res) {
     const saved = await pbCreateBill(pbUrl, token, record);
     return res.status(200).json({ ok: true, saved: true, savedId: saved.id, usedAttachment, parsed });
   } catch (err) {
-    console.error('SAVE_FAIL', String(err));
     return res.status(500).json({ error: 'Failed to save record', detail: String(err) });
   }
 }
