@@ -71,11 +71,10 @@ const AddServiceCompanyForm = ({ onSuccess, onCancel, onCompanyAdded, initialDat
   const validate = () => {
     const newErrors = {};
     if (!formData.companyName.trim()) newErrors.companyName = 'Company name is required';
-    if (!formData.paymentLink.trim()) {
-      newErrors.paymentLink = 'Payment portal URL is required';
-    } else {
+    // Payment link is optional — emailed bills often arrive without one, and a
+    // bill is still trackable and payable without it. Validate only if provided.
+    if (formData.paymentLink.trim()) {
       try {
-        // Basic URL validation
         let urlToTest = formData.paymentLink;
         if (!urlToTest.startsWith('http://') && !urlToTest.startsWith('https://')) {
           urlToTest = 'https://' + urlToTest;
@@ -267,7 +266,7 @@ const AddServiceCompanyForm = ({ onSuccess, onCancel, onCompanyAdded, initialDat
       </div>
 
       <div className="space-y-2">
-        <Label htmlFor="paymentLink">Payment Portal URL <span className="text-red-500">*</span></Label>
+        <Label htmlFor="paymentLink">Payment portal URL <span className="text-slate-400 font-normal">(optional)</span></Label>
         <Input
           id="paymentLink"
           name="paymentLink"
