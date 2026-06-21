@@ -540,6 +540,19 @@ const BillPayPage = () => {
   // "by property" view. Otherwise the list stays sectioned by status.
   const groupByProperty = showPropertyTags && groupBy === 'property';
 
+  // In "By property" view, a property's bills belong together, sorted by due
+  // date — so its overdue bill sits at the TOP of that property's group rather
+  // than standing alone in a separate Past Due section. So when grouping by
+  // property we feed the group ALL ready-to-pay bills (overdue + upcoming),
+  // due-date ascending, and suppress the standalone Past Due block.
+  const dueAsc = (a, b) => {
+    const da = a.dueDate ? new Date(a.dueDate).getTime() : Infinity; // undated last
+    const db = b.dueDate ? new Date(b.dueDate).getTime() : Infinity;
+    return da - db;
+  };
+  const groupedReadyToPay = [...readyToPay].sort(dueAsc);
+  const showStandalonePastDue = !groupByProperty && pastDue.length > 0;
+
   // Friendly count of no-home bills, for the toggle/empty hints.
   const otherCount = companies.filter(c => hasNoHome(c) && !isPaid(c) && c.status !== 'pending_review').length;
 
@@ -664,8 +677,10 @@ const BillPayPage = () => {
                 {/* Quick glance: the four stats. */}
                 <SummaryStrip companies={openCompanies} />
 
-                {/* ── 1. PAST DUE — top priority, loud ── */}
-                {pastDue.length > 0 && (
+                {/* ── 1. PAST DUE — top priority, loud ──
+                    In "By property" view this standalone block is suppressed;
+                    each property's overdue bill leads its own group instead. */}
+                {showStandalonePastDue && (
                   <>
                     <div className="flex items-center gap-2" style={{ marginBottom: '12px' }}>
                       <AlertCircle style={{ width: '18px', height: '18px', color: '#dc2626' }} />
@@ -681,23 +696,23 @@ const BillPayPage = () => {
                   </>
                 )}
 
-                {/* ── 2. READY TO PAY (upcoming / undated) ── */}
+                {/* ── 2. READY TO PAY ── */}
                 <div className="flex items-center justify-between" style={{ marginBottom: '12px' }}>
                   <h2 className="font-semibold text-slate-900" style={{ fontSize: '18px' }}>
-                    Ready to Pay <span className="text-slate-400 font-normal">({upcomingToPay.length})</span>
+                    Ready to Pay <span className="text-slate-400 font-normal">({groupByProperty ? groupedReadyToPay.length : upcomingToPay.length})</span>
                   </h2>
                   <button onClick={handleOpenAddCustom} className="flex items-center gap-1 font-semibold hover:opacity-70 transition-opacity" style={{ color: '#1e3a5f', fontSize: '13px' }}>
                     <Plus style={{ width: '14px', height: '14px' }} /> Add Bill
                   </button>
                 </div>
-                {upcomingToPay.length === 0 ? (
+                {(groupByProperty ? groupedReadyToPay.length === 0 : upcomingToPay.length === 0) ? (
                   <div className="bg-white text-center text-slate-400" style={{ borderRadius: '10px', border: '1px solid #e9e4db', padding: '24px', fontSize: '14px', marginBottom: '32px' }}>
                     Nothing upcoming to pay. You're all caught up.
                   </div>
                 ) : groupByProperty ? (
                   <div style={{ marginBottom: '32px' }}>
                     <PropertyGroupedList
-                      companies={upcomingToPay}
+                      companies={groupedReadyToPay}
                       homeName={homeName}
                       renderCard={(company) => (
                         <ServiceCompanyCard key={company.id} company={company} onRefresh={fetchCompanies} onPay={handleLogPayment} propertyName={null} homes={homes} />
