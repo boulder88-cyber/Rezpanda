@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Button } from '@/components/ui/button.jsx';
-import { ExternalLink, Edit2, Trash2, Building, CheckCircle2, Repeat } from 'lucide-react';
+import { ExternalLink, Edit2, Trash2, Building, CheckCircle2, Repeat, Plus } from 'lucide-react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog.jsx';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog.jsx';
 import AddServiceCompanyForm from './AddServiceCompanyForm.jsx';
@@ -50,6 +50,34 @@ const ServiceCompanyCard = ({ company, onRefresh, onPay, propertyName = null, ho
   // same month, if found. When set, we interrupt the confirm with a warning
   // instead of marking paid. null = no conflict / not yet checked.
   const [dupePaid, setDupePaid] = useState(null);
+  // Quick add-payment-link (for emailed bills that arrived without a URL).
+  const [addingLink, setAddingLink] = useState(false);
+  const [linkValue, setLinkValue] = useState('');
+  const [savingLink, setSavingLink] = useState(false);
+
+  const handleSaveLink = async () => {
+    let url = linkValue.trim();
+    if (!url) { setAddingLink(false); return; }
+    if (!url.startsWith('http://') && !url.startsWith('https://')) url = 'https://' + url;
+    try {
+      new URL(url); // basic validation; bail quietly if malformed
+    } catch {
+      toast({ title: 'That doesn\u2019t look like a valid link', variant: 'destructive' });
+      return;
+    }
+    setSavingLink(true);
+    try {
+      await pb.collection('service_companies').update(company.id, { paymentLink: url }, { $autoCancel: false });
+      setAddingLink(false);
+      setLinkValue('');
+      toast({ title: 'Payment link added' });
+      if (onRefresh) onRefresh();
+    } catch {
+      toast({ title: 'Could not save the link', variant: 'destructive' });
+    } finally {
+      setSavingLink(false);
+    }
+  };
   const [isCheckingDupe, setIsCheckingDupe] = useState(false);
 
   const isPaid = company.status === 'paid';
@@ -298,6 +326,36 @@ const ServiceCompanyCard = ({ company, onRefresh, onPay, propertyName = null, ho
                 {getDomain(company.paymentLink)}
                 <ExternalLink style={{ width: '11px', height: '11px' }} />
               </a>
+            )}
+            {!company.paymentLink && !isPaid && !autopay && !addingLink && (
+              <button
+                onClick={(e) => { e.stopPropagation(); setAddingLink(true); }}
+                className="flex items-center gap-1 transition-colors"
+                style={{ fontSize: '12px', color: '#1e3a5f' }}>
+                <Plus style={{ width: '11px', height: '11px' }} /> Add payment link
+              </button>
+            )}
+            {!company.paymentLink && !isPaid && !autopay && addingLink && (
+              <div className="flex items-center gap-1" onClick={(e) => e.stopPropagation()}>
+                <input
+                  autoFocus
+                  type="text"
+                  value={linkValue}
+                  onChange={(e) => setLinkValue(e.target.value)}
+                  onKeyDown={(e) => { if (e.key === 'Enter') handleSaveLink(); if (e.key === 'Escape') { setAddingLink(false); setLinkValue(''); } }}
+                  placeholder="paste the utility's pay URL"
+                  className="rounded-lg border border-slate-200 focus:outline-none focus:border-slate-400"
+                  style={{ fontSize: '12px', padding: '4px 8px', width: '180px' }}
+                />
+                <button onClick={handleSaveLink} disabled={savingLink}
+                  className="rounded-lg font-medium text-white" style={{ fontSize: '12px', padding: '4px 10px', background: '#1e3a5f' }}>
+                  {savingLink ? '…' : 'Save'}
+                </button>
+                <button onClick={() => { setAddingLink(false); setLinkValue(''); }}
+                  className="text-slate-400 hover:text-slate-600" style={{ fontSize: '12px', padding: '4px 6px' }}>
+                  Cancel
+                </button>
+              </div>
             )}
           </div>
         </div>
