@@ -46,6 +46,11 @@ const ServiceCompanyCard = ({ company, onRefresh, onPay, propertyName = null, ho
   const [awaitingConfirm, setAwaitingConfirm] = useState(false);
   const [isMarking, setIsMarking] = useState(false);
   const [isAssigning, setIsAssigning] = useState(false);
+  // Guard 3 (double-pay): holds an already-paid bill from the same payee in the
+  // same month, if found. When set, we interrupt the confirm with a warning
+  // instead of marking paid. null = no conflict / not yet checked.
+  const [dupePaid, setDupePaid] = useState(null);
+  const [isCheckingDupe, setIsCheckingDupe] = useState(false);
 
   const isPaid = company.status === 'paid';
   const autopay = isAutopay(company);
@@ -79,6 +84,42 @@ const ServiceCompanyCard = ({ company, onRefresh, onPay, propertyName = null, ho
     }
   };
 
+  // ── Guard 3: double-pay lookup ──────────────────────────────────────────
+  // Has this user ALREADY marked a bill from this same payee paid within the
+  // same calendar month? That's the signature of a double-pay: the same-day
+  // "I forgot I paid this" and the autopay-plus-manual weeks apart both land in
+  // one month. Keying on month (not day) catches the far-apart case; keying on
+  // payee+month (not across months) means next month's real bill never trips it.
+  // CasaCEO can't stop a payment (the user pays on the vendor site) — but it's
+  // the only place that KNOWS the bill was already handled, so it warns here.
+  const findSamePayeePaidThisMonth = async () => {
+    const name = company.companyName;
+    if (!name) return null;
+    const now = new Date();
+    const monthStart = new Date(now.getFullYear(), now.getMonth(), 1).toISOString();
+    const nextMonthStart = new Date(now.getFullYear(), now.getMonth() + 1, 1).toISOString();
+    const esc = String(name).replace(/"/g, '\\"');
+    // Same owner, same payee, already paid, paidDate within this calendar month,
+    // and not this very bill. autoCancel off so a rapid click can't abort it.
+    const filter =
+      `ownerId = "${company.ownerId}"` +
+      ` && companyName = "${esc}"` +
+      ` && status = "paid"` +
+      ` && id != "${company.id}"` +
+      ` && paidDate >= "${monthStart}"` +
+      ` && paidDate < "${nextMonthStart}"`;
+    try {
+      const list = await pb.collection('service_companies').getList(1, 1, {
+        filter,
+        sort: '-paidDate',
+        $autoCancel: false,
+      });
+      return (list.items && list.items[0]) || null;
+    } catch {
+      return null; // fail open: a lookup error never blocks a legitimate payment
+    }
+  };
+
   // Manual step 1: open utility site (if any), then ask "did you pay?".
   const handlePayClick = () => {
     if (company.paymentLink) {
@@ -87,8 +128,27 @@ const ServiceCompanyCard = ({ company, onRefresh, onPay, propertyName = null, ho
     setAwaitingConfirm(true);
   };
 
-  // Manual step 2: confirm -> status:paid + paidDate, log payment.
-  const handleConfirmPaid = async () => {
+  // Gate: user clicked "Yes, paid". Before flipping to paid, run the double-pay
+  // check. If a same-payee, same-month paid bill exists, surface the warning
+  // and STOP — the user decides. Otherwise proceed straight to marking paid.
+  const handleConfirmPaidClick = async () => {
+    setIsCheckingDupe(true);
+    try {
+      const prior = await findSamePayeePaidThisMonth();
+      if (prior) {
+        setDupePaid(prior);
+        return; // hold — the interrupt UI now drives the decision
+      }
+      await markPaid();
+    } finally {
+      setIsCheckingDupe(false);
+    }
+  };
+
+  // Manual step 2: the actual write -> status:paid + paidDate, log payment.
+  // Reached either with no conflict, or via the user explicitly confirming
+  // "yes, this is a different bill" past the double-pay warning.
+  const markPaid = async () => {
     setIsMarking(true);
     try {
       await pb.collection('service_companies').update(
@@ -98,6 +158,7 @@ const ServiceCompanyCard = ({ company, onRefresh, onPay, propertyName = null, ho
       );
       if (onPay) await onPay(company);
       setAwaitingConfirm(false);
+      setDupePaid(null);
       toast({ title: '✅ Marked paid', description: `${company.companyName} cleared.` });
       if (onRefresh) onRefresh();
     } catch {
@@ -266,11 +327,11 @@ const ServiceCompanyCard = ({ company, onRefresh, onPay, propertyName = null, ho
             </Button>
           ) : awaitingConfirm ? (
             <>
-              <Button variant="outline" size="sm" disabled={isMarking} onClick={() => setAwaitingConfirm(false)}>
+              <Button variant="outline" size="sm" disabled={isMarking || isCheckingDupe} onClick={() => { setAwaitingConfirm(false); setDupePaid(null); }}>
                 Not yet
               </Button>
-              <Button size="sm" className="font-semibold" style={{ background: '#059669' }} disabled={isMarking} onClick={handleConfirmPaid}>
-                {isMarking ? 'Saving…' : 'Yes, paid'}
+              <Button size="sm" className="font-semibold" style={{ background: '#059669' }} disabled={isMarking || isCheckingDupe} onClick={handleConfirmPaidClick}>
+                {isCheckingDupe ? 'Checking…' : isMarking ? 'Saving…' : 'Yes, paid'}
               </Button>
             </>
           ) : (
@@ -304,6 +365,27 @@ const ServiceCompanyCard = ({ company, onRefresh, onPay, propertyName = null, ho
           />
         </DialogContent>
       </Dialog>
+
+      {/* Guard 3: double-pay warning. Same payee already marked paid this month. */}
+      <AlertDialog open={Boolean(dupePaid)} onOpenChange={(open) => !open && setDupePaid(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>You may have already paid this</AlertDialogTitle>
+            <AlertDialogDescription>
+              {company.companyName} was already marked paid
+              {dupePaid?.paidDate ? ` on ${fmt(dupePaid.paidDate)}` : ' earlier this month'}
+              {typeof dupePaid?.amount === 'number' ? ` ($${dupePaid.amount.toFixed(2)})` : ''}.
+              {' '}If this is the same bill, don't pay it again. Only continue if this is a separate, different bill from {company.companyName}.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={isMarking}>Cancel</AlertDialogCancel>
+            <AlertDialogAction onClick={markPaid} disabled={isMarking} style={{ background: '#059669' }} className="hover:opacity-90">
+              {isMarking ? 'Saving…' : 'Yes, different bill — mark paid'}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
 
       {/* Delete Confirmation */}
       <AlertDialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
