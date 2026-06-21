@@ -403,6 +403,15 @@ const BillPayPage = () => {
   // owned locally so "Other bills" never leaks into the global HomeSwitcher.
   const [scope, setScope] = useState(allProperties && multiHome ? 'all' : 'property');
 
+  // ── All-properties view preference ──
+  // When viewing every property at once, the user can read the list two ways:
+  //   'status'   = the natural sectioned layout (Past Due, Ready to Pay, …),
+  //                with a small property tag on each row. The default.
+  //   'property' = Ready-to-Pay bills grouped under per-property headers with
+  //                subtotals. Better when you think home-by-home.
+  // Only meaningful in 'all' scope; ignored otherwise.
+  const [groupBy, setGroupBy] = useState('status');
+
   // Keep local scope in step with the global property selector: if the user
   // flips the global All-Properties switch, mirror it; if they pick a real
   // home, drop back to 'property'. (Doesn't override a deliberate 'other'.)
@@ -521,8 +530,11 @@ const BillPayPage = () => {
   const pastDue = readyToPay.filter(c => c.dueDate && new Date(c.dueDate) < now);
   const upcomingToPay = readyToPay.filter(c => !(c.dueDate && new Date(c.dueDate) < now));
 
-  // Show property tags / grouped headers only in the 'all' scope with >1 home.
+  // Show property tags on rows whenever we're looking across properties.
   const showPropertyTags = scope === 'all' && multiHome;
+  // Group Ready-to-Pay under per-property headers only when the user picks the
+  // "by property" view. Otherwise the list stays sectioned by status.
+  const groupByProperty = showPropertyTags && groupBy === 'property';
 
   // Friendly count of no-home bills, for the toggle/empty hints.
   const otherCount = companies.filter(c => hasNoHome(c) && !isPaid(c) && c.status !== 'pending_review').length;
@@ -587,6 +599,24 @@ const BillPayPage = () => {
             {/* Scope toggle only on the data tabs (not Providers/History). */}
             {(activeTab === 'dashboard' || activeTab === 'cashneeds' || activeTab === 'overview') && (
               <ScopeToggle scope={scope} setScope={setScope} selectedHome={selectedHome} multiHome={multiHome} />
+            )}
+            {/* All-properties view preference: by status vs by property.
+                Only on My Bills, and only when actually viewing all properties. */}
+            {activeTab === 'dashboard' && scope === 'all' && multiHome && (
+              <div className="flex items-center gap-1 bg-white border border-slate-200 rounded-xl" style={{ padding: '4px' }}>
+                {[
+                  { key: 'status', label: 'By status' },
+                  { key: 'property', label: 'By property' },
+                ].map(o => (
+                  <button key={o.key} onClick={() => setGroupBy(o.key)}
+                    className="rounded-lg transition-all font-medium"
+                    style={{ padding: '6px 12px', fontSize: '12px',
+                      background: groupBy === o.key ? '#1e3a5f' : 'transparent',
+                      color: groupBy === o.key ? '#fff' : '#64748b' }}>
+                    {o.label}
+                  </button>
+                ))}
+              </div>
             )}
           </div>
 
@@ -661,7 +691,7 @@ const BillPayPage = () => {
                   <div className="bg-white text-center text-slate-400" style={{ borderRadius: '10px', border: '1px solid #e9e4db', padding: '24px', fontSize: '14px', marginBottom: '32px' }}>
                     Nothing upcoming to pay. You're all caught up.
                   </div>
-                ) : showPropertyTags ? (
+                ) : groupByProperty ? (
                   <div style={{ marginBottom: '32px' }}>
                     <PropertyGroupedList
                       companies={upcomingToPay}
