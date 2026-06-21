@@ -33,6 +33,11 @@ const AddServiceCompanyForm = ({ onSuccess, onCancel, onCompanyAdded, initialDat
   // Only offer a property picker when there's a real choice to make.
   const multiHome = Array.isArray(homes) && homes.length > 1;
 
+  // Sentinel for the "no property" choice. shadcn's SelectItem can't hold an
+  // empty-string value, so we use a non-empty marker in the dropdown and
+  // translate it back to '' (the real unassigned/"Other bills" state) on save.
+  const NO_PROPERTY = '__none__';
+
   const [formData, setFormData] = useState({
     companyName: '',
     category: '',
@@ -100,7 +105,9 @@ const AddServiceCompanyForm = ({ onSuccess, onCancel, onCompanyAdded, initialDat
   };
 
   const handleHomeChange = (value) => {
-    setFormData(prev => ({ ...prev, homeId: value }));
+    // Map the sentinel back to '' so the form's homeId stays the real value.
+    const next = value === NO_PROPERTY ? '' : value;
+    setFormData(prev => ({ ...prev, homeId: next }));
   };
 
   const handleSubmit = async (e) => {
@@ -138,10 +145,14 @@ const AddServiceCompanyForm = ({ onSuccess, onCancel, onCompanyAdded, initialDat
       }
 
       // Property assignment:
-      //  - Creating: attach to the chosen/defaulted property.
-      //  - Editing: only write homeId if we actually have one, so we never
-      //    blank out a bill's existing property by saving an empty string.
-      if (formData.homeId) {
+      //  - Creating: only attach when a property is chosen/defaulted (don't
+      //    write an empty string on create).
+      //  - Editing: always write homeId — including '' — so choosing
+      //    "Other bills (no property)" actually clears an existing assignment
+      //    instead of being silently dropped.
+      if (isEditing) {
+        dataToSave.homeId = formData.homeId || '';
+      } else if (formData.homeId) {
         dataToSave.homeId = formData.homeId;
       }
 
@@ -225,7 +236,7 @@ const AddServiceCompanyForm = ({ onSuccess, onCancel, onCompanyAdded, initialDat
       {multiHome && (
         <div className="space-y-2">
           <Label htmlFor="homeId">Property</Label>
-          <Select value={formData.homeId} onValueChange={handleHomeChange}>
+          <Select value={formData.homeId || NO_PROPERTY} onValueChange={handleHomeChange}>
             <SelectTrigger>
               <SelectValue placeholder="Select a property" />
             </SelectTrigger>
@@ -233,6 +244,7 @@ const AddServiceCompanyForm = ({ onSuccess, onCancel, onCompanyAdded, initialDat
               {homes.map(h => (
                 <SelectItem key={h.id} value={h.id}>{homeLabel(h)}</SelectItem>
               ))}
+              <SelectItem value={NO_PROPERTY}>Other bills (no property)</SelectItem>
             </SelectContent>
           </Select>
           <p className="text-xs text-slate-400">You can reassign this later in review.</p>
