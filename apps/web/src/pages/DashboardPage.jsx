@@ -4,11 +4,12 @@ import { Link } from 'react-router-dom';
 import { useHome } from '@/contexts/HomeContext.jsx';
 import { useAuth } from '@/contexts/AuthContext.jsx';
 import pb from '@/lib/horizonsBackend.js';
+import PropertiesAtAGlance from '@/components/PropertiesAtAGlance.jsx';
 import { Button } from '@/components/ui/button.jsx';
 import {
   Wrench, CreditCard, FolderOpen,
   Home, ChevronDown, Plus, MapPin, Check, Bell, AlertCircle,
-  TrendingUp, ArrowRight, Sparkles, Compass
+  TrendingUp, ArrowRight, ArrowLeft, Sparkles, Compass
 } from 'lucide-react';
 
 // ─── Property Switcher ────────────────────────────────────────────────
@@ -271,6 +272,46 @@ const DashboardPage = () => {
   const { selectedHome, homes, loading } = useHome();
   const { currentUser } = useAuth();
 
+  // Entry model:
+  //  • 0–1 homes  → straight into the property dashboard (nothing changes).
+  //  • 2+ homes   → land on "properties at a glance" first; entering a tile
+  //                 flips `enteredProperty` and drops into that home's board.
+  // `enteredProperty` is session-local on purpose: every fresh login starts at
+  // the glance for multi-home users, which is the whole point of the change.
+  const [enteredProperty, setEnteredProperty] = useState(false);
+  const isMultiHome = !loading && homes.length > 1;
+
+  // Multi-home users who haven't drilled into a property yet see the overview.
+  if (isMultiHome && !enteredProperty) {
+    return (
+      <>
+        <Helmet>
+          <title>Your properties — CasaCEO</title>
+        </Helmet>
+        <div className="min-h-screen" style={{ background: '#faf8f4' }}>
+          {/* Top nav (logo + avatar only — the switcher isn't needed here) */}
+          <header className="sticky top-0 z-30 bg-white border-b px-4 sm:px-6 lg:px-8 h-18 py-3 flex items-center justify-between shadow-sm" style={{ borderColor: '#e9e4db' }}>
+            <Link to="/dashboard" className="flex items-center gap-2 hover:opacity-80 transition-opacity">
+              <div className="w-9 h-9 rounded-xl flex items-center justify-center" style={{ background: '#1e3a5f' }}>
+                <Home className="w-5 h-5 text-white" />
+              </div>
+              <span className="font-extrabold text-lg hidden sm:block" style={{ color: '#1e3a5f' }}>
+                Casa<span style={{ color: '#c9a96e' }}>CEO</span>
+              </span>
+            </Link>
+            <div className="w-9 h-9 rounded-xl flex items-center justify-center text-white font-bold text-sm" style={{ background: '#1e3a5f' }}>
+              {currentUser?.name?.[0] || 'U'}
+            </div>
+          </header>
+
+          <main className="px-4 sm:px-6 lg:px-8 py-8">
+            <PropertiesAtAGlance onEnter={() => setEnteredProperty(true)} />
+          </main>
+        </div>
+      </>
+    );
+  }
+
   return (
     <>
       <Helmet>
@@ -290,6 +331,15 @@ const DashboardPage = () => {
                 Casa<span style={{color:'#c9a96e'}}>CEO</span>
               </span>
             </Link>
+            {isMultiHome && (
+              <button
+                onClick={() => setEnteredProperty(false)}
+                className="hidden sm:flex items-center gap-1.5 font-medium transition-colors"
+                style={{ fontSize: '13px', color: '#5b6472' }}
+              >
+                <ArrowLeft className="w-4 h-4" /> All properties
+              </button>
+            )}
           </div>
 
           <PropertySwitcher />
