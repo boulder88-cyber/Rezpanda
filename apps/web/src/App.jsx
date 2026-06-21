@@ -20,6 +20,7 @@ import ImageGalleryPage from '@/pages/ImageGalleryPage.jsx';
 import DashboardPage from '@/pages/DashboardPage.jsx';
 import ExplorePage from '@/pages/ExplorePage.jsx';
 import HomeProfilePage from '@/pages/HomeProfilePage.jsx';
+import ManageHomesPage from '@/pages/ManageHomesPage.jsx';
 import NotificationsCenterPage from '@/pages/NotificationsCenterPage.jsx';
 import VendorDirectoryPage from '@/pages/VendorDirectoryPage.jsx';
 import ReportsPage from '@/pages/ReportsPage.jsx';
@@ -166,6 +167,7 @@ const AppContent = () => {
           {/* ── Portfolio & Properties ─────────────────────────────── */}
           <Route path="/portfolio" element={<ProtectedRoute><Layout><PortfolioOverviewPage /></Layout></ProtectedRoute>} />
           <Route path="/properties" element={<ProtectedRoute><Layout><HomePage /></Layout></ProtectedRoute>} />
+          <Route path="/manage-homes" element={<ProtectedRoute><Layout><ManageHomesPage /></Layout></ProtectedRoute>} />
           <Route path="/property-management" element={<ProtectedRoute><Layout><PropertyManagementDashboard /></Layout></ProtectedRoute>} />
           <Route path="/rental-properties" element={<ProtectedRoute><Layout><RentalPropertiesPage /></Layout></ProtectedRoute>} />
           <Route path="/rental-tax-guide" element={<ProtectedRoute><Layout><RentalTaxGuidePage /></Layout></ProtectedRoute>} />
