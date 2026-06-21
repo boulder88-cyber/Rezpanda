@@ -3,7 +3,7 @@ import pb from '@/lib/pocketbaseClient.js';
 import { useAuth } from '@/contexts/AuthContext.jsx';
 import { useHome } from '@/contexts/HomeContext.jsx';
 import { useToast } from '@/hooks/use-toast.js';
-import { Sparkles, Check, Calendar, Tag, Pencil, X, ExternalLink, Mail } from 'lucide-react';
+import { Sparkles, Check, Calendar, Tag, Pencil, X, ExternalLink, Mail, Trash2, Clock } from 'lucide-react';
 
 // ═══════════════════════════════════════════════════════════════════════
 // PENDING REVIEW SECTION
@@ -124,6 +124,24 @@ const PendingReviewSection = ({ onConfirmed }) => {
     }
   };
 
+  // Delete a pending bill outright. No confirmation dialog: every bill in
+  // this list is un-reviewed (status === "pending_review"), so a junk parse
+  // or a duplicate can be cleared in one tap. Confirmed/paid bills still keep
+  // the "are you sure?" gate elsewhere — this immediate delete is scoped to
+  // un-reviewed bills only, which is all that ever appears here.
+  const handleDeletePending = async (bill) => {
+    setConfirmingId(bill.id);
+    try {
+      await pb.collection('service_companies').delete(bill.id, { $autoCancel: false });
+      toast({ title: 'Bill removed.', description: `${bill.companyName || 'Bill'} deleted.` });
+      setPending(prev => prev.filter(b => b.id !== bill.id));
+    } catch {
+      toast({ title: 'Could not delete bill', variant: 'destructive' });
+    } finally {
+      setConfirmingId(null);
+    }
+  };
+
   // Save & Confirm: write the edited fields back to the SAME record, then
   // flip status to confirmed — corrections + confirm in a single action.
   const handleSaveAndConfirm = async (bill) => {
@@ -237,6 +255,12 @@ const PendingReviewSection = ({ onConfirmed }) => {
                         {bill.category}
                       </span>
                     )}
+                    {bill.forwardedAt && (
+                      <span className="flex items-center gap-1 text-slate-400" style={{ fontSize: '12px' }}>
+                        <Clock style={{ width: '12px', height: '12px' }} />
+                        Received {new Date(bill.forwardedAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}, {new Date(bill.forwardedAt).toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' })}
+                      </span>
+                    )}
                     {multiHome && !bill.homeId && (
                       <span className="flex items-center gap-1 font-medium" style={{ fontSize: '12px', color: '#b45309', background: '#fef3c7', borderRadius: '6px', padding: '1px 8px' }}>
                         Pick a property
@@ -247,6 +271,14 @@ const PendingReviewSection = ({ onConfirmed }) => {
 
                 {!isEditing && (
                   <div className="flex items-center gap-2 flex-shrink-0">
+                    <button
+                      onClick={() => handleDeletePending(bill)}
+                      disabled={isBusy}
+                      title="Delete this bill"
+                      className="flex items-center justify-center transition-all rounded-xl text-slate-400 hover:text-red-600"
+                      style={{ background: '#fff', border: '1px solid #e2e8f0', padding: '8px 10px', fontSize: '13px', opacity: isBusy ? 0.6 : 1 }}>
+                      <Trash2 style={{ width: '14px', height: '14px' }} />
+                    </button>
                     <button
                       onClick={() => startReview(bill)}
                       disabled={isBusy}
