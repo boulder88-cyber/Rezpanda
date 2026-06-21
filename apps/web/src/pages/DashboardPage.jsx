@@ -288,18 +288,18 @@ const DashboardPage = () => {
         <Helmet>
           <title>Your properties — CasaCEO</title>
         </Helmet>
-        <div className="min-h-screen" style={{ background: '#faf8f4' }}>
-          {/* Top nav (logo + avatar only — the switcher isn't needed here) */}
-          <header className="sticky top-0 z-30 bg-white border-b px-4 sm:px-6 lg:px-8 h-18 py-3 flex items-center justify-between shadow-sm" style={{ borderColor: '#e9e4db' }}>
+        <div className="min-h-screen" style={{ background: '#1e3a5f' }}>
+          {/* Top nav on navy: logo + avatar only */}
+          <header className="sticky top-0 z-30 px-4 sm:px-6 lg:px-8 h-18 py-3 flex items-center justify-between" style={{ background: '#1e3a5f', borderBottom: '1px solid rgba(255,255,255,0.10)' }}>
             <Link to="/dashboard" className="flex items-center gap-2 hover:opacity-80 transition-opacity">
-              <div className="w-9 h-9 rounded-xl flex items-center justify-center" style={{ background: '#1e3a5f' }}>
+              <div className="w-9 h-9 rounded-xl flex items-center justify-center" style={{ background: 'rgba(255,255,255,0.10)' }}>
                 <Home className="w-5 h-5 text-white" />
               </div>
-              <span className="font-extrabold text-lg hidden sm:block" style={{ color: '#1e3a5f' }}>
+              <span className="font-extrabold text-lg hidden sm:block text-white">
                 Casa<span style={{ color: '#c9a96e' }}>CEO</span>
               </span>
             </Link>
-            <div className="w-9 h-9 rounded-xl flex items-center justify-center text-white font-bold text-sm" style={{ background: '#1e3a5f' }}>
+            <div className="w-9 h-9 rounded-xl flex items-center justify-center text-white font-bold text-sm" style={{ background: 'rgba(255,255,255,0.12)', border: '1px solid rgba(255,255,255,0.18)' }}>
               {currentUser?.name?.[0] || 'U'}
             </div>
           </header>
