@@ -197,15 +197,17 @@ const PropertiesAtAGlance = ({ onEnter }) => {
         </Link>
       </div>
 
-      {/* Property tiles — top row, equal-spaced */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3" style={{ gap: '16px', marginBottom: '28px' }}>
+      {/* Property tiles — top row, evenly distributed (centered so a partial
+          row of 1-2 tiles doesn't cling to the left). */}
+      <div className="flex flex-wrap justify-center" style={{ gap: '16px', marginBottom: '28px' }}>
         {homes.map((home) => (
-          <PropertyGlanceTile
-            key={home.id}
-            home={home}
-            summary={loadingBills ? { dueTotal: 0, openCount: 0, overdueCount: 0, pendingCount: 0 } : summarize(bills, home.id)}
-            onEnter={() => handleEnter(home)}
-          />
+          <div key={home.id} className="w-full" style={{ flex: '1 1 240px', maxWidth: '320px' }}>
+            <PropertyGlanceTile
+              home={home}
+              summary={loadingBills ? { dueTotal: 0, openCount: 0, overdueCount: 0, pendingCount: 0 } : summarize(bills, home.id)}
+              onEnter={() => handleEnter(home)}
+            />
+          </div>
         ))}
       </div>
 
