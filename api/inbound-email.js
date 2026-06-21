@@ -136,7 +136,8 @@ async function extractBillWithClaude(apiKey, content) {
     'You extract structured data from utility bills, invoices, and receipts. ' +
     'Return ONLY a single JSON object, no prose, no markdown, no code fences. ' +
     'Schema: {"companyName": string|null, "amount": number|null, "dueDate": "YYYY-MM-DD"|null, ' +
-    '"category": one of ' + JSON.stringify(CATEGORIES) + '}. ' +
+    '"category": one of ' + JSON.stringify(CATEGORIES) + ', ' +
+    '"amountConfidence": "high"|"medium"|"low", "amountReason": string}. ' +
     'Rules: use null only if a field is truly not present anywhere in the document. ' +
     'amount = the total current amount the customer must pay now. It may be labeled ' +
     "'Amount Due', 'Total Due', 'Total Amount Due', 'Please Pay', 'Pay This Amount', " +
@@ -146,7 +147,22 @@ async function extractBillWithClaude(apiKey, content) {
     'the customer is asked to pay by the due date, not the prior balance or a past-due subtotal. ' +
     "dueDate = the date payment is due, often labeled 'Due Date', 'Payment Due', 'Pay By', " +
     "or 'Please Pay By'. Convert it to YYYY-MM-DD. If only a service period appears and no " +
-    'explicit due date, use null. Output only the JSON object.';
+    'explicit due date, use null. ' +
+    // ── Amount confidence ────────────────────────────────────────────────
+    // Grade how sure you are of the AMOUNT, based on how it was labeled and
+    // located — not on a general feeling. This signal tells a human reviewer
+    // which bills to double-check. Amount is the costliest field to get wrong.
+    'amountConfidence = your confidence that "amount" is the correct pay-now total. ' +
+    'Use "high" when a single amount is clearly labeled as the amount due in a summary box, ' +
+    'payment stub, or remittance slip with no competing total. ' +
+    'Use "medium" when a plausible total exists but competes with other amounts ' +
+    '(a prior balance, a past-due line, a budget/average-pay figure, or multiple totals) ' +
+    'and you had to choose between them. ' +
+    'Use "low" when the amount is unlabeled, inferred from running text, the document was ' +
+    'messy or text-only with no clear total, or you are genuinely unsure. ' +
+    'amountReason = a short phrase (under 12 words) naming WHERE the amount came from, ' +
+    'e.g. "boxed Total Amount Due" or "inferred from body text, no clear label". ' +
+    'Output only the JSON object.';
 
   const res = await fetch('https://api.anthropic.com/v1/messages', {
     method: 'POST',
@@ -157,7 +173,7 @@ async function extractBillWithClaude(apiKey, content) {
     },
     body: JSON.stringify({
       model: 'claude-haiku-4-5-20251001',
-      max_tokens: 512,
+      max_tokens: 600,
       system: systemPrompt,
       messages: [{ role: 'user', content }],
     }),
@@ -198,6 +214,51 @@ async function pbVerifyUser(pbUrl, token, userId) {
     headers: { Authorization: token },
   });
   return res.ok;
+}
+
+// ── Guard 1: ingestion dedupe (mechanical re-forward suppression) ──────────
+// Before creating a bill, look for one this user already has with the SAME
+// payee + SAME amount + SAME due date, created recently. That triple is the
+// signature of the same physical bill arriving twice (re-forward, SendGrid
+// retry, nested double-forward) — NOT a legitimate recurring bill, because a
+// recurring bill has a DIFFERENT due date each cycle. The recent-window cap
+// keeps us from ever colliding with last month's same-amount bill.
+//
+// Deliberately conservative: exact payee-string match only. "Xfinity" vs
+// "Comcast Xfinity" won't collide here — that's the normalized-payee problem,
+// a separate (later) job. This catches the common literal re-forward cleanly
+// and never risks suppressing a genuinely different bill.
+async function pbFindDuplicate(pbUrl, token, { ownerId, companyName, amount, dueDate, windowDays = 14 }) {
+  // Only a fully-specified bill can be a confident mechanical duplicate.
+  // If any of the three keys is missing, don't dedupe — let it through to review.
+  if (!companyName || typeof amount !== 'number' || !dueDate) return null;
+
+  const cutoff = new Date(Date.now() - windowDays * 24 * 60 * 60 * 1000).toISOString();
+
+  // PocketBase list filter. Note: amount compared as a number; companyName and
+  // dueDate as exact strings. created >= cutoff bounds the window.
+  const filter =
+    'ownerId = "' + ownerId + '"' +
+    ' && companyName = "' + String(companyName).replace(/"/g, '\\"') + '"' +
+    ' && amount = ' + amount +
+    ' && dueDate = "' + dueDate + '"' +
+    ' && created >= "' + cutoff + '"';
+
+  const url =
+    pbUrl + '/api/collections/service_companies/records' +
+    '?perPage=1&filter=' + encodeURIComponent(filter);
+
+  try {
+    const res = await fetch(url, { headers: { Authorization: token } });
+    if (!res.ok) return null; // on any lookup failure, fail open (allow the write)
+    const data = await res.json();
+    if (data && Array.isArray(data.items) && data.items.length > 0) {
+      return data.items[0];
+    }
+    return null;
+  } catch (e) {
+    return null; // never let a dedupe lookup error block ingestion
+  }
 }
 
 async function pbCreateBill(pbUrl, token, record) {
@@ -297,15 +358,51 @@ export default async function handler(req, res) {
       return res.status(200).json({ ok: false, reason: 'unknown user', userId });
     }
 
+    // Normalize the parsed amount once, so the dedupe check and the record agree.
+    const amountNum = typeof parsed.amount === 'number' ? parsed.amount : null;
+    const companyName = parsed.companyName || 'Unknown';
+    const dueDate = parsed.dueDate || '';
+
+    // ── Guard 1: suppress mechanical duplicates before they hit the queue ──
+    // Same payee + amount + due date within the window = the same bill arriving
+    // twice. We don't create a second pending bill; we report it as a duplicate.
+    const dupe = await pbFindDuplicate(pbUrl, token, {
+      ownerId: userId,
+      companyName,
+      amount: amountNum,
+      dueDate,
+    });
+    if (dupe) {
+      return res.status(200).json({
+        ok: true,
+        saved: false,
+        duplicateOf: dupe.id,
+        reason: 'duplicate suppressed',
+        companyName,
+        amount: amountNum,
+        dueDate,
+      });
+    }
+
+    // Confidence in the parsed amount (high|medium|low). Defaults to '' if the
+    // model didn't return it, which the UI treats as "no flag."
+    const amountConfidence =
+      parsed.amountConfidence === 'high' ||
+      parsed.amountConfidence === 'medium' ||
+      parsed.amountConfidence === 'low'
+        ? parsed.amountConfidence
+        : '';
+
     const record = {
-      companyName: parsed.companyName || 'Unknown',
-      amount: typeof parsed.amount === 'number' ? parsed.amount : null,
-      dueDate: parsed.dueDate || '',
+      companyName,
+      amount: amountNum,
+      dueDate,
       category: CATEGORIES.indexOf(parsed.category) !== -1 ? parsed.category : 'Other',
       paymentLink: '',
       status: 'pending_review',
       source: 'email',
       parsed_raw: parsed,
+      amountConfidence,
       ownerId: userId,
       homeId: '',
       senderAddress: extracted.from || '',
