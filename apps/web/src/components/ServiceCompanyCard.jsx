@@ -1,329 +1,295 @@
-import React, { useState } from 'react';
-import { Button } from '@/components/ui/button.jsx';
-import { ExternalLink, Edit2, Trash2, Building, CheckCircle2, Repeat } from 'lucide-react';
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog.jsx';
-import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog.jsx';
-import AddServiceCompanyForm from './AddServiceCompanyForm.jsx';
+import React, { useState, useEffect } from 'react';
 import pb from '@/lib/pocketbaseClient.js';
+import { useAuth } from '@/contexts/AuthContext.jsx';
+import { useHome } from '@/contexts/HomeContext.jsx';
+import { Input } from '@/components/ui/input.jsx';
+import { Button } from '@/components/ui/button.jsx';
+import { Label } from '@/components/ui/label.jsx';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select.jsx';
 import { useToast } from '@/hooks/use-toast.js';
+import { Loader2, Building2, Info } from 'lucide-react';
 
-// ═══════════════════════════════════════════════════════════════════════
-// SERVICE COMPANY ROW
-//
-// Status + paymentType drive behavior:
-//   • Manual, not paid        -> "Pay Bill" -> did-you-pay -> status:paid + paidDate
-//   • Autopay, not reviewed   -> "Mark Reviewed" -> status:paid + reviewedDate
-//                                (a human acknowledgment; does NOT move money)
-//   • status "paid"           -> "All Set" history row, labeled honestly:
-//                                  manual  -> "Paid <date>"
-//                                  autopay -> "Autopay . Reviewed <date>"
-//
-// Marking paid/reviewed also logs to payment_history (via onPay) so History
-// stays populated. "All Set" means the user's part is done — for autopay the
-// actual bank draft may still lag a few days, which is why it's not "Paid".
-// ═══════════════════════════════════════════════════════════════════════
+const CATEGORIES = [
+  'Electric',
+  'Gas',
+  'Water',
+  'Internet/Cable',
+  'Phone',
+  'Trash/Recycling',
+  'Pest Control',
+  'Security',
+  'Other'
+];
 
-const isAutopay = (c) => c.paymentType === 'Autopay (card)' || c.paymentType === 'Autopay (bank)';
-
-// ── Status color system ─────────────────────────────────────────────────
-// red    = overdue (manual, due date in the past, not paid)
-// yellow = needs action (manual, not yet paid, due now/soon or undated)
-// green  = handled, will close on its own (autopay, not yet reviewed)
-// grey   = paid / history
-// Returns the accent color used as a left bar on the row.
-const statusAccent = (c) => {
-  if (c.status === 'paid') return '#cbd5e1';            // grey
-  if (isAutopay(c)) return '#059669';                   // green
-  if (c.dueDate && new Date(c.dueDate) < new Date()) return '#dc2626'; // red
-  return '#f59e0b';                                     // yellow
-};
-
-const ServiceCompanyCard = ({ company, onRefresh, onPay, propertyName = null, homes = [] }) => {
+const AddServiceCompanyForm = ({ onSuccess, onCancel, onCompanyAdded, initialData = null }) => {
+  const { currentUser } = useAuth();
+  const { selectedHome, homes } = useHome();
   const { toast } = useToast();
-  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
-  const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
-  const [isDeleting, setIsDeleting] = useState(false);
-  const [awaitingConfirm, setAwaitingConfirm] = useState(false);
-  const [isMarking, setIsMarking] = useState(false);
-  const [isAssigning, setIsAssigning] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
 
-  const isPaid = company.status === 'paid';
-  const autopay = isAutopay(company);
+  // Are we editing an existing bill, or creating a new one?
+  const isEditing = Boolean(initialData && initialData.id);
 
-  // Backfill: assign this bill to a property (for bills missing homeId).
-  const handleAssignHome = async (homeId) => {
-    if (!homeId) return;
-    setIsAssigning(true);
-    try {
-      await pb.collection('service_companies').update(company.id, { homeId }, { $autoCancel: false });
-      if (onRefresh) onRefresh();
-    } catch {
-      toast({ title: 'Could not set property', variant: 'destructive' });
-    } finally {
-      setIsAssigning(false);
+  // Only offer a property picker when there's a real choice to make.
+  const multiHome = Array.isArray(homes) && homes.length > 1;
+
+  // Sentinel for the "no property" choice. shadcn's SelectItem can't hold an
+  // empty-string value, so we use a non-empty marker in the dropdown and
+  // translate it back to '' (the real unassigned/"Other bills" state) on save.
+  const NO_PROPERTY = '__none__';
+
+  const [formData, setFormData] = useState({
+    companyName: '',
+    category: '',
+    paymentLink: '',
+    homeId: ''
+  });
+
+  // Seed the form when initialData changes.
+  // - Editing: keep the bill's existing homeId/category (don't clobber).
+  // - Creating: default homeId to the currently selected property.
+  useEffect(() => {
+    if (initialData) {
+      setFormData({
+        companyName: initialData.name || initialData.companyName || '',
+        category: initialData.category || '',
+        paymentLink: initialData.payment_portal_url || initialData.paymentLink || '',
+        homeId: initialData.homeId || (initialData.id ? '' : (selectedHome?.id || ''))
+      });
+    } else {
+      setFormData({
+        companyName: '',
+        category: '',
+        paymentLink: '',
+        homeId: selectedHome?.id || ''
+      });
+    }
+  }, [initialData, selectedHome]);
+
+  const [errors, setErrors] = useState({});
+
+  const validate = () => {
+    const newErrors = {};
+    if (!formData.companyName.trim()) newErrors.companyName = 'Company name is required';
+    if (!formData.paymentLink.trim()) {
+      newErrors.paymentLink = 'Payment portal URL is required';
+    } else {
+      try {
+        // Basic URL validation
+        let urlToTest = formData.paymentLink;
+        if (!urlToTest.startsWith('http://') && !urlToTest.startsWith('https://')) {
+          urlToTest = 'https://' + urlToTest;
+        }
+        new URL(urlToTest);
+      } catch (e) {
+        newErrors.paymentLink = 'Please enter a valid URL (e.g., https://example.com)';
+      }
+    }
+    setErrors(newErrors);
+    return Object.keys(newErrors).length === 0;
+  };
+
+  const handleChange = (e) => {
+    const { name, value } = e.target;
+    setFormData(prev => ({ ...prev, [name]: value }));
+    if (errors[name]) {
+      setErrors(prev => ({ ...prev, [name]: null }));
     }
   };
 
-  const handleDelete = async () => {
-    setIsDeleting(true);
+  const handleCategoryChange = (value) => {
+    setFormData(prev => ({ ...prev, category: value }));
+    if (errors.category) {
+      setErrors(prev => ({ ...prev, category: null }));
+    }
+  };
+
+  const handleHomeChange = (value) => {
+    // Map the sentinel back to '' so the form's homeId stays the real value.
+    const next = value === NO_PROPERTY ? '' : value;
+    setFormData(prev => ({ ...prev, homeId: next }));
+  };
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+
+    if (!validate()) {
+      return;
+    }
+
+    if (!currentUser) {
+      toast({ title: "Authentication required", description: "Please log in to add a company.", variant: "destructive" });
+      return;
+    }
+
+    setIsLoading(true);
+
     try {
-      await pb.collection('service_companies').delete(company.id, { $autoCancel: false });
-      toast({ title: 'Bill removed.' });
-      onRefresh();
+      // Ensure URL has protocol
+      let finalUrl = formData.paymentLink.trim();
+      if (!finalUrl.startsWith('http://') && !finalUrl.startsWith('https://')) {
+        finalUrl = 'https://' + finalUrl;
+      }
+
+      // Base fields written on both create and edit.
+      const dataToSave = {
+        companyName: formData.companyName,
+        paymentLink: finalUrl,
+        ownerId: currentUser.id,
+      };
+
+      // Category: save it (previously collected but dropped on save).
+      // Only write when set, so we never overwrite an existing value with ''.
+      if (formData.category) {
+        dataToSave.category = formData.category;
+      }
+
+      // Property assignment:
+      //  - Creating: only attach when a property is chosen/defaulted (don't
+      //    write an empty string on create).
+      //  - Editing: always write homeId — including '' — so choosing
+      //    "Other bills (no property)" actually clears an existing assignment
+      //    instead of being silently dropped.
+      if (isEditing) {
+        dataToSave.homeId = formData.homeId || '';
+      } else if (formData.homeId) {
+        dataToSave.homeId = formData.homeId;
+      }
+
+      let record;
+      if (isEditing) {
+        record = await pb.collection('service_companies').update(initialData.id, dataToSave, { $autoCancel: false });
+      } else {
+        record = await pb.collection('service_companies').create(dataToSave, { $autoCancel: false });
+      }
+
+      toast({
+        title: isEditing ? "Bill updated" : "Company added successfully",
+        description: `${record.companyName} has been ${isEditing ? 'updated' : 'added to your dashboard'}.`
+      });
+
+      // Reset form fields after a successful create (keep current-home default).
+      if (!isEditing) {
+        setFormData({ companyName: '', category: '', paymentLink: '', homeId: selectedHome?.id || '' });
+      }
+      setErrors({});
+
+      if (onCompanyAdded) {
+        onCompanyAdded();
+      }
+
+      if (onSuccess) {
+        onSuccess();
+      }
     } catch (error) {
-      console.error('Error deleting:', error);
-      toast({ title: 'Failed to delete', variant: 'destructive' });
+      console.error('[AddServiceCompanyForm] Error saving service company:', error);
+      toast({
+        title: "Error saving company",
+        description: error.message || "An unexpected error occurred while saving.",
+        variant: "destructive"
+      });
     } finally {
-      setIsDeleting(false);
-      setIsDeleteDialogOpen(false);
+      setIsLoading(false);
     }
   };
 
-  // Manual step 1: open utility site (if any), then ask "did you pay?".
-  const handlePayClick = () => {
-    if (company.paymentLink) {
-      window.open(company.paymentLink, '_blank', 'noopener,noreferrer');
-    }
-    setAwaitingConfirm(true);
-  };
+  const isPreFilled = initialData && !initialData.id && initialData.name;
 
-  // Manual step 2: confirm -> status:paid + paidDate, log payment.
-  const handleConfirmPaid = async () => {
-    setIsMarking(true);
-    try {
-      await pb.collection('service_companies').update(
-        company.id,
-        { status: 'paid', paidDate: new Date().toISOString() },
-        { $autoCancel: false }
-      );
-      if (onPay) await onPay(company);
-      setAwaitingConfirm(false);
-      toast({ title: '✅ Marked paid', description: `${company.companyName} cleared.` });
-      if (onRefresh) onRefresh();
-    } catch {
-      toast({ title: 'Could not mark paid', variant: 'destructive' });
-    } finally {
-      setIsMarking(false);
-    }
-  };
-
-  // Autopay: "Mark Reviewed" -> status:paid + reviewedDate. A human looked at
-  // it and it's correct. Does NOT change processing; money drafts on its own.
-  const handleMarkReviewed = async () => {
-    setIsMarking(true);
-    try {
-      await pb.collection('service_companies').update(
-        company.id,
-        { status: 'paid', reviewedDate: new Date().toISOString() },
-        { $autoCancel: false }
-      );
-      if (onPay) await onPay(company);
-      toast({ title: '✅ Reviewed', description: `${company.companyName} checked — autopay will draft on its own.` });
-      if (onRefresh) onRefresh();
-    } catch {
-      toast({ title: 'Could not mark reviewed', variant: 'destructive' });
-    } finally {
-      setIsMarking(false);
-    }
-  };
-
-  // Undo: a paid/reviewed bill goes back to its open state. This is the
-  // safety net for an accidental "paid" or a mistake noticed after the fact.
-  // Flip status back to "confirmed" and clear BOTH date stamps so the bill
-  // re-lands in the correct open section (Ready to Pay or autopay review).
-  // No confirm dialog on purpose — undo IS the safety net, and it's itself
-  // reversible (just mark paid again).
-  const handleUndoPaid = async () => {
-    setIsMarking(true);
-    try {
-      await pb.collection('service_companies').update(
-        company.id,
-        { status: 'confirmed', paidDate: null, reviewedDate: null },
-        { $autoCancel: false }
-      );
-      toast({ title: 'Moved back to unpaid', description: `${company.companyName} is open again.` });
-      if (onRefresh) onRefresh();
-    } catch {
-      toast({ title: 'Could not undo', variant: 'destructive' });
-    } finally {
-      setIsMarking(false);
-    }
-  };
-
-  const getDomain = (url) => {
-    try { return new URL(url).hostname.replace('www.', ''); }
-    catch (e) { return url; }
-  };
-
-  const fmt = (d) => d ? new Date(d).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) : null;
-  const paidLabel = fmt(company.paidDate);
-  const reviewedLabel = fmt(company.reviewedDate);
-  const dueLabel = fmt(company.dueDate);
+  // Label for the home currently chosen — used in the single-home hint.
+  const homeLabel = (h) => (h ? (h.name || h.address || 'Property') : '');
 
   return (
-    <>
-      <div
-        className="flex flex-col sm:flex-row sm:items-center gap-3 group"
-        style={{
-          background: isPaid ? '#f8fafc' : '#fff',
-          border: '1px solid #e2e8f0',
-          borderLeft: `4px solid ${statusAccent(company)}`,
-          borderRadius: '10px',
-          padding: '14px 16px',
-          opacity: isPaid ? 0.7 : 1,
-        }}
-      >
-        {/* Icon */}
-        <div className="flex items-center justify-center flex-shrink-0" style={{ width: '40px', height: '40px', borderRadius: '10px', background: '#eef2f8' }}>
-          <Building style={{ width: '18px', height: '18px', color: '#1e3a5f' }} />
-        </div>
-
-        {/* Name + meta */}
-        <div className="flex-1 min-w-0">
-          <p className="font-semibold text-slate-900 truncate" style={{ fontSize: '15px' }} title={company.companyName}>
-            {company.companyName}
-          </p>
-          <div className="flex flex-wrap items-center gap-x-4 gap-y-1" style={{ marginTop: '2px' }}>
-            {propertyName && (
-              <span className="font-medium" style={{ fontSize: '11px', color: '#1e3a5f', background: '#eef2f8', borderRadius: '6px', padding: '1px 8px' }}>
-                {propertyName}
-              </span>
-            )}
-            {!company.homeId && homes && homes.length > 1 && (
-              <select
-                value=""
-                disabled={isAssigning}
-                onChange={(e) => handleAssignHome(e.target.value)}
-                title="This bill isn't assigned to a property yet"
-                style={{ fontSize: '11px', color: '#b45309', fontWeight: 500, border: '1px solid #f59e0b', borderRadius: '6px', padding: '1px 6px', background: '#fffbeb' }}
-              >
-                <option value="">Unassigned · pick a property</option>
-                {homes.map(h => (
-                  <option key={h.id} value={h.id}>{h.name || h.address || 'Property'}</option>
-                ))}
-              </select>
-            )}
-            {autopay && (
-              <span className="flex items-center gap-1 font-medium" style={{ fontSize: '11px', color: '#7c3aed', background: '#f5f3ff', borderRadius: '6px', padding: '1px 8px' }}>
-                <Repeat style={{ width: '11px', height: '11px' }} />
-                {company.paymentType}
-              </span>
-            )}
-            {company.category && (
-              <span className="text-slate-400" style={{ fontSize: '12px' }}>{company.category}</span>
-            )}
-            {dueLabel && !isPaid && (
-              <span className="text-slate-500" style={{ fontSize: '12px' }}>
-                {autopay ? `Drafts ~${dueLabel}` : `Due ${dueLabel}`}
-              </span>
-            )}
-            {/* All Set labels — honest per type */}
-            {isPaid && autopay && (
-              <span className="flex items-center gap-1 font-medium" style={{ color: '#7c3aed', fontSize: '12px' }}>
-                <CheckCircle2 style={{ width: '13px', height: '13px' }} />
-                Autopay · Reviewed{reviewedLabel ? ` ${reviewedLabel}` : ''}{dueLabel ? ` · drafts ~${dueLabel}` : ''}
-              </span>
-            )}
-            {isPaid && !autopay && (
-              <span className="flex items-center gap-1 font-medium" style={{ color: '#059669', fontSize: '12px' }}>
-                <CheckCircle2 style={{ width: '13px', height: '13px' }} />
-                Paid{paidLabel ? ` · ${paidLabel}` : ''}
-              </span>
-            )}
-            {company.paymentLink && !isPaid && !autopay && (
-              <a href={company.paymentLink} target="_blank" rel="noopener noreferrer"
-                className="flex items-center gap-1 text-slate-400 hover:text-slate-600 transition-colors" style={{ fontSize: '12px' }}
-                onClick={(e) => e.stopPropagation()}>
-                {getDomain(company.paymentLink)}
-                <ExternalLink style={{ width: '11px', height: '11px' }} />
-              </a>
-            )}
-          </div>
-        </div>
-
-        {/* Amount */}
-        <div className="font-bold text-slate-900 flex-shrink-0" style={{ fontSize: '15px', minWidth: '70px', textAlign: 'right' }}>
-          {typeof company.amount === 'number' ? `$${company.amount.toFixed(2)}` : '—'}
-        </div>
-
-        {/* Action area */}
-        <div className="flex items-center gap-2 flex-shrink-0" style={{ minWidth: '190px', justifyContent: 'flex-end' }}>
-          {isPaid ? (
-            <div className="flex items-center gap-2">
-              <span className="font-medium" style={{ color: '#94a3b8', fontSize: '13px' }}>All set</span>
-              <button
-                onClick={handleUndoPaid}
-                disabled={isMarking}
-                className="font-medium text-slate-400 hover:text-slate-700 transition-colors underline"
-                style={{ fontSize: '12px', textUnderlineOffset: '2px', opacity: isMarking ? 0.5 : 1 }}>
-                {isMarking ? 'Undoing…' : 'Undo'}
-              </button>
-            </div>
-          ) : autopay ? (
-            // Autopay: the action is to REVIEW, not pay.
-            <Button size="sm" className="font-semibold" style={{ background: '#7c3aed' }} disabled={isMarking} onClick={handleMarkReviewed}>
-              {isMarking ? 'Saving…' : 'Mark Reviewed'}
-            </Button>
-          ) : awaitingConfirm ? (
-            <>
-              <Button variant="outline" size="sm" disabled={isMarking} onClick={() => setAwaitingConfirm(false)}>
-                Not yet
-              </Button>
-              <Button size="sm" className="font-semibold" style={{ background: '#059669' }} disabled={isMarking} onClick={handleConfirmPaid}>
-                {isMarking ? 'Saving…' : 'Yes, paid'}
-              </Button>
-            </>
-          ) : (
-            <Button size="sm" className="font-semibold" style={{ background: '#1e3a5f' }} onClick={handlePayClick}>
-              {company.paymentLink ? 'Pay Bill' : 'Mark as Paid'}
-            </Button>
-          )}
-
-          {/* Edit / delete (hover) */}
-          <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-            <Button variant="ghost" size="icon" className="h-8 w-8 text-slate-400 hover:text-primary" onClick={() => setIsEditModalOpen(true)}>
-              <Edit2 className="w-4 h-4" />
-            </Button>
-            <Button variant="ghost" size="icon" className="h-8 w-8 text-slate-400 hover:text-destructive" onClick={() => setIsDeleteDialogOpen(true)}>
-              <Trash2 className="w-4 h-4" />
-            </Button>
-          </div>
-        </div>
+    <form onSubmit={handleSubmit} className="space-y-5">
+      <div className="bg-slate-50 dark:bg-slate-900/50 border border-slate-200 dark:border-slate-800 rounded-lg p-3 flex items-start gap-3 mb-2">
+        <Info className="w-5 h-5 text-slate-500 shrink-0 mt-0.5" />
+        <p className="text-sm text-slate-600 dark:text-slate-400">
+          Add a provider to your dashboard. This information helps you connect to their payment portals.
+        </p>
       </div>
 
-      {/* Edit Modal */}
-      <Dialog open={isEditModalOpen} onOpenChange={setIsEditModalOpen}>
-        <DialogContent className="sm:max-w-[425px]">
-          <DialogHeader>
-            <DialogTitle>Edit Bill</DialogTitle>
-          </DialogHeader>
-          <AddServiceCompanyForm
-            initialData={company}
-            onSuccess={() => { setIsEditModalOpen(false); onRefresh(); }}
-            onCancel={() => setIsEditModalOpen(false)}
-          />
-        </DialogContent>
-      </Dialog>
+      {isPreFilled && (
+        <div className="bg-primary/5 border border-primary/20 rounded-lg p-3 flex items-start gap-3 mb-2">
+          <Building2 className="w-5 h-5 text-primary shrink-0 mt-0.5" />
+          <p className="text-sm text-slate-700 dark:text-slate-300">
+            Setting up <span className="font-semibold text-primary">{formData.companyName}</span>. Please verify their details to complete the setup.
+          </p>
+        </div>
+      )}
 
-      {/* Delete Confirmation */}
-      <AlertDialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>Remove this bill?</AlertDialogTitle>
-            <AlertDialogDescription>
-              This will permanently delete {company.companyName}. This action cannot be undone.
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel disabled={isDeleting}>Cancel</AlertDialogCancel>
-            <AlertDialogAction onClick={handleDelete} disabled={isDeleting} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
-              {isDeleting ? 'Deleting...' : 'Delete'}
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
-    </>
+      <div className="space-y-2">
+        <Label htmlFor="companyName">Company Name <span className="text-red-500">*</span></Label>
+        <Input
+          id="companyName"
+          name="companyName"
+          placeholder="e.g., City Water Utility"
+          value={formData.companyName}
+          onChange={handleChange}
+          className={errors.companyName ? "border-red-500" : ""}
+        />
+        {errors.companyName && <p className="text-sm text-red-500">{errors.companyName}</p>}
+      </div>
+
+      {/* Property assignment.
+          - Multiple homes: show a picker, pre-selected to the current property.
+          - Single home: no picker (nothing to choose); the bill silently
+            defaults to that home via formData.homeId. */}
+      {multiHome && (
+        <div className="space-y-2">
+          <Label htmlFor="homeId">Property</Label>
+          <Select value={formData.homeId || NO_PROPERTY} onValueChange={handleHomeChange}>
+            <SelectTrigger>
+              <SelectValue placeholder="Select a property" />
+            </SelectTrigger>
+            <SelectContent>
+              {homes.map(h => (
+                <SelectItem key={h.id} value={h.id}>{homeLabel(h)}</SelectItem>
+              ))}
+              <SelectItem value={NO_PROPERTY}>Other bills (no property)</SelectItem>
+            </SelectContent>
+          </Select>
+          <p className="text-xs text-slate-400">You can reassign this later in review.</p>
+        </div>
+      )}
+
+      <div className="space-y-2">
+        <Label htmlFor="category">Category (Optional)</Label>
+        <Select value={formData.category} onValueChange={handleCategoryChange}>
+          <SelectTrigger className={errors.category ? "border-red-500" : ""}>
+            <SelectValue placeholder="Select a category" />
+          </SelectTrigger>
+          <SelectContent>
+            {CATEGORIES.map(cat => (
+              <SelectItem key={cat} value={cat}>{cat}</SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+        {errors.category && <p className="text-sm text-red-500">{errors.category}</p>}
+      </div>
+
+      <div className="space-y-2">
+        <Label htmlFor="paymentLink">Payment Portal URL <span className="text-red-500">*</span></Label>
+        <Input
+          id="paymentLink"
+          name="paymentLink"
+          placeholder="https://..."
+          value={formData.paymentLink}
+          onChange={handleChange}
+          className={errors.paymentLink ? "border-red-500" : ""}
+        />
+        {errors.paymentLink && <p className="text-sm text-red-500">{errors.paymentLink}</p>}
+      </div>
+
+      <div className="flex justify-end gap-3 pt-4">
+        <Button type="button" variant="outline" onClick={onCancel} disabled={isLoading}>
+          Cancel
+        </Button>
+        <Button type="submit" disabled={isLoading}>
+          {isLoading && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
+          {isEditing ? 'Save Changes' : 'Save Company'}
+        </Button>
+      </div>
+    </form>
   );
 };
 
-export default ServiceCompanyCard;
+export default AddServiceCompanyForm;
