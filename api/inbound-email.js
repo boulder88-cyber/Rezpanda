@@ -137,8 +137,20 @@ async function extractBillWithClaude(apiKey, content) {
     'Return ONLY a single JSON object, no prose, no markdown, no code fences. ' +
     'Schema: {"companyName": string|null, "amount": number|null, "dueDate": "YYYY-MM-DD"|null, ' +
     '"category": one of ' + JSON.stringify(CATEGORIES) + ', ' +
-    '"amountConfidence": "high"|"medium"|"low", "amountReason": string}. ' +
+    '"amountConfidence": "high"|"medium"|"low", "amountReason": string, ' +
+    '"payUrl": string|null, "phone": string|null, "address": string|null, ' +
+    '"accountNumber": string|null}. ' +
     'Rules: use null only if a field is truly not present anywhere in the document. ' +
+    // ── Vendor enrichment fields ─────────────────────────────────────────
+    // These describe the BILLER (the company), not this month\'s charge. They
+    // are used to build/enrich a reusable vendor record. Pull them only if the
+    // document actually states them; never invent.
+    'payUrl = the URL where the customer pays this biller online, if printed ' +
+    '(e.g. "pay.duke-energy.com"). Include the scheme if shown; null if absent. ' +
+    'phone = the biller\'s customer-service or billing phone number as printed; null if absent. ' +
+    'address = the biller\'s remittance or mailing address (one line, as printed); null if absent. ' +
+    'accountNumber = the customer\'s account number with this biller exactly as printed, ' +
+    'digits and any separators; null if absent. Do NOT guess or pad it. ' +
     'amount = the total current amount the customer must pay now. It may be labeled ' +
     "'Amount Due', 'Total Due', 'Total Amount Due', 'Please Pay', 'Pay This Amount', " +
     "'Balance Due', 'Current Charges', 'New Charges', or appear in a payment/remittance " +
@@ -245,7 +257,7 @@ async function pbFindDuplicate(pbUrl, token, { ownerId, companyName, amount, due
     ' && created >= "' + cutoff + '"';
 
   const url =
-    pbUrl + '/api/collections/service_companies/records' +
+    pbUrl + '/api/collections/invoices/records' +
     '?perPage=1&filter=' + encodeURIComponent(filter);
 
   try {
@@ -262,7 +274,7 @@ async function pbFindDuplicate(pbUrl, token, { ownerId, companyName, amount, due
 }
 
 async function pbCreateBill(pbUrl, token, record) {
-  const res = await fetch(pbUrl + '/api/collections/service_companies/records', {
+  const res = await fetch(pbUrl + '/api/collections/invoices/records', {
     method: 'POST',
     headers: { 'content-type': 'application/json', Authorization: token },
     body: JSON.stringify(record),
@@ -272,6 +284,117 @@ async function pbCreateBill(pbUrl, token, record) {
     throw new Error('PocketBase create failed ' + res.status + ': ' + body.slice(0, 300));
   }
   return res.json();
+}
+
+// ── Vendor enrichment helpers ──────────────────────────────────────────────
+// A vendor is the stable biller entity (Comcast). Many invoices reference one
+// vendor. We resolve-or-create per owner, matching on name OR sender domain.
+
+// Pull a bare domain from a "from" header like 'Billing <billing@comcast.com>'.
+function senderDomainFrom(fromRaw) {
+  if (!fromRaw) return '';
+  const m = String(fromRaw).match(/@([A-Za-z0-9.-]+\.[A-Za-z]{2,})/);
+  return m ? m[1].toLowerCase() : '';
+}
+
+// Truncate any account number to a masked last-4 (XXXX1234). The FULL number is
+// never returned, never stored — this is the only account value that survives.
+// Returns '' if there aren't at least 4 digits to mask.
+function maskAccount(raw) {
+  if (raw == null) return '';
+  const digits = String(raw).replace(/[^0-9]/g, '');
+  if (digits.length < 4) return '';
+  return 'XXXX' + digits.slice(-4);
+}
+
+// Remove the raw account number from the object we persist as parsed_raw, so the
+// full number never leaks through the "what we saw" reference panel.
+function scrubParsed(parsed) {
+  const clone = { ...parsed };
+  delete clone.accountNumber;
+  return clone;
+}
+
+// Find this owner's vendor by name (case-insensitive) OR sender domain.
+async function pbFindVendor(pbUrl, token, { ownerId, name, senderDomain }) {
+  const clauses = [];
+  const nameLc = (name || '').trim();
+  if (nameLc) clauses.push('name ~ "' + nameLc.replace(/"/g, '\\"') + '"');
+  if (senderDomain) clauses.push('senderDomain = "' + senderDomain.replace(/"/g, '\\"') + '"');
+  if (clauses.length === 0) return null;
+
+  const filter = 'ownerId = "' + ownerId + '" && (' + clauses.join(' || ') + ')';
+  const url = pbUrl + '/api/collections/vendors/records?perPage=5&filter=' + encodeURIComponent(filter);
+  try {
+    const res = await fetch(url, { headers: { Authorization: token } });
+    if (!res.ok) return null;
+    const data = await res.json();
+    if (!data || !Array.isArray(data.items) || data.items.length === 0) return null;
+    // Prefer an exact (case-insensitive) name match; else first by-domain hit.
+    const exact = data.items.find(
+      (v) => (v.name || '').trim().toLowerCase() === nameLc.toLowerCase()
+    );
+    return exact || data.items[0];
+  } catch (e) {
+    return null;
+  }
+}
+
+async function pbCreateVendor(pbUrl, token, record) {
+  const res = await fetch(pbUrl + '/api/collections/vendors/records', {
+    method: 'POST',
+    headers: { 'content-type': 'application/json', Authorization: token },
+    body: JSON.stringify(record),
+  });
+  if (!res.ok) {
+    const body = await res.text();
+    throw new Error('Vendor create failed ' + res.status + ': ' + body.slice(0, 300));
+  }
+  return res.json();
+}
+
+async function pbUpdateVendor(pbUrl, token, id, patch) {
+  const res = await fetch(pbUrl + '/api/collections/vendors/records/' + encodeURIComponent(id), {
+    method: 'PATCH',
+    headers: { 'content-type': 'application/json', Authorization: token },
+    body: JSON.stringify(patch),
+  });
+  if (!res.ok) return null; // enrichment is best-effort; never block the bill
+  return res.json();
+}
+
+// Resolve a vendor for this bill, creating it if absent and back-filling any
+// empty enrichment fields when this bill carries new info. Returns vendor id,
+// or '' if we couldn't resolve/create one (the invoice still saves, unlinked).
+async function resolveOrCreateVendor(pbUrl, token, { ownerId, name, senderDomain, payUrl, phone, address, accountLast4 }) {
+  try {
+    const existing = await pbFindVendor(pbUrl, token, { ownerId, name, senderDomain });
+    if (existing) {
+      // Enrich only empty fields — never overwrite something already captured.
+      const patch = {};
+      if (!existing.senderDomain && senderDomain) patch.senderDomain = senderDomain;
+      if (!existing.payUrl && payUrl) patch.payUrl = payUrl;
+      if (!existing.phone && phone) patch.phone = phone;
+      if (!existing.address && address) patch.address = address;
+      if (!existing.accountLast4 && accountLast4) patch.accountLast4 = accountLast4;
+      if (Object.keys(patch).length > 0) {
+        await pbUpdateVendor(pbUrl, token, existing.id, patch);
+      }
+      return existing.id;
+    }
+    const created = await pbCreateVendor(pbUrl, token, {
+      ownerId,
+      name: name || 'Unknown',
+      senderDomain: senderDomain || '',
+      payUrl: payUrl || '',
+      phone: phone || '',
+      address: address || '',
+      accountLast4: accountLast4 || '',
+    });
+    return created.id;
+  } catch (e) {
+    return ''; // fail open: an unlinked invoice is better than a dropped bill
+  }
 }
 
 // ── Main handler ───────────────────────────────────────────────────────────
@@ -393,24 +516,44 @@ export default async function handler(req, res) {
         ? parsed.amountConfidence
         : '';
 
+    // ── Vendor resolve-or-create ───────────────────────────────────────────
+    // Truncate the account number to last-4 BEFORE anything is written. The
+    // full number lives only in this function's memory (parsed.accountNumber)
+    // and is scrubbed from parsed_raw below, so it never reaches the database.
+    const senderDomain = senderDomainFrom(extracted.from || '');
+    const accountLast4 = maskAccount(parsed.accountNumber);
+
+    const vendorId = await resolveOrCreateVendor(pbUrl, token, {
+      ownerId: userId,
+      name: companyName,
+      senderDomain,
+      payUrl: parsed.payUrl || '',
+      phone: parsed.phone || '',
+      address: parsed.address || '',
+      accountLast4,
+    });
+
+    // Strip the raw account number out of what we persist as provenance.
+    const safeParsedRaw = scrubParsed(parsed);
+
     const record = {
       companyName,
       amount: amountNum,
       dueDate,
       category: CATEGORIES.indexOf(parsed.category) !== -1 ? parsed.category : 'Other',
-      paymentLink: '',
       status: 'pending_review',
       source: 'email',
-      parsed_raw: parsed,
+      parsed_raw: safeParsedRaw,
       amountConfidence,
       ownerId: userId,
       homeId: '',
       senderAddress: extracted.from || '',
       forwardedAt: new Date().toISOString(),
+      vendorId: vendorId || '',
     };
 
     const saved = await pbCreateBill(pbUrl, token, record);
-    return res.status(200).json({ ok: true, saved: true, savedId: saved.id, usedAttachment, parsed });
+    return res.status(200).json({ ok: true, saved: true, savedId: saved.id, vendorId, usedAttachment, parsed: safeParsedRaw });
   } catch (err) {
     return res.status(500).json({ error: 'Failed to save record', detail: String(err) });
   }
