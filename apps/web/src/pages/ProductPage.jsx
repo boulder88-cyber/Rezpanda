@@ -127,7 +127,9 @@ const HeroSection = () => (
       <div style={{ position: 'absolute', width: '400px', height: '400px', borderRadius: '50%', background: 'rgba(107,143,113,0.14)', filter: 'blur(20px)', bottom: '-180px', left: '-120px' }} />
     </div>
     <div style={{ maxWidth: '760px', margin: '0 auto', textAlign: 'center', position: 'relative', zIndex: 1 }}>
-      <p style={{ fontFamily: sans, fontSize: '12px', fontWeight: 700, color: '#BBD0EC', letterSpacing: '0.16em', textTransform: 'uppercase', marginBottom: '16px' }}>What CasaCEO does</p>
+      <p style={{ fontFamily: sans, fontSize: '12px', fontWeight: 700, color: '#BBD0EC', letterSpacing: '0.16em', textTransform: 'uppercase', marginBottom: '16px' }}>
+        What <span style={{ textTransform: 'none', fontWeight: 800, letterSpacing: '-0.01em' }}>Casa<span style={{ color: '#c9a96e' }}>CEO</span></span> does
+      </p>
       <h1 style={{ fontFamily: serif, fontSize: 'clamp(2.3rem, 5vw, 3.4rem)', fontWeight: 600, color: '#fff', lineHeight: 1.1, letterSpacing: '-0.015em', marginBottom: '20px' }}>
         Three ways to keep your home in order.
       </h1>
