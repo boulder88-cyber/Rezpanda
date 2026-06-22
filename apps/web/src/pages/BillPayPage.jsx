@@ -437,15 +437,21 @@ const BillPayPage = () => {
     if (!currentUser) return;
     try {
       setIsLoading(true);
-      const records = await pb.collection('service_companies').getFullList({
-        batch: 500, filter: `ownerId="${currentUser.id}"`, sort: 'companyName', $autoCancel: false
+      const records = await pb.collection('invoices').getFullList({
+        batch: 500, filter: `ownerId="${currentUser.id}"`, sort: 'companyName',
+        expand: 'vendorId', $autoCancel: false
       });
-      const uniqueRecords = [];
-      const seenNames = new Set();
-      for (const record of records) {
-        if (!seenNames.has(record.companyName)) { seenNames.add(record.companyName); uniqueRecords.push(record); }
-      }
-      setCompanies(uniqueRecords);
+      // Flatten the vendor's pay URL onto each invoice as `paymentLink` so the
+      // card and pay buttons keep reading a single field. The pay URL now lives
+      // on the vendor (stable), resolved here through the expanded relation.
+      const flattened = records.map((r) => {
+        const vendor = r.expand && r.expand.vendorId ? r.expand.vendorId : null;
+        return { ...r, paymentLink: vendor ? (vendor.payUrl || '') : '' };
+      });
+      // Show every invoice. (The old collapse-by-companyName was a workaround
+      // from when each monthly bill was its own row sharing a name; the clean
+      // vendor/invoice split makes that collapsing wrong — each invoice is real.)
+      setCompanies(flattened);
     } catch {
       toast({ title: 'Failed to load bills', variant: 'destructive' });
     } finally {
