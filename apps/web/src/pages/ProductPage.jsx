@@ -10,35 +10,33 @@ import {
   CasaCEO — Product page (/product)
   --------------------------------------------------------------------------
   The deeper dive behind the home page's "See what it does." Same three
-  pillars, same warm tokens — just one level more detail on each. NOT a
-  flat feature list, NOT the old HomeOS module cathedral. Everything that
-  isn't a pillar (insurance, warranty, vendors, taxes, personal bills…)
-  folds in as an example sub-item under one of the three.
+  pillars, same warm tokens — but each pillar now leads with a real
+  before/after: the scattered, costly way a home gets managed now, vs. the
+  same moment with CasaCEO. Tone: warm but honest about the cost — name the
+  late fee and the lost warranty, then land in relief, not anxiety.
 
-  The "+" is the quiet bonus: Bill Pay can catch the non-home bills too.
-  It gets ONE small, calm moment near the bills section — never a headline,
-  never homepage copy. Invisible-until-discovered.
-
-  Tokens mirror MarketingHomePage exactly:
-    Ink   #1C3553  warmed navy — brand anchor + headlines
-    Sky   #3E6BA8  softer mid-blue accent
-    Paper #F6F3EC  warm off-white background
-    Sand  #EFE9DD  warm card tint / dividers
-    Sage  #6B8F71  "done / reassurance" accent
-    Stone #6E6A62  warm gray secondary text
-    Line  #E3DCCE  warm border
+  Everything that isn't a pillar (insurance, warranty, taxes, personal
+  bills…) folds in under one of the three. The "+" keeps ONE quiet moment
+  under Bills — never a headline. Tokens mirror MarketingHomePage exactly.
 */
 
 const INK = '#1C3553';
 const SKY = '#3E6BA8';
+const GOLD = '#c9a96e';
 const PAPER = '#F6F3EC';
 const SAND = '#EFE9DD';
 const SAGE = '#6B8F71';
 const STONE = '#6E6A62';
 const LINE = '#E3DCCE';
+const CLAY = '#B07A5B'; // warm muted terracotta for the "now" side — never alarm-red
 
 const serif = "'Iowan Old Style', 'Palatino Linotype', Palatino, Georgia, 'Times New Roman', serif";
 const sans = "'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif";
+
+// ── Brand wordmark ─────────────────────────────────────────────────
+const Wordmark = () => (
+  <span style={{ textTransform: 'none', whiteSpace: 'nowrap' }}>Casa<span style={{ color: GOLD }}>CEO</span></span>
+);
 
 // ── Fade-in on scroll ──────────────────────────────────────────────
 const useFadeIn = () => {
@@ -68,7 +66,7 @@ const STATUS_STYLE = {
 };
 
 // ═══════════════════════════════════════════════════════════════════
-// DATA — three pillars, each with what's actually inside it
+// DATA — three pillars: lived before/after, then what's inside
 // ═══════════════════════════════════════════════════════════════════
 
 const PILLARS = [
@@ -77,7 +75,15 @@ const PILLARS = [
     icon: CreditCard,
     label: 'Bill Pay',
     status: 'Available now',
-    lede: 'Your whole recurring money-out picture in one calm place — sorted by provider and due date, so nothing slips past you.',
+    lede: 'The bills that run your home, gathered in one calm place — read, sorted, and lined up by due date before any of them can sneak past you.',
+    now: {
+      head: 'The way it goes now',
+      body: 'Bills arrive in five inboxes and a pile by the door. You mean to deal with the water bill, then it\u2019s three weeks later and there\u2019s a $39 late fee for something you absolutely had the money to pay. You\u2019re not disorganized — there\u2019s just no one place that holds it all, so the mental tab is always open.',
+    },
+    withCasa: {
+      head: 'With CasaCEO',
+      body: 'You forward a bill once and it files itself — payee, amount, and due date read for you. Everything lines up in one view: what\u2019s due this week, what\u2019s coming, what\u2019s already handled. The late fee stops happening because nothing is hiding anymore. You still pay it yourself, your way — you just stop being surprised.',
+    },
     inside: [
       'Forward a bill by email and it files itself — provider, amount, and due date read automatically',
       'Utilities, mortgage, property taxes, and insurance premiums all grouped together',
@@ -91,7 +97,15 @@ const PILLARS = [
     icon: Wrench,
     label: 'Maintenance',
     status: 'Available now',
-    lede: 'Simple recurring reminders for the things that quietly keep a home healthy — no spreadsheets, no mental load.',
+    lede: 'The quiet upkeep that keeps a home healthy, remembered for you — so the small things stay small instead of becoming the expensive thing.',
+    now: {
+      head: 'The way it goes now',
+      body: 'Nobody schedules the furnace filter. You remember it in February when the air feels off, or never, until a service call turns a $15 filter into a $400 repair. The gutters, the water heater flush, the HVAC check — they live in your head, which means they live nowhere, until something forces the issue.',
+    },
+    withCasa: {
+      head: 'With CasaCEO',
+      body: 'You set a task once and it comes back on its own, at the right time of year. A gentle nudge before the season turns, not a crisis after. The home keeps a record of what was done and when — so \u201cwait, did we ever flush the water heater?\u201d has an answer instead of a shrug.',
+    },
     inside: [
       'Set a task once and let it come back on its own — filters, gutters, seasonal checks',
       'See what is overdue and what is due soon at a glance, per property',
@@ -105,7 +119,15 @@ const PILLARS = [
     icon: FileText,
     label: 'Documents',
     status: 'Coming soon',
-    lede: 'Every important paper in one findable place — the things that matter, all there the moment you need them.',
+    lede: 'The papers a household actually relies on, kept findable — there the moment you need them, not the day after.',
+    now: {
+      head: 'The way it goes now',
+      body: 'The dishwasher dies and the warranty is in a drawer, or an email, or gone. You spend an evening you didn\u2019t have digging for the closing papers, the policy number, the receipt that would\u2019ve covered it. The documents that protect you only matter at the worst moment — and that\u2019s exactly when they\u2019re impossible to find.',
+    },
+    withCasa: {
+      head: 'With CasaCEO',
+      body: 'Deeds, policies, warranties, receipts — kept in one place, organized by what they are. When the dishwasher dies you pull up the warranty in seconds, not an evening. The papers are quietly ready before you need them, which is the only time being ready actually counts.',
+    },
     inside: [
       'Deeds, closing papers, and title documents kept together',
       'Insurance policies, warranties, and receipts, easy to pull up',
@@ -127,32 +149,32 @@ const HeroSection = () => (
       <div style={{ position: 'absolute', width: '400px', height: '400px', borderRadius: '50%', background: 'rgba(107,143,113,0.14)', filter: 'blur(20px)', bottom: '-180px', left: '-120px' }} />
     </div>
     <div style={{ maxWidth: '760px', margin: '0 auto', textAlign: 'center', position: 'relative', zIndex: 1 }}>
-      <p style={{ fontFamily: sans, fontSize: '12px', fontWeight: 700, color: '#BBD0EC', letterSpacing: '0.16em', textTransform: 'uppercase', marginBottom: '16px' }}>
-        What <span style={{ textTransform: 'none', fontWeight: 800, letterSpacing: '-0.01em' }}>Casa<span style={{ color: '#c9a96e' }}>CEO</span></span> does
-      </p>
+      <p style={{ fontFamily: sans, fontSize: '12px', fontWeight: 700, color: '#BBD0EC', letterSpacing: '0.16em', textTransform: 'uppercase', marginBottom: '16px' }}>What <Wordmark /> does</p>
       <h1 style={{ fontFamily: serif, fontSize: 'clamp(2.3rem, 5vw, 3.4rem)', fontWeight: 600, color: '#fff', lineHeight: 1.1, letterSpacing: '-0.015em', marginBottom: '20px' }}>
-        Three ways to keep your home in order.
+        The home runs you. It should be the other way around.
       </h1>
-      <p style={{ fontFamily: sans, fontSize: '18px', lineHeight: 1.65, color: 'rgba(255,255,255,0.74)', maxWidth: '560px', margin: '0 auto' }}>
-        Your bills, your upkeep, and your documents — each one simple on its own, and calmer together. Use one, or use all three.
+      <p style={{ fontFamily: sans, fontSize: '18px', lineHeight: 1.65, color: 'rgba(255,255,255,0.74)', maxWidth: '580px', margin: '0 auto' }}>
+        Three small things, handled — your bills, your upkeep, your documents. Here\u2019s what changes when each one stops living in your head.
       </p>
     </div>
   </section>
 );
 
 // ═══════════════════════════════════════════════════════════════════
-// PILLAR SECTIONS — one deep block each, alternating background
+// PILLAR SECTIONS — before/after, then what's inside
 // ═══════════════════════════════════════════════════════════════════
 
 const PillarSection = ({ pillar, index }) => {
   const Icon = pillar.icon;
   const s = STATUS_STYLE[pillar.status];
   const onPaper = index % 2 === 0;
+  const cardBg = onPaper ? '#fff' : PAPER;
   return (
     <section id={pillar.id} style={{ background: onPaper ? PAPER : '#fff', padding: '78px 24px', borderTop: `1px solid ${LINE}` }}>
       <div style={{ maxWidth: '900px', margin: '0 auto' }}>
+        {/* Heading */}
         <FadeIn>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '16px', marginBottom: '18px' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '16px', marginBottom: '16px' }}>
             <div style={{ width: '54px', height: '54px', borderRadius: '14px', background: SAND, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
               <Icon style={{ width: '26px', height: '26px', color: INK }} />
             </div>
@@ -163,26 +185,45 @@ const PillarSection = ({ pillar, index }) => {
               <h2 style={{ fontFamily: serif, fontSize: 'clamp(1.7rem, 3.5vw, 2.3rem)', fontWeight: 600, color: INK, letterSpacing: '-0.015em', marginTop: '8px' }}>{pillar.label}</h2>
             </div>
           </div>
-          <p style={{ fontFamily: sans, fontSize: '17.5px', lineHeight: 1.65, color: STONE, marginBottom: '30px', maxWidth: '640px' }}>{pillar.lede}</p>
+          <p style={{ fontFamily: sans, fontSize: '17.5px', lineHeight: 1.65, color: STONE, marginBottom: '30px', maxWidth: '660px' }}>{pillar.lede}</p>
         </FadeIn>
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '14px', marginBottom: '26px' }}>
+
+        {/* Before / after */}
+        <FadeIn delay={60}>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '16px', marginBottom: '30px' }}>
+            {/* Now */}
+            <div style={{ background: cardBg, border: `1px solid ${LINE}`, borderRadius: '16px', padding: '24px', borderLeft: `4px solid ${CLAY}` }}>
+              <p style={{ fontFamily: sans, fontSize: '12px', fontWeight: 700, color: CLAY, letterSpacing: '0.04em', textTransform: 'uppercase', marginBottom: '12px' }}>{pillar.now.head}</p>
+              <p style={{ fontFamily: sans, fontSize: '15px', lineHeight: 1.7, color: INK }}>{pillar.now.body}</p>
+            </div>
+            {/* With CasaCEO */}
+            <div style={{ background: cardBg, border: `1px solid ${LINE}`, borderRadius: '16px', padding: '24px', borderLeft: `4px solid ${SAGE}` }}>
+              <p style={{ fontFamily: sans, fontSize: '12px', fontWeight: 700, color: SAGE, letterSpacing: '0.04em', textTransform: 'uppercase', marginBottom: '12px' }}>{pillar.withCasa.head}</p>
+              <p style={{ fontFamily: sans, fontSize: '15px', lineHeight: 1.7, color: INK }}>{pillar.withCasa.body}</p>
+            </div>
+          </div>
+        </FadeIn>
+
+        {/* What's inside */}
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '14px', marginBottom: '24px' }}>
           {pillar.inside.map((pt, i) => (
             <FadeIn key={i} delay={i * 70}>
-              <div style={{ display: 'flex', alignItems: 'flex-start', gap: '11px', background: onPaper ? '#fff' : PAPER, border: `1px solid ${LINE}`, borderRadius: '13px', padding: '16px 18px', height: '100%' }}>
+              <div style={{ display: 'flex', alignItems: 'flex-start', gap: '11px', background: cardBg, border: `1px solid ${LINE}`, borderRadius: '13px', padding: '16px 18px', height: '100%' }}>
                 <CheckCircle2 style={{ width: '18px', height: '18px', color: SAGE, flexShrink: 0, marginTop: '1px' }} />
                 <p style={{ fontFamily: sans, fontSize: '14.5px', lineHeight: 1.55, color: INK }}>{pt}</p>
               </div>
             </FadeIn>
           ))}
         </div>
+
         <FadeIn>
-          <p style={{ fontFamily: sans, fontSize: '14px', lineHeight: 1.6, color: STONE, fontStyle: 'italic', maxWidth: '620px' }}>{pillar.note}</p>
+          <p style={{ fontFamily: sans, fontSize: '14px', lineHeight: 1.6, color: STONE, fontStyle: 'italic', maxWidth: '640px' }}>{pillar.note}</p>
         </FadeIn>
 
-        {/* Quiet "+" moment — only under Bills, only here, never a headline */}
+        {/* Quiet "+" moment — only under Bills */}
         {pillar.id === 'bills' && (
           <FadeIn delay={120}>
-            <div style={{ display: 'flex', alignItems: 'flex-start', gap: '13px', background: onPaper ? '#fff' : PAPER, border: `1px dashed ${LINE}`, borderRadius: '14px', padding: '18px 20px', marginTop: '24px', maxWidth: '640px' }}>
+            <div style={{ display: 'flex', alignItems: 'flex-start', gap: '13px', background: cardBg, border: `1px dashed ${LINE}`, borderRadius: '14px', padding: '18px 20px', marginTop: '24px', maxWidth: '640px' }}>
               <div style={{ width: '34px', height: '34px', borderRadius: '10px', background: SAND, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
                 <Plus style={{ width: '17px', height: '17px', color: SKY }} />
               </div>
@@ -201,7 +242,7 @@ const PillarSection = ({ pillar, index }) => {
 };
 
 // ═══════════════════════════════════════════════════════════════════
-// REASSURANCE STRIP (same three promises as the home page)
+// REASSURANCE STRIP
 // ═══════════════════════════════════════════════════════════════════
 
 const ReassureSection = () => (
@@ -235,7 +276,7 @@ const ReassureSection = () => (
 );
 
 // ═══════════════════════════════════════════════════════════════════
-// CLOSING CTA (mirrors home page styling)
+// CLOSING CTA
 // ═══════════════════════════════════════════════════════════════════
 
 const CTASection = () => (
@@ -243,10 +284,10 @@ const CTASection = () => (
     <div style={{ maxWidth: '640px', margin: '0 auto', textAlign: 'center' }}>
       <FadeIn>
         <h2 style={{ fontFamily: serif, fontSize: 'clamp(1.9rem, 4vw, 2.7rem)', fontWeight: 600, color: '#fff', letterSpacing: '-0.015em', marginBottom: '16px', lineHeight: 1.15 }}>
-          Start with one. Add the rest when you&rsquo;re ready.
+          Close the open tab in your head.
         </h2>
         <p style={{ fontFamily: sans, fontSize: '17px', color: 'rgba(255,255,255,0.72)', marginBottom: '34px', lineHeight: 1.6 }}>
-          There&rsquo;s no big setup and nothing to wrestle with — just a calmer place to run your home.
+          Start with one — the bill that keeps slipping, or the upkeep you keep forgetting. Add the rest when you&rsquo;re ready.
         </p>
         <div style={{ display: 'flex', gap: '12px', justifyContent: 'center', flexWrap: 'wrap' }}>
           <Link to="/signup" style={{ display: 'inline-flex', alignItems: 'center', gap: '8px', fontFamily: sans, padding: '15px 32px', borderRadius: '11px', background: '#fff', color: INK, fontSize: '15px', fontWeight: 700, textDecoration: 'none', transition: 'transform 0.15s' }}
@@ -258,9 +299,6 @@ const CTASection = () => (
             Talk to us
           </Link>
         </div>
-        <p style={{ fontFamily: sans, fontSize: '13px', color: 'rgba(255,255,255,0.5)', marginTop: '26px' }}>
-          Free to start &middot; No card needed &middot; Ready in 5 minutes
-        </p>
       </FadeIn>
     </div>
   </section>
