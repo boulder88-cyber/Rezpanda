@@ -64,6 +64,14 @@ const FadeIn = ({ children, delay = 0 }) => {
   );
 };
 
+// ── Brand wordmark ─────────────────────────────────────────────────
+// CasaCEO with the gold "CEO". `textTransform: none` keeps CamelCase even
+// inside uppercase eyebrow labels. Inherits surrounding size/weight.
+const GOLD = '#c9a96e';
+const Wordmark = () => (
+  <span style={{ textTransform: 'none', whiteSpace: 'nowrap' }}>Casa<span style={{ color: GOLD }}>CEO</span></span>
+);
+
 // ═══════════════════════════════════════════════════════════════════
 // DATA — three pillars. Everything else folds in as an example sub-item.
 // ═══════════════════════════════════════════════════════════════════
@@ -96,7 +104,7 @@ const STATUS_STYLE = {
 };
 
 const STEPS = [
-  { n: '1', title: 'Add your home', desc: 'Enter your address and a few details. That\u2019s the whole setup.' },
+  { n: '1', title: 'Add your home', desc: 'Enter your address and a few details. That’s the whole setup.' },
   { n: '2', title: 'Bring things in', desc: 'Forward a bill, drop in a document, log a maintenance task. Add only what you need, when you need it.' },
   { n: '3', title: 'Stay on top of it', desc: 'Reminders surface, records stay organized, and your home runs in one calm place — no spreadsheets, no second job.' },
 ];
@@ -152,12 +160,12 @@ const PillarsSection = () => (
     <div style={{ maxWidth: '1100px', margin: '0 auto' }}>
       <FadeIn>
         <div style={{ textAlign: 'center', marginBottom: '56px' }}>
-          <p style={{ fontFamily: sans, fontSize: '12px', fontWeight: 700, color: SKY, letterSpacing: '0.16em', textTransform: 'uppercase', marginBottom: '14px' }}>What CasaCEO does</p>
+          <p style={{ fontFamily: sans, fontSize: '12px', fontWeight: 700, color: SKY, letterSpacing: '0.16em', textTransform: 'uppercase', marginBottom: '14px' }}>What <Wordmark /> does</p>
           <h2 style={{ fontFamily: serif, fontSize: 'clamp(1.85rem, 4vw, 2.6rem)', fontWeight: 600, color: INK, letterSpacing: '-0.015em', marginBottom: '16px' }}>
             Three ways to keep your home in order.
           </h2>
           <p style={{ fontFamily: sans, fontSize: '17px', color: STONE, maxWidth: '540px', margin: '0 auto', lineHeight: 1.6 }}>
-            Use one, use all three. CasaCEO stays simple and grows with you — nothing you don\u2019t need gets in the way.
+            Use one, use all three. <Wordmark /> stays simple and grows with you — nothing you don&rsquo;t need gets in the way.
           </p>
         </div>
       </FadeIn>
@@ -224,7 +232,7 @@ const HowItWorksSection = () => (
 // ═══════════════════════════════════════════════════════════════════
 
 const PERSONAS = [
-  { tag: 'Caretakers', desc: "Managing a parent\u2019s home from afar? Keep their bills, repairs, and records in one place you can check anytime.", accent: SAGE },
+  { tag: 'Caretakers', desc: "Managing a parent’s home from afar? Keep their bills, repairs, and records in one place you can check anytime.", accent: SAGE },
   { tag: 'Homeowners', desc: 'Everything about your home, organized — so you spend less time hunting for paperwork and more time living in it.', accent: SKY },
   { tag: 'Multiple homes', desc: 'A vacation place or a rental? Switch between homes in a tap; each one keeps its own tidy set of records.', accent: INK },
 ];
@@ -234,7 +242,7 @@ const PersonasSection = () => (
     <div style={{ maxWidth: '1100px', margin: '0 auto' }}>
       <FadeIn>
         <div style={{ textAlign: 'center', marginBottom: '50px' }}>
-          <p style={{ fontFamily: sans, fontSize: '12px', fontWeight: 700, color: SKY, letterSpacing: '0.16em', textTransform: 'uppercase', marginBottom: '14px' }}>Who it\u2019s for</p>
+          <p style={{ fontFamily: sans, fontSize: '12px', fontWeight: 700, color: SKY, letterSpacing: '0.16em', textTransform: 'uppercase', marginBottom: '14px' }}>Who it’s for</p>
           <h2 style={{ fontFamily: serif, fontSize: 'clamp(1.85rem, 4vw, 2.6rem)', fontWeight: 600, color: INK, letterSpacing: '-0.015em' }}>
             One calm place. However you live.
           </h2>
@@ -263,12 +271,12 @@ const ReassureSection = () => (
   <section style={{ background: '#fff', padding: '72px 24px', borderTop: `1px solid ${LINE}` }}>
     <div style={{ maxWidth: '900px', margin: '0 auto' }}>
       <FadeIn>
-        <p style={{ fontFamily: sans, fontSize: '12px', fontWeight: 700, color: SKY, letterSpacing: '0.16em', textTransform: 'uppercase', textAlign: 'center', marginBottom: '36px' }}>Why CasaCEO</p>
+        <p style={{ fontFamily: sans, fontSize: '12px', fontWeight: 700, color: SKY, letterSpacing: '0.16em', textTransform: 'uppercase', textAlign: 'center', marginBottom: '36px' }}>Why <Wordmark /></p>
       </FadeIn>
       <div style={{ display: 'flex', flexWrap: 'wrap', gap: '28px', justifyContent: 'center' }}>
       {[
         { icon: Bell, label: 'Gentle reminders', sub: 'Before a due date, never after.' },
-        { icon: ShieldCheck, label: 'Private by default', sub: 'Your home\u2019s records are yours alone.' },
+        { icon: ShieldCheck, label: 'Private by default', sub: 'Your home’s records are yours alone.' },
         { icon: Heart, label: 'Simple on purpose', sub: 'No clutter, no jargon, no second job.' },
       ].map((r, i) => {
         const Icon = r.icon;
@@ -301,7 +309,7 @@ const TestimonialSection = () => (
           {Array(5).fill(0).map((_, j) => <Star key={j} style={{ width: '16px', height: '16px', color: '#D9A45B', fill: '#D9A45B' }} />)}
         </div>
         <p style={{ fontFamily: serif, fontSize: 'clamp(1.3rem, 3vw, 1.8rem)', fontWeight: 500, color: INK, lineHeight: 1.45, letterSpacing: '-0.01em', marginBottom: '24px' }}>
-          &ldquo;I finally feel like I understand what I own. CasaCEO gave me a system for my house I never knew I needed.&rdquo;
+          &ldquo;I finally feel like I understand what I own. <Wordmark /> gave me a system for my house I never knew I needed.&rdquo;
         </p>
         <p style={{ fontFamily: sans, fontSize: '14px', fontWeight: 700, color: INK }}>Jennifer M.</p>
         <p style={{ fontFamily: sans, fontSize: '13px', color: STONE }}>Homeowner · Atlanta, GA</p>
