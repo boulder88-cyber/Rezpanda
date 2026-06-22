@@ -28,14 +28,6 @@ const FOOTER_COLS = [
     ],
   },
   {
-    heading: 'For you',
-    links: [
-      { label: 'Homeowners', href: '/pricing' },
-      { label: 'Multiple homes', href: '/properties' },
-      { label: 'Caretakers', href: '/about' },
-    ],
-  },
-  {
     heading: 'Company',
     links: [
       { label: 'About', href: '/about' },
