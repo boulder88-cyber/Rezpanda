@@ -1,35 +1,58 @@
 import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
 import SiteLayout from './SiteLayout.jsx';
-import { Search, ChevronDown, ChevronUp, Home, FileText, Wrench, Shield, Mail, MessageCircle } from 'lucide-react';
+import { Search, ChevronDown, ChevronUp, CreditCard, Wrench, FileText, ShieldCheck, Mail } from 'lucide-react';
+
+/*
+  CasaCEO — Support (/support)
+  --------------------------------------------------------------------------
+  Recolored to the warm palette and rewritten so the FAQs describe the REAL
+  product (forward-by-email bills, per-property pricing, no bank access,
+  store-fields-not-files) instead of the old HomeOS claims (AVM/valuation,
+  AES-256 vault, smart-home devices, shared access). No fake article counts.
+*/
+
+const INK = '#1C3553';
+const SKY = '#3E6BA8';
+const GOLD = '#c9a96e';
+const PAPER = '#F6F3EC';
+const SAND = '#EFE9DD';
+const STONE = '#6E6A62';
+const LINE = '#E3DCCE';
+
+const serif = "'Iowan Old Style', 'Palatino Linotype', Palatino, Georgia, 'Times New Roman', serif";
+const sans = "'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif";
+
+const Wordmark = () => (
+  <span style={{ textTransform: 'none', whiteSpace: 'nowrap' }}>Casa<span style={{ color: GOLD }}>CEO</span></span>
+);
 
 const CATEGORIES = [
-  { icon: Home, label: 'Getting Started', color: '#1e3a5f', bg: '#eef2f8', count: 12 },
-  { icon: FileText, label: 'Documents', color: '#7c3aed', bg: '#f5f3ff', count: 8 },
-  { icon: Wrench, label: 'Maintenance', color: '#f97316', bg: '#fff7ed', count: 10 },
-  { icon: Shield, label: 'Insurance & Utilities', color: '#e8604c', bg: '#fdf0ee', count: 7 },
+  { icon: CreditCard, label: 'Bill Pay' },
+  { icon: Wrench, label: 'Maintenance' },
+  { icon: FileText, label: 'Documents' },
+  { icon: ShieldCheck, label: 'Privacy & security' },
 ];
 
 const FAQS = [
-  { q: 'How do I add my home to HomeOS?', a: 'After signing up, click "Add Home" from your dashboard. Enter your property address and HomeOS will auto-populate public record data. You can then add purchase details, upload documents, and connect your utilities.' },
-  { q: 'Is my data secure?', a: 'Yes — all data is encrypted at rest with AES-256 and in transit with TLS 1.3. Documents are stored in an encrypted vault. We never sell or share your data. You can export or delete everything at any time.' },
-  { q: 'How does the AI document classification work?', a: 'When you upload a document, HomeOS AI analyzes it to detect the type (warranty, insurance policy, receipt, etc.), extracts key fields like dates and amounts, and suggests tags. You can review and edit before saving.' },
-  { q: 'Can I invite my spouse or partner to access the platform?', a: 'Yes — go to Shared Access in your Home Profile and invite collaborators by email. You can grant Owner, Editor, or Viewer permissions and manage access at any time.' },
-  { q: 'How does the home valuation work?', a: 'HomeOS uses an Automated Valuation Model (AVM) that refreshes daily based on comparable sales, market trends, and your home\'s details. You can also add manual snapshots at any time.' },
-  { q: 'What happens if I cancel my account?', a: 'You can export all your data before canceling. After cancellation, your data is permanently deleted from active systems within 30 days and from backups within 90 days.' },
-  { q: 'Do you have a mobile app?', a: 'A native iOS and Android app is in development. Currently, HomeOS is fully responsive and works great in mobile browsers. Sign up at casaceo.com to be notified when the app launches.' },
-  { q: 'How do I connect my smart home devices?', a: 'From Smart Home Hub in your dashboard, you can connect Nest, Ring, Ecobee, and smart meters. Integration settings allow you to manage connected devices and configure alert preferences.' },
+  { q: 'How do I add my home?', a: 'After signing up, choose "Add property" and enter your address plus a few basic details. That\u2019s the whole setup — you can start forwarding bills and adding maintenance tasks right away.' },
+  { q: 'How does forwarding a bill work?', a: 'Each account gets its own CasaCEO email address. Forward a bill to it — or have a provider send statements there directly — and CasaCEO reads the provider, amount, and due date, then files it for you. A quick review step lets you check anything it wasn\u2019t sure about before it counts.' },
+  { q: 'Does CasaCEO pay my bills or access my bank?', a: 'No. CasaCEO never connects to your bank, never stores a card, and never moves money. It keeps track of what\u2019s due and reminds you — you pay each bill yourself, your own way. That boundary is the core of how the product protects you.' },
+  { q: 'What does it cost?', a: 'Pricing is per property: $4.99/month (or $49.99/year) for a home you live in, and $9.99/month (or $99.99/year) for a rental. Add as many properties as you like — you only pay the per-property price for each.' },
+  { q: 'What happens to the emails and PDFs I forward?', a: 'CasaCEO keeps the structured details of a bill — provider, amount, due date — rather than a long-term copy of the original email or file. Storing the fields instead of the document keeps things lean and reduces what\u2019s held about you.' },
+  { q: 'Can I manage more than one home?', a: 'Yes. Each property keeps its own tidy set of bills and records, and you switch between them in a tap. A vacation place or a rental stays cleanly separate from the home you live in.' },
+  { q: 'How do I cancel?', a: 'You can cancel anytime from your account settings. If you\u2019d like a copy of your records first, reach out and we\u2019ll help you export them.' },
 ];
 
 const FAQItem = ({ faq, defaultOpen = false }) => {
   const [open, setOpen] = useState(defaultOpen);
   return (
-    <div style={{ borderBottom: '1px solid #f1f5f9' }}>
+    <div style={{ borderBottom: `1px solid ${LINE}` }}>
       <button onClick={() => setOpen(o => !o)} style={{ width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '18px 24px', background: 'none', border: 'none', cursor: 'pointer', textAlign: 'left', gap: '16px' }}>
-        <p style={{ fontSize: '16px', fontWeight: 600, color: '#0F172A', flex: 1 }}>{faq.q}</p>
-        {open ? <ChevronUp style={{ width: '18px', height: '18px', color: '#94a3b8', flexShrink: 0 }} /> : <ChevronDown style={{ width: '18px', height: '18px', color: '#94a3b8', flexShrink: 0 }} />}
+        <p style={{ fontFamily: sans, fontSize: '16px', fontWeight: 600, color: INK, flex: 1 }}>{faq.q}</p>
+        {open ? <ChevronUp style={{ width: '18px', height: '18px', color: STONE, flexShrink: 0 }} /> : <ChevronDown style={{ width: '18px', height: '18px', color: STONE, flexShrink: 0 }} />}
       </button>
-      {open && <div style={{ padding: '0 24px 20px' }}><p style={{ fontSize: '15px', color: '#64748b', lineHeight: 1.8 }}>{faq.a}</p></div>}
+      {open && <div style={{ padding: '0 24px 20px' }}><p style={{ fontFamily: sans, fontSize: '15px', color: STONE, lineHeight: 1.75 }}>{faq.a}</p></div>}
     </div>
   );
 };
@@ -39,68 +62,61 @@ const SupportPage = () => {
   const filtered = FAQS.filter(f => !query || f.q.toLowerCase().includes(query.toLowerCase()) || f.a.toLowerCase().includes(query.toLowerCase()));
 
   return (
-    <SiteLayout seo={{ title: 'Support — HomeOS Help Center' }} fullWidth>
+    <SiteLayout seo={{ title: 'Support — CasaCEO help center' }} fullWidth>
       {/* Hero */}
-      <section style={{ background: 'linear-gradient(135deg, #1e3a5f 0%, #1A73E8 100%)', padding: '72px 24px 64px', textAlign: 'center' }}>
-        <div style={{ maxWidth: '640px', margin: '0 auto' }}>
-          <h1 style={{ fontSize: 'clamp(2rem, 4vw, 2.75rem)', fontWeight: 800, color: 'white', marginBottom: '16px', letterSpacing: '-0.02em' }}>How can we help?</h1>
-          <p style={{ fontSize: '17px', color: 'rgba(255,255,255,0.7)', marginBottom: '28px' }}>Search our help center or browse by category.</p>
-          {/* Search bar */}
+      <section style={{ background: INK, padding: '76px 24px 62px', textAlign: 'center', position: 'relative', overflow: 'hidden' }}>
+        <div aria-hidden style={{ position: 'absolute', inset: 0, pointerEvents: 'none' }}>
+          <div style={{ position: 'absolute', width: '520px', height: '520px', borderRadius: '50%', background: 'rgba(62,107,168,0.22)', filter: 'blur(20px)', top: '-200px', right: '-120px' }} />
+        </div>
+        <div style={{ maxWidth: '640px', margin: '0 auto', position: 'relative', zIndex: 1 }}>
+          <h1 style={{ fontFamily: serif, fontSize: 'clamp(2rem, 4vw, 2.7rem)', fontWeight: 600, color: '#fff', marginBottom: '14px', letterSpacing: '-0.015em' }}>How can we help?</h1>
+          <p style={{ fontFamily: sans, fontSize: '17px', color: 'rgba(255,255,255,0.72)', marginBottom: '28px' }}>Search common questions or browse by topic.</p>
           <div style={{ position: 'relative' }}>
-            <Search style={{ position: 'absolute', left: '16px', top: '50%', transform: 'translateY(-50%)', width: '18px', height: '18px', color: '#94a3b8' }} />
-            <input value={query} onChange={e => setQuery(e.target.value)} placeholder="Search help articles…"
-              style={{ width: '100%', height: '52px', paddingLeft: '48px', paddingRight: '16px', borderRadius: '12px', border: 'none', fontSize: '16px', outline: 'none', boxSizing: 'border-box', boxShadow: '0 4px 16px rgba(0,0,0,0.15)' }} />
+            <Search style={{ position: 'absolute', left: '16px', top: '50%', transform: 'translateY(-50%)', width: '18px', height: '18px', color: STONE }} />
+            <input value={query} onChange={e => setQuery(e.target.value)} placeholder="Search help…"
+              style={{ fontFamily: sans, width: '100%', height: '52px', paddingLeft: '48px', paddingRight: '16px', borderRadius: '12px', border: 'none', fontSize: '16px', outline: 'none', boxSizing: 'border-box', boxShadow: '0 4px 16px rgba(0,0,0,0.15)' }} />
           </div>
         </div>
       </section>
 
-      {/* Categories */}
-      <section style={{ padding: '64px 24px', background: '#f8fafc' }}>
+      {/* Categories + FAQ */}
+      <section style={{ padding: '60px 24px', background: PAPER }}>
         <div style={{ maxWidth: '900px', margin: '0 auto' }}>
-          <p style={{ fontSize: '12px', fontWeight: 700, color: '#94a3b8', letterSpacing: '0.12em', textTransform: 'uppercase', marginBottom: '20px', textAlign: 'center' }}>Browse by Category</p>
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: '12px', marginBottom: '56px' }}>
+          <p style={{ fontFamily: sans, fontSize: '12px', fontWeight: 700, color: SKY, letterSpacing: '0.14em', textTransform: 'uppercase', marginBottom: '20px', textAlign: 'center' }}>Browse by topic</p>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: '12px', marginBottom: '52px' }}>
             {CATEGORIES.map(cat => {
               const Icon = cat.icon;
               return (
-                <button key={cat.label} style={{ background: 'white', borderRadius: '14px', border: '1px solid #e2e8f0', padding: '20px 16px', textAlign: 'center', cursor: 'pointer', transition: 'border-color 0.15s, box-shadow 0.15s' }}
-                  onMouseEnter={e => { e.currentTarget.style.borderColor = cat.color; e.currentTarget.style.boxShadow = '0 4px 12px rgba(0,0,0,0.08)'; }}
-                  onMouseLeave={e => { e.currentTarget.style.borderColor = '#e2e8f0'; e.currentTarget.style.boxShadow = 'none'; }}>
-                  <div style={{ width: '44px', height: '44px', borderRadius: '12px', background: cat.bg, display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 12px' }}>
-                    <Icon style={{ width: '20px', height: '20px', color: cat.color }} />
+                <div key={cat.label} style={{ background: '#fff', borderRadius: '14px', border: `1px solid ${LINE}`, padding: '20px 16px', textAlign: 'center' }}>
+                  <div style={{ width: '44px', height: '44px', borderRadius: '12px', background: SAND, display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 12px' }}>
+                    <Icon style={{ width: '20px', height: '20px', color: INK }} />
                   </div>
-                  <p style={{ fontSize: '14px', fontWeight: 700, color: '#0F172A', marginBottom: '4px' }}>{cat.label}</p>
-                  <p style={{ fontSize: '12px', color: '#94a3b8' }}>{cat.count} articles</p>
-                </button>
+                  <p style={{ fontFamily: sans, fontSize: '14px', fontWeight: 700, color: INK }}>{cat.label}</p>
+                </div>
               );
             })}
           </div>
 
-          {/* FAQ */}
-          <p style={{ fontSize: '12px', fontWeight: 700, color: '#94a3b8', letterSpacing: '0.12em', textTransform: 'uppercase', marginBottom: '16px' }}>
-            Frequently Asked Questions {query && `— "${query}"`}
+          <p style={{ fontFamily: sans, fontSize: '12px', fontWeight: 700, color: SKY, letterSpacing: '0.14em', textTransform: 'uppercase', marginBottom: '16px' }}>
+            Common questions {query && `— "${query}"`}
           </p>
-          <div style={{ background: 'white', borderRadius: '16px', border: '1px solid #e2e8f0', overflow: 'hidden', boxShadow: '0 1px 4px rgba(0,0,0,0.05)' }}>
+          <div style={{ background: '#fff', borderRadius: '16px', border: `1px solid ${LINE}`, overflow: 'hidden' }}>
             {filtered.length > 0
               ? filtered.map((faq, i) => <FAQItem key={i} faq={faq} defaultOpen={i === 0} />)
-              : <div style={{ padding: '40px', textAlign: 'center', color: '#94a3b8' }}>No results for "{query}". Try a different search.</div>
+              : <div style={{ padding: '40px', textAlign: 'center', color: STONE, fontFamily: sans }}>No results for "{query}". Try a different search.</div>
             }
           </div>
         </div>
       </section>
 
       {/* Contact */}
-      <section style={{ padding: '64px 24px', background: 'white' }}>
-        <div style={{ maxWidth: '700px', margin: '0 auto', textAlign: 'center' }}>
-          <p style={{ fontSize: '18px', fontWeight: 700, color: '#0F172A', marginBottom: '8px' }}>Still need help?</p>
-          <p style={{ fontSize: '15px', color: '#64748b', marginBottom: '28px' }}>Our team typically responds within one business day.</p>
-          <div style={{ display: 'flex', gap: '12px', justifyContent: 'center', flexWrap: 'wrap' }}>
-            <Link to="/contact" style={{ display: 'inline-flex', alignItems: 'center', gap: '7px', padding: '12px 24px', borderRadius: '10px', background: '#1A73E8', color: 'white', fontSize: '14px', fontWeight: 600, textDecoration: 'none' }}>
-              <Mail style={{ width: '15px', height: '15px' }} /> Email Support
-            </Link>
-            <Link to="/contact" style={{ display: 'inline-flex', alignItems: 'center', gap: '7px', padding: '12px 24px', borderRadius: '10px', background: '#f8fafc', border: '1px solid #e2e8f0', color: '#334155', fontSize: '14px', fontWeight: 600, textDecoration: 'none' }}>
-              <MessageCircle style={{ width: '15px', height: '15px' }} /> Request Demo
-            </Link>
-          </div>
+      <section style={{ padding: '70px 24px', background: '#fff', textAlign: 'center', borderTop: `1px solid ${LINE}` }}>
+        <div style={{ maxWidth: '640px', margin: '0 auto' }}>
+          <p style={{ fontFamily: serif, fontSize: '22px', fontWeight: 600, color: INK, marginBottom: '8px' }}>Still need a hand?</p>
+          <p style={{ fontFamily: sans, fontSize: '15px', color: STONE, marginBottom: '28px' }}>We usually reply within one business day.</p>
+          <Link to="/contact" style={{ display: 'inline-flex', alignItems: 'center', gap: '8px', fontFamily: sans, padding: '13px 26px', borderRadius: '11px', background: INK, color: '#fff', fontSize: '14px', fontWeight: 700, textDecoration: 'none' }}>
+            <Mail style={{ width: '15px', height: '15px' }} /> Contact us
+          </Link>
         </div>
       </section>
     </SiteLayout>
