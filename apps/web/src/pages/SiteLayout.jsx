@@ -1,4 +1,5 @@
 import React, { useEffect } from 'react';
+import { useLocation } from 'react-router-dom';
 import { Helmet } from 'react-helmet';
 import SiteHeader from './SiteHeader.jsx';
 import SiteFooter from './SiteFooter.jsx';
@@ -39,7 +40,26 @@ const SiteLayout = ({
   hideFooter = false,
 }) => {
   // Scroll to top on mount
-  useEffect(() => { window.scrollTo(0, 0); }, []);
+  // Scroll to the #anchor if the URL has one, otherwise to the top.
+  // Re-runs whenever the path OR hash changes, so anchor links work even
+  // when you're already on the page (BrowserRouter won't scroll on its own).
+  const location = useLocation();
+  useEffect(() => {
+    if (location.hash) {
+      const id = decodeURIComponent(location.hash.slice(1));
+      // Wait a frame so the target section is mounted before we measure it.
+      requestAnimationFrame(() => {
+        const el = document.getElementById(id);
+        if (el) {
+          el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+          return;
+        }
+        window.scrollTo(0, 0);
+      });
+    } else {
+      window.scrollTo(0, 0);
+    }
+  }, [location.pathname, location.hash]);
 
   return (
     <>
