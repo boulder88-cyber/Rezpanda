@@ -46,7 +46,7 @@ const PropertyGlanceTile = ({ home, summary, onEnter }) => {
   return (
     <button
       onClick={onEnter}
-      className="text-left hover:-translate-y-0.5 transition-all group flex flex-col w-full"
+      className="text-left hover:-translate-y-0.5 transition-all group flex flex-col w-full h-full"
       style={{
         background: NAVY,
         borderRadius: '16px',
@@ -197,17 +197,26 @@ const PropertiesAtAGlance = ({ onEnter }) => {
         </Link>
       </div>
 
-      {/* Property tiles — top row, evenly distributed (centered so a partial
-          row of 1-2 tiles doesn't cling to the left). */}
-      <div className="flex flex-wrap justify-center" style={{ gap: '16px', marginBottom: '28px' }}>
+      {/* Property tiles — equal-width grid columns so two tiles render the
+          same size, with items stretched to equal height (a tile with bills
+          and a tile that's all-clear now match). Grid is width-capped and
+          centered so a single tile doesn't stretch full-bleed. */}
+      <div
+        className="grid mx-auto items-stretch"
+        style={{
+          gap: '16px',
+          marginBottom: '28px',
+          gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))',
+          maxWidth: homes.length === 1 ? '360px' : homes.length === 2 ? '760px' : '100%',
+        }}
+      >
         {homes.map((home) => (
-          <div key={home.id} className="w-full" style={{ flex: '1 1 240px', maxWidth: '320px' }}>
-            <PropertyGlanceTile
-              home={home}
-              summary={loadingBills ? { dueTotal: 0, openCount: 0, overdueCount: 0, pendingCount: 0 } : summarize(bills, home.id)}
-              onEnter={() => handleEnter(home)}
-            />
-          </div>
+          <PropertyGlanceTile
+            key={home.id}
+            home={home}
+            summary={loadingBills ? { dueTotal: 0, openCount: 0, overdueCount: 0, pendingCount: 0 } : summarize(bills, home.id)}
+            onEnter={() => handleEnter(home)}
+          />
         ))}
       </div>
 
