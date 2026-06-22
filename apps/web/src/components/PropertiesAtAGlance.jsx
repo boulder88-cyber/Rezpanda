@@ -142,7 +142,7 @@ const PropertiesAtAGlance = ({ onEnter }) => {
     const load = async () => {
       if (!currentUser?.id) { setLoadingBills(false); return; }
       try {
-        const records = await pb.collection('service_companies').getFullList({
+        const records = await pb.collection('invoices').getFullList({
           batch: 500,
           filter: `ownerId="${currentUser.id}"`,
           sort: 'companyName',
