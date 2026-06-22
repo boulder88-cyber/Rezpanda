@@ -1,101 +1,103 @@
-import React, { useState, useEffect, useRef } from 'react';
-import { Helmet } from 'react-helmet';
+import React, { useState, useRef, useEffect } from 'react';
 import { Link } from 'react-router-dom';
+import SiteLayout from './SiteLayout.jsx';
 import { Cookie, ChevronDown, ChevronUp, Mail, CheckCircle2 } from 'lucide-react';
-import SiteLayout from '@/pages/SiteLayout.jsx';
+
+/*
+  CasaCEO — Cookie Policy (/cookies)
+  --------------------------------------------------------------------------
+  Branding + drift pass. Fixed palette (coral/blue/purple cookie colors ->
+  warm), naming (HomeOS -> CasaCEO), wrong email (@homeos.com ->
+  @casaceo.com). Softened the old page's confident third-party analytics
+  claims to "if/when used" language, since the product may not run analytics
+  cookies yet. Legal substance left for lawyer review.
+*/
+
+const INK = '#1C3553';
+const SKY = '#3E6BA8';
+const GOLD = '#c9a96e';
+const PAPER = '#F6F3EC';
+const SAND = '#EFE9DD';
+const SAGE = '#6B8F71';
+const STONE = '#6E6A62';
+const LINE = '#E3DCCE';
+
+const serif = "'Iowan Old Style', 'Palatino Linotype', Palatino, Georgia, 'Times New Roman', serif";
+const sans = "'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif";
 
 const useFadeIn = () => {
   const ref = useRef(null);
   const [visible, setVisible] = useState(false);
   useEffect(() => {
-    const observer = new IntersectionObserver(
-      ([e]) => { if (e.isIntersecting) { setVisible(true); observer.disconnect(); } },
-      { threshold: 0.06 }
-    );
-    if (ref.current) observer.observe(ref.current);
-    return () => observer.disconnect();
+    const reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    if (reduce) { setVisible(true); return; }
+    const obs = new IntersectionObserver(([e]) => { if (e.isIntersecting) { setVisible(true); obs.disconnect(); } }, { threshold: 0.06 });
+    if (ref.current) obs.observe(ref.current);
+    return () => obs.disconnect();
   }, []);
   return [ref, visible];
 };
-
 const FadeIn = ({ children, delay = 0 }) => {
   const [ref, visible] = useFadeIn();
   return (
-    <div ref={ref} style={{
-      opacity: visible ? 1 : 0,
-      transform: visible ? 'translateY(0)' : 'translateY(16px)',
-      transition: `opacity 0.5s ease ${delay}ms, transform 0.5s ease ${delay}ms`,
-    }}>
+    <div ref={ref} style={{ opacity: visible ? 1 : 0, transform: visible ? 'none' : 'translateY(16px)', transition: `opacity 0.5s ease ${delay}ms, transform 0.5s ease ${delay}ms` }}>
       {children}
     </div>
   );
 };
 
+const ulStyle = { paddingLeft: '20px', display: 'flex', flexDirection: 'column', gap: '6px', listStyle: 'disc' };
+
 const COOKIE_TYPES = [
   {
-    label: 'Essential Cookies',
+    label: 'Essential cookies',
     required: true,
-    color: '#059669', bg: '#ecfdf5', border: '#a7f3d0',
-    desc: 'These cookies are necessary for HomeOS to function. They cannot be disabled.',
-    uses: ['User authentication and session management', 'Security and fraud prevention', 'Core platform functionality'],
+    desc: 'Necessary for CasaCEO to function. These cannot be turned off.',
+    uses: ['Sign-in and session management', 'Security and abuse prevention', 'Core functionality'],
   },
   {
-    label: 'Performance Cookies',
+    label: 'Preference cookies',
     required: false,
-    color: '#2563eb', bg: '#eff6ff', border: '#bfdbfe',
-    desc: 'Help us understand how users interact with the platform so we can improve it.',
-    uses: ['Analytics and usage statistics', 'Page load performance measurement', 'Error tracking and diagnostics'],
+    desc: 'Remember your settings so the app behaves the way you left it.',
+    uses: ['Interface and layout preferences', 'Regional settings'],
   },
   {
-    label: 'Preference Cookies',
+    label: 'Performance cookies',
     required: false,
-    color: '#7c3aed', bg: '#f5f3ff', border: '#c4b5fd',
-    desc: 'Remember your settings and preferences to personalize your experience.',
-    uses: ['UI settings and layout preferences', 'Language and regional settings', 'Dashboard customization state'],
+    desc: 'If used, these help us understand how the app is performing so we can improve it. Aggregate and anonymized only.',
+    uses: ['Basic usage statistics', 'Error and performance diagnostics'],
   },
 ];
 
 const SECTIONS = [
   {
-    title: 'What Are Cookies?',
+    title: 'What are cookies?',
     content: (
       <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
-        <p>Cookies are small text files that are placed on your device when you visit a website or use a web application. They are widely used to make websites work efficiently, remember your preferences, and provide information to site owners.</p>
-        <p>HomeOS uses cookies and similar tracking technologies (such as local storage and session tokens) to operate the platform, improve your experience, and ensure security.</p>
+        <p>Cookies are small text files placed on your device when you use a web app. They help the app work, remember your preferences, and stay secure.</p>
+        <p>CasaCEO uses cookies and similar technologies (such as session tokens) to operate the service and keep you signed in safely.</p>
       </div>
     ),
   },
   {
-    title: 'Third-Party Cookies',
+    title: 'Third-party cookies',
     content: (
       <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
-        <p>HomeOS works with a small number of trusted third-party service providers who may set cookies on our behalf. These providers are subject to strict data processing agreements.</p>
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-          {[
-            { label: 'Infrastructure Providers', desc: 'Hosting and content delivery networks that ensure platform availability.' },
-            { label: 'Analytics Partners', desc: 'Aggregate, anonymized usage analytics to improve platform performance.' },
-          ].map((item, i) => (
-            <div key={i} style={{ padding: '12px 16px', borderRadius: '10px', background: '#f8fafc', border: '1px solid #e2e8f0' }}>
-              <p style={{ fontWeight: 600, fontSize: '14px', color: '#1e293b', marginBottom: '3px' }}>{item.label}</p>
-              <p style={{ fontSize: '13px', color: '#64748b' }}>{item.desc}</p>
-            </div>
-          ))}
-        </div>
-        <p>HomeOS does not use cookies for advertising or behavioral targeting purposes.</p>
+        <p>CasaCEO relies on a small number of infrastructure providers to host and deliver the service. If any set cookies on our behalf, they do so under data processing agreements.</p>
+        <p>CasaCEO does not use cookies for advertising or behavioral targeting, and there are no ads in the product.</p>
       </div>
     ),
   },
   {
-    title: 'Managing Your Cookies',
+    title: 'Managing your cookies',
     content: (
       <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
-        <p>You can control and manage cookies in several ways:</p>
-        <ul style={{ paddingLeft: '20px', display: 'flex', flexDirection: 'column', gap: '6px', listStyle: 'disc' }}>
-          <li><strong>Browser Settings:</strong> Most browsers allow you to refuse or delete cookies. Refer to your browser's help documentation for instructions.</li>
-          <li><strong>Opt-Out Tools:</strong> You may opt out of analytics cookies at any time through your HomeOS account settings.</li>
-          <li><strong>Essential Cookies:</strong> These cannot be disabled as they are required for the platform to function.</li>
+        <p>You can control cookies in a few ways:</p>
+        <ul style={ulStyle}>
+          <li><strong>Browser settings:</strong> Most browsers let you refuse or delete cookies \u2014 see your browser\u2019s help docs.</li>
+          <li><strong>Essential cookies:</strong> These can\u2019t be disabled, since the app needs them to work.</li>
         </ul>
-        <p>Disabling non-essential cookies will not prevent you from using HomeOS, but may affect certain features and preferences.</p>
+        <p>Turning off non-essential cookies won\u2019t stop you using CasaCEO, but some preferences may not be remembered.</p>
       </div>
     ),
   },
@@ -103,10 +105,10 @@ const SECTIONS = [
     title: 'Contact',
     content: (
       <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-        <p>For questions about our use of cookies and tracking technologies, please contact:</p>
-        <div style={{ display: 'inline-flex', alignItems: 'center', gap: '8px', padding: '10px 16px', borderRadius: '10px', background: '#eef2f8', width: 'fit-content' }}>
-          <Mail style={{ width: '16px', height: '16px', color: '#1e3a5f' }} />
-          <span style={{ fontWeight: 600, color: '#1e3a5f', fontSize: '14px' }}>cookies@homeos.com</span>
+        <p>Questions about cookies? Contact us:</p>
+        <div style={{ display: 'inline-flex', alignItems: 'center', gap: '8px', padding: '10px 16px', borderRadius: '10px', background: SAND, width: 'fit-content' }}>
+          <Mail style={{ width: '16px', height: '16px', color: INK }} />
+          <span style={{ fontWeight: 600, color: INK, fontSize: '14px' }}>hello@casaceo.com</span>
         </div>
       </div>
     ),
@@ -116,22 +118,19 @@ const SECTIONS = [
 const AccordionSection = ({ section, index }) => {
   const [open, setOpen] = useState(index === 0);
   return (
-    <div style={{ borderBottom: '1px solid #f1f5f9' }}>
-      <button onClick={() => setOpen(o => !o)} className="w-full flex items-center justify-between text-left" style={{ padding: '20px 28px', background: 'none', border: 'none', cursor: 'pointer' }}>
-        <div className="flex items-center gap-3">
-          <span style={{ fontSize: '12px', fontWeight: 700, color: '#e8604c', background: '#fdf0ee', padding: '2px 8px', borderRadius: '999px', flexShrink: 0 }}>
+    <div style={{ borderBottom: `1px solid ${LINE}` }}>
+      <button onClick={() => setOpen(o => !o)} style={{ width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'space-between', textAlign: 'left', padding: '20px 28px', background: 'none', border: 'none', cursor: 'pointer' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+          <span style={{ fontFamily: sans, fontSize: '12px', fontWeight: 700, color: GOLD, background: SAND, padding: '2px 8px', borderRadius: '999px', flexShrink: 0 }}>
             {String(index + 1).padStart(2, '0')}
           </span>
-          <p className="font-semibold text-slate-900" style={{ fontSize: '16px' }}>{section.title}</p>
+          <p style={{ fontFamily: sans, fontWeight: 700, color: INK, fontSize: '16px' }}>{section.title}</p>
         </div>
-        {open
-          ? <ChevronUp style={{ width: '18px', height: '18px', color: '#94a3b8', flexShrink: 0 }} />
-          : <ChevronDown style={{ width: '18px', height: '18px', color: '#94a3b8', flexShrink: 0 }} />
-        }
+        {open ? <ChevronUp style={{ width: '18px', height: '18px', color: STONE, flexShrink: 0 }} /> : <ChevronDown style={{ width: '18px', height: '18px', color: STONE, flexShrink: 0 }} />}
       </button>
       {open && (
-        <div style={{ padding: '0 28px 24px', color: '#475569', fontSize: '14px', lineHeight: '1.8' }}>
-          {typeof section.content === 'string' ? <p>{section.content}</p> : section.content}
+        <div style={{ padding: '0 28px 24px', color: STONE, fontFamily: sans, fontSize: '14px', lineHeight: 1.8 }}>
+          {section.content}
         </div>
       )}
     </div>
@@ -139,49 +138,45 @@ const AccordionSection = ({ section, index }) => {
 };
 
 const CookiePolicyPage = () => (
-  <SiteLayout seo={{ title: 'Cookie Policy — HomeOS' }} fullWidth>
-    <section className="relative overflow-hidden" style={{ background: '#1e3a5f', padding: '80px 32px 64px' }}>
-      <div className="absolute inset-0 overflow-hidden pointer-events-none">
-        <div className="absolute rounded-full opacity-5" style={{ width: '500px', height: '500px', background: '#e8604c', top: '-120px', right: '-80px' }} />
+  <SiteLayout seo={{ title: 'Cookie Policy — CasaCEO' }} fullWidth>
+    <section style={{ background: INK, padding: '80px 24px 62px', textAlign: 'center', position: 'relative', overflow: 'hidden' }}>
+      <div aria-hidden style={{ position: 'absolute', inset: 0, pointerEvents: 'none' }}>
+        <div style={{ position: 'absolute', width: '500px', height: '500px', borderRadius: '50%', background: 'rgba(62,107,168,0.22)', filter: 'blur(20px)', top: '-180px', right: '-100px' }} />
       </div>
-      <div className="relative z-10 max-w-3xl mx-auto text-center">
-        <div className="flex items-center justify-center" style={{ marginBottom: '20px' }}>
-          <div style={{ width: '56px', height: '56px', borderRadius: '14px', background: 'rgba(255,255,255,0.1)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-            <Cookie style={{ width: '28px', height: '28px', color: 'white' }} />
-          </div>
+      <div style={{ maxWidth: '620px', margin: '0 auto', position: 'relative', zIndex: 1 }}>
+        <div style={{ width: '54px', height: '54px', borderRadius: '14px', background: 'rgba(255,255,255,0.1)', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 18px' }}>
+          <Cookie style={{ width: '26px', height: '26px', color: GOLD }} />
         </div>
-        <h1 className="font-semibold text-white" style={{ fontSize: '44px', lineHeight: '1.15', marginBottom: '16px' }}>Cookie Policy</h1>
-        <p className="text-blue-200" style={{ fontSize: '17px', lineHeight: '1.75', maxWidth: '460px', margin: '0 auto 20px' }}>
-          Learn how HomeOS uses cookies to improve your experience.
+        <h1 style={{ fontFamily: serif, fontSize: 'clamp(1.9rem, 4vw, 2.6rem)', fontWeight: 600, color: '#fff', marginBottom: '14px', letterSpacing: '-0.015em' }}>Cookie Policy</h1>
+        <p style={{ fontFamily: sans, fontSize: '16px', color: 'rgba(255,255,255,0.72)', lineHeight: 1.65, maxWidth: '460px', margin: '0 auto 18px' }}>
+          How CasaCEO uses cookies to keep the app working and signed in.
         </p>
-        <p style={{ fontSize: '13px', color: 'rgba(255,255,255,0.4)' }}>Last updated: May 2026</p>
+        <p style={{ fontFamily: sans, fontSize: '13px', color: 'rgba(255,255,255,0.4)' }}>Last updated: June 2026</p>
       </div>
     </section>
 
-    <section style={{ padding: '64px 32px', background: '#f8fafc' }}>
+    <section style={{ padding: '60px 24px', background: PAPER }}>
       <div style={{ maxWidth: '800px', margin: '0 auto' }}>
         <FadeIn>
-          <p className="font-semibold text-slate-500 uppercase tracking-widest" style={{ fontSize: '12px', marginBottom: '16px', letterSpacing: '0.12em' }}>Types of Cookies We Use</p>
+          <p style={{ fontFamily: sans, fontSize: '12px', fontWeight: 700, color: SKY, letterSpacing: '0.12em', textTransform: 'uppercase', marginBottom: '16px' }}>Types of cookies we use</p>
           <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', marginBottom: '32px' }}>
             {COOKIE_TYPES.map((ct, i) => (
-              <div key={i} style={{ background: 'white', borderRadius: '14px', border: `1px solid ${ct.border}`, padding: '20px 24px', boxShadow: '0 1px 3px rgba(0,0,0,0.04)' }}>
-                <div className="flex items-center justify-between" style={{ marginBottom: '8px' }}>
-                  <div className="flex items-center gap-2">
-                    <p className="font-semibold text-slate-900" style={{ fontSize: '15px' }}>{ct.label}</p>
-                    {ct.required && (
-                      <span style={{ fontSize: '11px', fontWeight: 700, color: ct.color, background: ct.bg, padding: '1px 7px', borderRadius: '999px' }}>Required</span>
-                    )}
+              <div key={i} style={{ background: '#fff', borderRadius: '14px', border: `1px solid ${LINE}`, padding: '20px 24px' }}>
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '8px' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                    <p style={{ fontFamily: sans, fontWeight: 700, color: INK, fontSize: '15px' }}>{ct.label}</p>
+                    {ct.required
+                      ? <span style={{ fontFamily: sans, fontSize: '11px', fontWeight: 700, color: SAGE, background: '#EEF2EC', padding: '1px 8px', borderRadius: '999px' }}>Required</span>
+                      : <span style={{ fontFamily: sans, fontSize: '11px', fontWeight: 600, color: STONE, background: SAND, padding: '1px 8px', borderRadius: '999px' }}>Optional</span>
+                    }
                   </div>
-                  {!ct.required && (
-                    <span style={{ fontSize: '11px', fontWeight: 600, color: '#94a3b8', background: '#f8fafc', padding: '1px 7px', borderRadius: '999px', border: '1px solid #e2e8f0' }}>Optional</span>
-                  )}
                 </div>
-                <p style={{ fontSize: '13px', color: '#64748b', marginBottom: '10px', lineHeight: '1.6' }}>{ct.desc}</p>
+                <p style={{ fontFamily: sans, fontSize: '13px', color: STONE, marginBottom: '10px', lineHeight: 1.6 }}>{ct.desc}</p>
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
                   {ct.uses.map((use, j) => (
-                    <div key={j} className="flex items-center gap-2">
-                      <CheckCircle2 style={{ width: '13px', height: '13px', color: ct.color, flexShrink: 0 }} />
-                      <p style={{ fontSize: '13px', color: '#475569' }}>{use}</p>
+                    <div key={j} style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                      <CheckCircle2 style={{ width: '13px', height: '13px', color: SAGE, flexShrink: 0 }} />
+                      <p style={{ fontFamily: sans, fontSize: '13px', color: STONE }}>{use}</p>
                     </div>
                   ))}
                 </div>
@@ -190,16 +185,16 @@ const CookiePolicyPage = () => (
           </div>
         </FadeIn>
         <FadeIn delay={80}>
-          <div className="bg-white" style={{ borderRadius: '16px', border: '1px solid #e2e8f0', overflow: 'hidden', boxShadow: '0 1px 4px rgba(0,0,0,0.04)' }}>
+          <div style={{ background: '#fff', borderRadius: '16px', border: `1px solid ${LINE}`, overflow: 'hidden' }}>
             {SECTIONS.map((section, i) => (
               <AccordionSection key={i} section={section} index={i} />
             ))}
           </div>
         </FadeIn>
         <FadeIn delay={130}>
-          <div className="flex flex-wrap gap-3 justify-center" style={{ marginTop: '32px' }}>
+          <div style={{ display: 'flex', flexWrap: 'wrap', gap: '14px', justifyContent: 'center', marginTop: '32px' }}>
             {[['Privacy Policy', '/privacy'], ['Terms of Service', '/terms'], ['Security', '/security']].map(([label, href], i) => (
-              <Link key={i} to={href} className="font-medium hover:opacity-70 transition-opacity" style={{ fontSize: '13px', color: '#1e3a5f', textDecoration: 'underline' }}>{label}</Link>
+              <Link key={i} to={href} style={{ fontFamily: sans, fontSize: '13px', color: INK, textDecoration: 'underline', fontWeight: 500 }}>{label}</Link>
             ))}
           </div>
         </FadeIn>
