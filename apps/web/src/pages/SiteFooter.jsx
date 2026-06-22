@@ -2,7 +2,19 @@ import React from 'react';
 import { Link } from 'react-router-dom';
 
 // ═══════════════════════════════════════════════════════════════════════
+// TOKENS (mirror the marketing pages)
+// ═══════════════════════════════════════════════════════════════════════
+
+const INK = '#1C3553';   // warmed navy — footer background + brand
+const GOLD = '#c9a96e';  // accent (CEO wordmark)
+const serif = "'Iowan Old Style', 'Palatino Linotype', Palatino, Georgia, 'Times New Roman', serif";
+const sans = "'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif";
+
+// ═══════════════════════════════════════════════════════════════════════
 // DATA
+// Only links to pages/anchors that actually exist AND match the locked
+// positioning (homeowner running their own home). Product anchors point at
+// the three real sections on /product: #bills, #maintenance, #documents.
 // ═══════════════════════════════════════════════════════════════════════
 
 const FOOTER_COLS = [
@@ -10,20 +22,17 @@ const FOOTER_COLS = [
     heading: 'Product',
     links: [
       { label: 'Overview', href: '/product' },
-      { label: 'Home Profile', href: '/product#home-profile' },
-      { label: 'Document Vault', href: '/product#documents' },
+      { label: 'Bill Pay', href: '/product#bills' },
       { label: 'Maintenance', href: '/product#maintenance' },
-      { label: 'Timeline', href: '/product#timeline' },
-      { label: 'Valuation', href: '/product#valuation' },
+      { label: 'Documents', href: '/product#documents' },
     ],
   },
   {
-    heading: 'Solutions',
+    heading: 'For you',
     links: [
-      { label: 'For Agents', href: '/agents' },
-      { label: 'For Brokerages', href: '/brokerages' },
-      { label: 'For Homeowners', href: '/pricing' },
-      { label: 'For Family Offices', href: '/pricing' },
+      { label: 'Homeowners', href: '/pricing' },
+      { label: 'Multiple homes', href: '/properties' },
+      { label: 'Caretakers', href: '/about' },
     ],
   },
   {
@@ -70,7 +79,7 @@ const SiteFooter = () => {
   const currentYear = new Date().getFullYear();
 
   return (
-    <footer style={{ background: '#0F172A', color: 'white' }}>
+    <footer style={{ background: INK, color: 'white', fontFamily: sans }}>
       {/* Main footer grid */}
       <div style={{ maxWidth: '1280px', margin: '0 auto', padding: '64px 24px 48px' }}>
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(160px, 1fr))', gap: '48px', alignItems: 'flex-start' }}>
@@ -79,19 +88,19 @@ const SiteFooter = () => {
           <div style={{ gridColumn: 'span 1' }}>
             {/* Logo */}
             <Link to="/" style={{ display: 'flex', alignItems: 'center', gap: '8px', textDecoration: 'none', marginBottom: '16px' }}>
-              <div style={{ width: '32px', height: '32px', borderRadius: '8px', background: 'linear-gradient(135deg, #1e3a5f 0%, #1A73E8 100%)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+              <div style={{ width: '32px', height: '32px', borderRadius: '8px', background: 'rgba(255,255,255,0.1)', border: '1px solid rgba(255,255,255,0.16)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                 <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
                   <path d="M8 2L2 6.5V14h4v-4h4v4h4V6.5L8 2z" fill="white" fillOpacity="0.95" />
                 </svg>
               </div>
               <span style={{ fontSize: '18px', fontWeight: 800, letterSpacing: '-0.02em' }}>
-                <span style={{ color: 'white' }}>Casa</span><span style={{ color: '#c9a96e' }}>CEO</span>
+                <span style={{ color: 'white' }}>Casa</span><span style={{ color: GOLD }}>CEO</span>
               </span>
             </Link>
 
-            {/* Tagline */}
-            <p style={{ fontSize: '13px', color: 'rgba(255,255,255,0.5)', lineHeight: '1.6', marginBottom: '20px', maxWidth: '200px' }}>
-              The operating system for your home.
+            {/* Tagline — warm, home-positioned, no OS framing */}
+            <p style={{ fontFamily: serif, fontSize: '15px', color: 'rgba(255,255,255,0.7)', lineHeight: 1.5, marginBottom: '20px', maxWidth: '210px' }}>
+              A calm place to run your home.
             </p>
 
             {/* Social icons */}
@@ -120,15 +129,15 @@ const SiteFooter = () => {
           {/* Columns 2–5 */}
           {FOOTER_COLS.map(col => (
             <div key={col.heading}>
-              <p style={{ fontSize: '12px', fontWeight: 700, color: 'rgba(255,255,255,0.4)', textTransform: 'uppercase', letterSpacing: '0.1em', marginBottom: '16px' }}>
+              <p style={{ fontSize: '12px', fontWeight: 700, color: 'rgba(255,255,255,0.45)', textTransform: 'uppercase', letterSpacing: '0.1em', marginBottom: '16px' }}>
                 {col.heading}
               </p>
               <ul style={{ listStyle: 'none', padding: 0, margin: 0, display: 'flex', flexDirection: 'column', gap: '10px' }}>
                 {col.links.map(link => (
                   <li key={link.label}>
-                    <Link to={link.href} style={{ fontSize: '14px', color: 'rgba(255,255,255,0.6)', textDecoration: 'none', transition: 'color 0.15s' }}
+                    <Link to={link.href} style={{ fontSize: '14px', color: 'rgba(255,255,255,0.62)', textDecoration: 'none', transition: 'color 0.15s' }}
                       onMouseEnter={e => e.currentTarget.style.color = 'white'}
-                      onMouseLeave={e => e.currentTarget.style.color = 'rgba(255,255,255,0.6)'}
+                      onMouseLeave={e => e.currentTarget.style.color = 'rgba(255,255,255,0.62)'}
                     >
                       {link.label}
                     </Link>
@@ -141,16 +150,16 @@ const SiteFooter = () => {
       </div>
 
       {/* Bottom bar */}
-      <div style={{ borderTop: '1px solid rgba(255,255,255,0.08)' }}>
+      <div style={{ borderTop: '1px solid rgba(255,255,255,0.1)' }}>
         <div style={{ maxWidth: '1280px', margin: '0 auto', padding: '20px 24px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '12px' }}>
-          <p style={{ fontSize: '13px', color: 'rgba(255,255,255,0.35)' }}>
+          <p style={{ fontSize: '13px', color: 'rgba(255,255,255,0.4)' }}>
             © {currentYear} CasaCEO. All rights reserved.
           </p>
           <div style={{ display: 'flex', gap: '20px' }}>
             {[['Privacy', '/privacy'], ['Terms', '/terms'], ['Status', '/status']].map(([label, href]) => (
-              <Link key={label} to={href} style={{ fontSize: '13px', color: 'rgba(255,255,255,0.35)', textDecoration: 'none', transition: 'color 0.15s' }}
-                onMouseEnter={e => e.currentTarget.style.color = 'rgba(255,255,255,0.7)'}
-                onMouseLeave={e => e.currentTarget.style.color = 'rgba(255,255,255,0.35)'}
+              <Link key={label} to={href} style={{ fontSize: '13px', color: 'rgba(255,255,255,0.4)', textDecoration: 'none', transition: 'color 0.15s' }}
+                onMouseEnter={e => e.currentTarget.style.color = 'rgba(255,255,255,0.75)'}
+                onMouseLeave={e => e.currentTarget.style.color = 'rgba(255,255,255,0.4)'}
               >
                 {label}
               </Link>
