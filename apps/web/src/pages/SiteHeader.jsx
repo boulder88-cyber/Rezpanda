@@ -9,8 +9,6 @@ import { Menu, X, ArrowRight } from 'lucide-react';
 const NAV_LINKS = [
   { label: 'Home', href: '/' },
   { label: 'Product', href: '/product' },
-  { label: 'For Agents', href: '/agents' },
-  { label: 'For Brokerages', href: '/brokerages' },
   { label: 'Pricing', href: '/pricing' },
   { label: 'Resources', href: '/resources' },
   { label: 'Support', href: '/support' },
@@ -26,7 +24,7 @@ const HomeOSLogo = ({ dark = false }) => (
     {/* Icon mark */}
     <div style={{
       width: '32px', height: '32px', borderRadius: '8px',
-      background: 'linear-gradient(135deg, #1e3a5f 0%, #1A73E8 100%)',
+      background: '#1e3a5f',
       display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0,
     }}>
       <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
@@ -96,7 +94,7 @@ const MobileDrawer = ({ open, onClose }) => {
           <Link to="/login" style={{ display: 'block', textAlign: 'center', padding: '12px', borderRadius: '10px', border: '1px solid #e2e8f0', fontSize: '15px', fontWeight: 600, color: '#334155', textDecoration: 'none' }}>
             Log In
           </Link>
-          <Link to="/signup" style={{ display: 'block', textAlign: 'center', padding: '12px', borderRadius: '10px', background: '#1A73E8', fontSize: '15px', fontWeight: 600, color: 'white', textDecoration: 'none' }}>
+          <Link to="/signup" style={{ display: 'block', textAlign: 'center', padding: '12px', borderRadius: '10px', background: '#1e3a5f', fontSize: '15px', fontWeight: 600, color: 'white', textDecoration: 'none' }}>
             Get Started →
           </Link>
         </div>
@@ -146,11 +144,11 @@ const SiteHeader = () => {
             {NAV_LINKS.map(link => (
               <Link key={link.href} to={link.href} style={{
                 padding: '6px 12px', borderRadius: '8px', fontSize: '14px', fontWeight: isActive(link.href) ? 700 : 500,
-                color: isActive(link.href) ? '#1A73E8' : '#475569',
-                background: isActive(link.href) ? '#EFF6FF' : 'transparent',
+                color: isActive(link.href) ? '#1e3a5f' : '#475569',
+                background: isActive(link.href) ? '#f2ede3' : 'transparent',
                 textDecoration: 'none', transition: 'color 0.15s, background 0.15s', whiteSpace: 'nowrap',
               }}
-                onMouseEnter={e => { if (!isActive(link.href)) { e.currentTarget.style.color = '#1A73E8'; e.currentTarget.style.background = '#F8FAFC'; } }}
+                onMouseEnter={e => { if (!isActive(link.href)) { e.currentTarget.style.color = '#1e3a5f'; e.currentTarget.style.background = '#f7f4ee'; } }}
                 onMouseLeave={e => { if (!isActive(link.href)) { e.currentTarget.style.color = '#475569'; e.currentTarget.style.background = 'transparent'; } }}
               >
                 {link.label}
@@ -162,14 +160,14 @@ const SiteHeader = () => {
           <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
             {/* Desktop only */}
             <Link to="/login" style={{ padding: '8px 16px', borderRadius: '8px', fontSize: '14px', fontWeight: 600, color: '#475569', textDecoration: 'none', transition: 'color 0.15s' }}
-              onMouseEnter={e => e.currentTarget.style.color = '#1A73E8'}
+              onMouseEnter={e => e.currentTarget.style.color = '#1e3a5f'}
               onMouseLeave={e => e.currentTarget.style.color = '#475569'}
               className="hidden sm:block"
             >
               Log In
             </Link>
             <Link to="/signup" style={{
-              padding: '8px 18px', borderRadius: '8px', background: '#1A73E8', color: 'white',
+              padding: '8px 18px', borderRadius: '8px', background: '#1e3a5f', color: 'white',
               fontSize: '14px', fontWeight: 600, textDecoration: 'none', display: 'flex', alignItems: 'center', gap: '5px',
               transition: 'opacity 0.15s',
             }}
