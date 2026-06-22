@@ -130,12 +130,62 @@ const AddServiceCompanyForm = ({ onSuccess, onCancel, onCompanyAdded, initialDat
         finalUrl = 'https://' + finalUrl;
       }
 
-      // Base fields written on both create and edit.
+      // ── Resolve or create the vendor (manual add) ──────────────────────
+      // The pay URL belongs to the vendor, not the invoice. Manual entry has no
+      // sender email, so we match the vendor by name only (case-insensitive),
+      // scoped to this owner. Create one if absent; enrich an empty payUrl if we
+      // now have one. Fail open: if vendor handling errors, the bill still saves
+      // unlinked rather than blocking the user.
+      let vendorId = '';
+      try {
+        const nameTrimmed = formData.companyName.trim();
+        if (isEditing && initialData && initialData.vendorId) {
+          // Editing an existing bill: keep its vendor link. Just enrich the
+          // vendor's payUrl if the user supplied one and it was empty.
+          vendorId = initialData.vendorId;
+          if (formData.paymentLink.trim()) {
+            await pb.collection('vendors').update(vendorId, { payUrl: finalUrl }, { $autoCancel: false });
+          }
+        } else if (nameTrimmed) {
+          const found = await pb.collection('vendors').getList(1, 5, {
+            filter: `ownerId = "${currentUser.id}" && name ~ "${nameTrimmed.replace(/"/g, '\\"')}"`,
+            $autoCancel: false,
+          });
+          const exact = (found.items || []).find(
+            (v) => (v.name || '').trim().toLowerCase() === nameTrimmed.toLowerCase()
+          );
+          const vendor = exact || (found.items && found.items[0]) || null;
+          if (vendor) {
+            vendorId = vendor.id;
+            if (!vendor.payUrl && formData.paymentLink.trim()) {
+              await pb.collection('vendors').update(vendor.id, { payUrl: finalUrl }, { $autoCancel: false });
+            }
+          } else {
+            const created = await pb.collection('vendors').create({
+              ownerId: currentUser.id,
+              name: nameTrimmed,
+              senderDomain: '',
+              payUrl: formData.paymentLink.trim() ? finalUrl : '',
+              phone: '', address: '', accountLast4: '',
+            }, { $autoCancel: false });
+            vendorId = created.id;
+          }
+        }
+      } catch {
+        vendorId = ''; // fail open — unlinked invoice beats a blocked save
+      }
+
+      // Base fields written on both create and edit. paymentLink lives on the
+      // vendor now, so it is NOT written to the invoice.
       const dataToSave = {
         companyName: formData.companyName,
-        paymentLink: finalUrl,
         ownerId: currentUser.id,
       };
+      // Only write vendorId when we actually resolved one — never blank an
+      // existing link because a lookup happened to fail.
+      if (vendorId) {
+        dataToSave.vendorId = vendorId;
+      }
 
       // Category: save it (previously collected but dropped on save).
       // Only write when set, so we never overwrite an existing value with ''.
@@ -157,9 +207,9 @@ const AddServiceCompanyForm = ({ onSuccess, onCancel, onCompanyAdded, initialDat
 
       let record;
       if (isEditing) {
-        record = await pb.collection('service_companies').update(initialData.id, dataToSave, { $autoCancel: false });
+        record = await pb.collection('invoices').update(initialData.id, dataToSave, { $autoCancel: false });
       } else {
-        record = await pb.collection('service_companies').create(dataToSave, { $autoCancel: false });
+        record = await pb.collection('invoices').create(dataToSave, { $autoCancel: false });
       }
 
       toast({
