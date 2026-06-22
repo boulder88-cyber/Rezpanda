@@ -47,12 +47,14 @@ const UtilityCompanyListing = forwardRef(({ onSelectCompany }, ref) => {
         $autoCancel: false
       });
 
-      // 2. Fetch all from user's personal service_companies
+      // 2. Fetch this user's known billers from their personal vendors.
+      //    Vendors is the stable biller entity (one per biller), so each shows
+      //    up once here — unlike invoices, which would repeat a biller monthly.
       let serviceResult = { items: [] };
       if (currentUser) {
-        serviceResult = await pb.collection('service_companies').getList(1, 500, {
+        serviceResult = await pb.collection('vendors').getList(1, 500, {
           filter: `ownerId="${currentUser.id}"`,
-          sort: 'companyName',
+          sort: 'name',
           $autoCancel: false
         });
       }
@@ -61,15 +63,15 @@ const UtilityCompanyListing = forwardRef(({ onSelectCompany }, ref) => {
       const uniqueCompanies = [];
       const seenNames = new Set();
 
-      // Add user's custom service companies first
+      // Add user's own vendors first
       for (const company of serviceResult.items) {
-        if (!seenNames.has(company.companyName)) {
-          seenNames.add(company.companyName);
+        if (!seenNames.has(company.name)) {
+          seenNames.add(company.name);
           uniqueCompanies.push({
             id: company.id,
-            name: company.companyName,
+            name: company.name,
             category: 'Other', // Fallback category for custom entries
-            payment_portal_url: company.paymentLink,
+            payment_portal_url: company.payUrl,
             isCustom: true
           });
         }
