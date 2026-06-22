@@ -67,7 +67,13 @@ const ServiceCompanyCard = ({ company, onRefresh, onPay, propertyName = null, ho
     }
     setSavingLink(true);
     try {
-      await pb.collection('service_companies').update(company.id, { paymentLink: url }, { $autoCancel: false });
+      // The pay URL belongs to the VENDOR (stable "how you pay this biller"),
+      // not to this month's invoice. Write it to the linked vendor if there is
+      // one; if the bill has no vendor yet, fall back to nothing (rare — the
+      // ingestion path creates a vendor for every emailed bill).
+      if (company.vendorId) {
+        await pb.collection('vendors').update(company.vendorId, { payUrl: url }, { $autoCancel: false });
+      }
       setAddingLink(false);
       setLinkValue('');
       toast({ title: 'Payment link added' });
@@ -88,7 +94,7 @@ const ServiceCompanyCard = ({ company, onRefresh, onPay, propertyName = null, ho
     if (!homeId) return;
     setIsAssigning(true);
     try {
-      await pb.collection('service_companies').update(company.id, { homeId }, { $autoCancel: false });
+      await pb.collection('invoices').update(company.id, { homeId }, { $autoCancel: false });
       if (onRefresh) onRefresh();
     } catch {
       toast({ title: 'Could not set property', variant: 'destructive' });
@@ -100,7 +106,7 @@ const ServiceCompanyCard = ({ company, onRefresh, onPay, propertyName = null, ho
   const handleDelete = async () => {
     setIsDeleting(true);
     try {
-      await pb.collection('service_companies').delete(company.id, { $autoCancel: false });
+      await pb.collection('invoices').delete(company.id, { $autoCancel: false });
       toast({ title: 'Bill removed.' });
       onRefresh();
     } catch (error) {
@@ -137,7 +143,7 @@ const ServiceCompanyCard = ({ company, onRefresh, onPay, propertyName = null, ho
       ` && paidDate >= "${monthStart}"` +
       ` && paidDate < "${nextMonthStart}"`;
     try {
-      const list = await pb.collection('service_companies').getList(1, 1, {
+      const list = await pb.collection('invoices').getList(1, 1, {
         filter,
         sort: '-paidDate',
         $autoCancel: false,
@@ -179,7 +185,7 @@ const ServiceCompanyCard = ({ company, onRefresh, onPay, propertyName = null, ho
   const markPaid = async () => {
     setIsMarking(true);
     try {
-      await pb.collection('service_companies').update(
+      await pb.collection('invoices').update(
         company.id,
         { status: 'paid', paidDate: new Date().toISOString() },
         { $autoCancel: false }
@@ -201,7 +207,7 @@ const ServiceCompanyCard = ({ company, onRefresh, onPay, propertyName = null, ho
   const handleMarkReviewed = async () => {
     setIsMarking(true);
     try {
-      await pb.collection('service_companies').update(
+      await pb.collection('invoices').update(
         company.id,
         { status: 'paid', reviewedDate: new Date().toISOString() },
         { $autoCancel: false }
@@ -225,7 +231,7 @@ const ServiceCompanyCard = ({ company, onRefresh, onPay, propertyName = null, ho
   const handleUndoPaid = async () => {
     setIsMarking(true);
     try {
-      await pb.collection('service_companies').update(
+      await pb.collection('invoices').update(
         company.id,
         { status: 'confirmed', paidDate: null, reviewedDate: null },
         { $autoCancel: false }
