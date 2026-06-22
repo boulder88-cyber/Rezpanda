@@ -39,12 +39,19 @@ const PendingReviewSection = ({ onConfirmed }) => {
     if (!currentUser) return;
     try {
       setLoading(true);
-      const records = await pb.collection('service_companies').getFullList({
+      const records = await pb.collection('invoices').getFullList({
         filter: `ownerId = "${currentUser.id}" && status = "pending_review"`,
         sort: '-created',
+        expand: 'vendorId',
         $autoCancel: false,
       });
-      setPending(records);
+      // Flatten vendor payUrl onto each bill as paymentLink (pay URL lives on
+      // the vendor now); the review panel's vendor-site link reads this field.
+      const flattened = records.map((r) => {
+        const vendor = r.expand && r.expand.vendorId ? r.expand.vendorId : null;
+        return { ...r, paymentLink: vendor ? (vendor.payUrl || '') : '' };
+      });
+      setPending(flattened);
     } catch {
       // silent: if it fails, just show nothing rather than break the page
       setPending([]);
@@ -113,7 +120,7 @@ const PendingReviewSection = ({ onConfirmed }) => {
       // Only write homeId when we're actually setting/attaching one, so we
       // never blank out an existing value.
       if (homeIdToUse && homeIdToUse !== bill.homeId) payload.homeId = homeIdToUse;
-      await pb.collection('service_companies').update(bill.id, payload, { $autoCancel: false });
+      await pb.collection('invoices').update(bill.id, payload, { $autoCancel: false });
       toast({ title: '✅ Bill confirmed', description: `${bill.companyName} added to your bills.` });
       setPending(prev => prev.filter(b => b.id !== bill.id));
       if (onConfirmed) onConfirmed();
@@ -132,7 +139,7 @@ const PendingReviewSection = ({ onConfirmed }) => {
   const handleDeletePending = async (bill) => {
     setConfirmingId(bill.id);
     try {
-      await pb.collection('service_companies').delete(bill.id, { $autoCancel: false });
+      await pb.collection('invoices').delete(bill.id, { $autoCancel: false });
       toast({ title: 'Bill removed.', description: `${bill.companyName || 'Bill'} deleted.` });
       setPending(prev => prev.filter(b => b.id !== bill.id));
     } catch {
@@ -191,7 +198,7 @@ const PendingReviewSection = ({ onConfirmed }) => {
       else if (choseUnassigned) payload.homeId = '';
       if (draft.paymentType) payload.paymentType = draft.paymentType;
 
-      await pb.collection('service_companies').update(bill.id, payload, { $autoCancel: false });
+      await pb.collection('invoices').update(bill.id, payload, { $autoCancel: false });
       toast({ title: '✅ Bill confirmed', description: `${trimmedName} added to your bills.` });
       setPending(prev => prev.filter(b => b.id !== bill.id));
       cancelReview();
