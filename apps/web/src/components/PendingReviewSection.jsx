@@ -14,7 +14,7 @@ import { Sparkles, Check, Calendar, Tag, Pencil, X, ExternalLink, Mail, Trash2, 
 //   • Confirm        → flips status to "confirmed" as-is (good parses)
 //   • Review         → expands the row inline into editable fields pre-filled
 //                      with the parsed values. "Save & Confirm" writes the
-//                      corrections back to the SAME service_companies record
+//                      corrections back to the SAME invoices record
 //                      and flips status to confirmed in one action.
 //
 // The parsed_raw text (what the AI originally read) is surfaced inside the
