@@ -40,25 +40,60 @@ const SiteLayout = ({
   hideFooter = false,
 }) => {
   // Scroll to top on mount
-  // Scroll to the #anchor if the URL has one, otherwise to the top.
-  // Re-runs whenever the path OR hash changes, so anchor links work even
-  // when you're already on the page (BrowserRouter won't scroll on its own).
+  // Scroll handling. With a hash, scroll to that section; otherwise to top.
+  // Re-runs on path OR hash change, so anchor links work even when you're
+  // already on the page (BrowserRouter does not scroll to hashes on its own).
+  //
+  // Why this is more involved than a one-liner: every section on these pages
+  // is wrapped in a fade-in that starts offset and invisible, and sections
+  // mount/expand as React paints. A single requestAnimationFrame fires before
+  // the target has settled, so scrollIntoView lands short (looks like "jumps
+  // to top"). We instead RETRY for a short window until the element exists and
+  // its position stops moving, and we offset for the sticky header height.
   const location = useLocation();
   useEffect(() => {
-    if (location.hash) {
-      const id = decodeURIComponent(location.hash.slice(1));
-      // Wait a frame so the target section is mounted before we measure it.
-      requestAnimationFrame(() => {
-        const el = document.getElementById(id);
-        if (el) {
-          el.scrollIntoView({ behavior: 'smooth', block: 'start' });
-          return;
-        }
-        window.scrollTo(0, 0);
-      });
-    } else {
+    const HEADER_OFFSET = 80; // sticky header (64px) + a little breathing room
+
+    if (!location.hash) {
       window.scrollTo(0, 0);
+      return;
     }
+
+    const id = decodeURIComponent(location.hash.slice(1));
+    let cancelled = false;
+    let lastTop = null;
+    let stableCount = 0;
+    const start = Date.now();
+
+    const tryScroll = () => {
+      if (cancelled) return;
+      const el = document.getElementById(id);
+
+      if (el) {
+        const top = el.getBoundingClientRect().top + window.pageYOffset - HEADER_OFFSET;
+        // Keep nudging until the measured position holds steady across a few
+        // frames (i.e. fade-in/layout has settled), then do the final scroll.
+        if (lastTop !== null && Math.abs(top - lastTop) < 2) {
+          stableCount += 1;
+        } else {
+          stableCount = 0;
+        }
+        lastTop = top;
+        window.scrollTo({ top, behavior: 'smooth' });
+        if (stableCount >= 2) return; // settled — stop retrying
+      }
+
+      // Retry for up to ~1.2s, then give up gracefully.
+      if (Date.now() - start < 1200) {
+        requestAnimationFrame(tryScroll);
+      } else if (!el) {
+        window.scrollTo(0, 0);
+      }
+    };
+
+    // Start after the current paint so the section has begun mounting.
+    requestAnimationFrame(tryScroll);
+    return () => { cancelled = true; };
   }, [location.pathname, location.hash]);
 
   return (
