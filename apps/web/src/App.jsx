@@ -130,18 +130,25 @@ const AppContent = () => {
 
           {/* ── Tier-9 Website Master (public, SiteLayout) ────────── */}
           <Route path="/product" element={<ProductPage />} />
+          {/* RETIRED 6.22 — agent/brokerage positioning dropped; nothing links here.
+              Files kept in repo; un-comment to restore.
           <Route path="/agents" element={<AgentsPage />} />
           <Route path="/brokerages" element={<BrokeragesPage />} />
+          */}
           <Route path="/support" element={<SupportPage />} />
           <Route path="/resources" element={<ResourcesPage />} />
 
           {/* ── Marketing / Narrative (public, no Layout) ─────────── */}
+          {/* RETIRED 6.22 — old HomeOS identity (HomeOS overview, why-homeos,
+              agent/brokerage value, CompassHomeOS preview). Nothing links here;
+              files kept in repo. Un-comment to restore.
           <Route path="/homeos" element={<HomeOSOverviewPage />} />
           <Route path="/why-homeos" element={<WhyHomeOSPage />} />
           <Route path="/agent-value" element={<AgentValuePage />} />
           <Route path="/brokerage-value" element={<BrokerageValuePage />} />
-          <Route path="/homeowner-journey" element={<HomeownerJourneyPage />} />
           <Route path="/compass-preview" element={<CompassHomeOSPreviewPage />} />
+          */}
+          <Route path="/homeowner-journey" element={<HomeownerJourneyPage />} />
 
           {/* ── Tier-4 Info Pages (public) ────────────────────────── */}
           <Route path="/pricing" element={<PricingPage />} />
@@ -210,6 +217,9 @@ const AppContent = () => {
           <Route path="/value-engine" element={<ProtectedRoute><Layout><ValueEnginePage /></Layout></ProtectedRoute>} />
           <Route path="/smart-home" element={<ProtectedRoute><Layout><SmartHomeHubPage /></Layout></ProtectedRoute>} />
           <Route path="/insights" element={<ProtectedRoute><Layout><InsightsReportsPage /></Layout></ProtectedRoute>} />
+
+          {/* ── Catch-all: unknown/retired paths fall back to the home page ── */}
+          <Route path="*" element={<MarketingHomePage />} />
 
         </Routes>
         <Toaster />
