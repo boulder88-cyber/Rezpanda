@@ -446,7 +446,10 @@ const BillPayPage = () => {
       // on the vendor (stable), resolved here through the expanded relation.
       const flattened = records.map((r) => {
         const vendor = r.expand && r.expand.vendorId ? r.expand.vendorId : null;
-        return { ...r, paymentLink: vendor ? (vendor.payUrl || '') : '' };
+        // paymentLink + senderDomain flattened from the vendor so the card reads
+        // single fields. senderDomain feeds the "Add payment link" finder's
+        // fallback guess when an invoice's own senderAddress is empty.
+        return { ...r, paymentLink: vendor ? (vendor.payUrl || '') : '', senderDomain: vendor ? (vendor.senderDomain || '') : '' };
       });
       // Show every invoice. (The old collapse-by-companyName was a workaround
       // from when each monthly bill was its own row sharing a name; the clean
