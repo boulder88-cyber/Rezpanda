@@ -151,7 +151,10 @@ const PropertyFormModal = ({ isOpen, onClose, onSuccess, initialData = null }) =
         // readable label in the switcher.
         name: formData.name.trim() || street,
         street,
-        apt,
+        // NOTE: `apt` is intentionally NOT sent as its own field — the `homes`
+        // collection has no apt column, and PocketBase rejects writes with
+        // unknown fields. The apartment/unit still rides along inside the
+        // composed `address` line below, so nothing is lost.
         city,
         state,
         zip,
@@ -179,9 +182,22 @@ const PropertyFormModal = ({ isOpen, onClose, onSuccess, initialData = null }) =
       onClose();
     } catch (error) {
       console.error("Error saving home:", error);
+      // PocketBase puts field-level validation reasons in response.data; the
+      // top-level message is often just "Failed to create record." Pull the
+      // first field error out so the user (and we) see what actually failed.
+      const fieldErrors = error?.response?.data || error?.data || null;
+      let detail = error.message || "Could not save the home.";
+      if (fieldErrors && typeof fieldErrors === 'object') {
+        const first = Object.entries(fieldErrors)[0];
+        if (first) {
+          const [field, info] = first;
+          const msg = info && typeof info === 'object' ? (info.message || '') : String(info);
+          detail = `${field}: ${msg}`.trim();
+        }
+      }
       toast({
         title: "Error",
-        description: error.message || "Could not save the home.",
+        description: detail,
         variant: "destructive"
       });
     } finally {
