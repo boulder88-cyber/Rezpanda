@@ -124,19 +124,32 @@ const PropertyGlanceTile = ({ home, summary, onEnter }) => {
   // Top accent reflects urgency; gold leads the calm state.
   const accent = overdueCount > 0 ? '#dc2626' : openCount > 0 ? '#f59e0b' : GOLD;
 
-  // Maintenance status — ALWAYS present so every tile carries it and the cards
-  // stay symmetric. The healthy "on track" state is a pillar worth celebrating,
-  // so it gets a green pill with real stature (matching the bills all-clear),
-  // while warnings stay inline-colored and "nothing tracked" stays quiet.
-  let maintLine;
+  // Maintenance status — ALWAYS present so every tile carries it and the rows
+  // line up. All states render as the same boxed pill (so heights match); only
+  // the color/tone differs. "No maintenance tracked" is NOT a home status — a
+  // home always has maintenance needs, the app just doesn't know them yet — so
+  // it reads as an invitation to set it up, not a verdict.
+  let maint;
   if (mTotal === 0) {
-    maintLine = { text: 'No maintenance tracked', color: 'rgba(255,255,255,0.45)', kind: 'none' };
+    maint = {
+      text: 'Set up maintenance', icon: 'wrench',
+      color: 'rgba(255,255,255,0.6)', bg: 'rgba(255,255,255,0.06)', border: 'rgba(255,255,255,0.14)',
+    };
   } else if (mOverdue > 0) {
-    maintLine = { text: `${mOverdue} maintenance ${mOverdue === 1 ? 'task' : 'tasks'} overdue`, color: '#fca5a5', kind: 'overdue' };
+    maint = {
+      text: `${mOverdue} maintenance ${mOverdue === 1 ? 'task' : 'tasks'} overdue`, icon: 'alert',
+      color: '#fca5a5', bg: 'rgba(220,38,38,0.14)', border: 'rgba(220,38,38,0.28)',
+    };
   } else if (mSoon > 0) {
-    maintLine = { text: `${mSoon} maintenance ${mSoon === 1 ? 'task' : 'tasks'} due this month`, color: '#fcd34d', kind: 'soon' };
+    maint = {
+      text: `${mSoon} maintenance ${mSoon === 1 ? 'task' : 'tasks'} due this month`, icon: 'wrench',
+      color: '#fcd34d', bg: 'rgba(245,158,11,0.14)', border: 'rgba(245,158,11,0.26)',
+    };
   } else {
-    maintLine = { text: 'Maintenance on track', kind: 'ontrack' };
+    maint = {
+      text: 'Maintenance on track', icon: 'check',
+      color: '#6ee7b7', bg: 'rgba(110,231,183,0.10)', border: 'rgba(110,231,183,0.22)',
+    };
   }
 
   return (
@@ -204,20 +217,16 @@ const PropertyGlanceTile = ({ home, summary, onEnter }) => {
         )}
       </div>
 
-      {/* Maintenance status — always present, its own row at the bottom so the
-          tiles stay symmetric. The healthy state gets a green pill (pillar
-          worth celebrating); warnings and the no-data state stay inline. */}
-      {maintLine.kind === 'ontrack' ? (
-        <div className="flex items-center gap-2 rounded-lg" style={{ background: 'rgba(110,231,183,0.10)', border: '1px solid rgba(110,231,183,0.22)', padding: '8px 12px', marginBottom: '16px', color: '#6ee7b7' }}>
-          <CheckCircle2 style={{ width: '15px', height: '15px', flexShrink: 0 }} />
-          <span className="font-semibold" style={{ fontSize: '13px' }}>{maintLine.text}</span>
-        </div>
-      ) : (
-        <div className="flex items-center gap-1.5" style={{ marginBottom: '16px' }}>
-          <Wrench style={{ width: '12px', height: '12px', color: maintLine.color, flexShrink: 0 }} />
-          <span style={{ fontSize: '12px', color: maintLine.color }}>{maintLine.text}</span>
-        </div>
-      )}
+      {/* Maintenance status — always present, same pill shape across states so
+          the rows line up tile-to-tile; only the tone differs. */}
+      <div className="flex items-center gap-2 rounded-lg" style={{ background: maint.bg, border: `1px solid ${maint.border}`, padding: '8px 12px', marginBottom: '16px', color: maint.color }}>
+        {maint.icon === 'check'
+          ? <CheckCircle2 style={{ width: '15px', height: '15px', flexShrink: 0 }} />
+          : maint.icon === 'alert'
+            ? <AlertCircle style={{ width: '15px', height: '15px', flexShrink: 0 }} />
+            : <Wrench style={{ width: '14px', height: '14px', flexShrink: 0 }} />}
+        <span className="font-semibold" style={{ fontSize: '13px' }}>{maint.text}</span>
+      </div>
 
       {/* Enter */}
       <div className="flex items-center gap-1.5 font-semibold mt-auto" style={{ fontSize: '13px', color: GOLD }}>
