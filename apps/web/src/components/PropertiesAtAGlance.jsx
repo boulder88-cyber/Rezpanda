@@ -3,7 +3,7 @@ import { useHome } from '@/contexts/HomeContext.jsx';
 import { useAuth } from '@/contexts/AuthContext.jsx';
 import { useNavigate, Link } from 'react-router-dom';
 import pb from '@/lib/horizonsBackend.js';
-import { Home, MapPin, ArrowRight, AlertCircle, CheckCircle2, Plus, CreditCard, Wrench, FolderOpen, Inbox } from 'lucide-react';
+import { Home, MapPin, ArrowRight, AlertCircle, CheckCircle2, Plus, CreditCard, Wrench, FolderOpen, Inbox, Building } from 'lucide-react';
 
 // ═══════════════════════════════════════════════════════════════════════
 // PROPERTIES AT A GLANCE  (warm off-white field · navy tiles)
@@ -34,6 +34,10 @@ const GOLD = '#c9a96e';
 const isPaid = (c) => c.status === 'paid';
 const isPending = (c) => c.status === 'pending_review';
 const isOpen = (c) => !isPaid(c) && !isPending(c); // confirmed, not yet paid
+// Mirror of BillPayPage.placementOf — old bills with no placement field are
+// inferred from homeId so existing data behaves as before.
+const placementOf = (c) => (c && c.placement) ? c.placement : (c && c.homeId ? 'property' : 'unassigned');
+const needsPlacement = (c) => isOpen(c) && placementOf(c) === 'unassigned';
 
 // Days until a date (positive = future, negative = past). Mirrors the
 // management page's ceil-based day math.
@@ -206,8 +210,12 @@ const NeedsYourEye = ({ items, homesById, onGoBill }) => {
   return (
     <div className="bg-white" style={{ border: '1px solid #e9e4db', borderRadius: '14px', padding: '8px 6px', marginBottom: '28px' }}>
       {items.map((it, i) => {
-        const homeName = homesById[it.homeId]?.name || homesById[it.homeId]?.address || 'Other bills';
+        const placement = it.placement || (it.homeId ? 'property' : 'unassigned');
+        const bucketLabel = placement === 'other' ? 'Other bills' : placement === 'unassigned' ? 'Needs placement' : null;
+        const homeName = homesById[it.homeId]?.name || homesById[it.homeId]?.address || bucketLabel || 'Other bills';
         const isOverdue = it.kind === 'overdue';
+        const isPlacement = it.kind === 'placement';
+        const tint = isOverdue ? '#fef2f2' : '#fffbeb';
         return (
           <button
             key={it.id}
@@ -215,10 +223,12 @@ const NeedsYourEye = ({ items, homesById, onGoBill }) => {
             className="w-full flex items-center gap-3 text-left transition-colors hover:bg-[#faf8f4]"
             style={{ padding: '11px 12px', borderTop: i === 0 ? 'none' : '1px solid #f3efe8', borderRadius: '10px' }}
           >
-            <div className="flex items-center justify-center flex-shrink-0" style={{ width: '32px', height: '32px', borderRadius: '9px', background: isOverdue ? '#fef2f2' : '#fffbeb' }}>
+            <div className="flex items-center justify-center flex-shrink-0" style={{ width: '32px', height: '32px', borderRadius: '9px', background: tint }}>
               {isOverdue
                 ? <AlertCircle style={{ width: '16px', height: '16px', color: '#dc2626' }} />
-                : <Inbox style={{ width: '16px', height: '16px', color: '#d97706' }} />}
+                : isPlacement
+                  ? <Building style={{ width: '16px', height: '16px', color: '#d97706' }} />
+                  : <Inbox style={{ width: '16px', height: '16px', color: '#d97706' }} />}
             </div>
             <div className="flex-1 min-w-0">
               <p className="font-medium truncate" style={{ fontSize: '13.5px', color: '#1f2733' }}>
@@ -226,7 +236,7 @@ const NeedsYourEye = ({ items, homesById, onGoBill }) => {
                 {it.amount ? <span style={{ color: '#5b6472', fontWeight: 400 }}>{'  ·  $'}{parseFloat(it.amount).toFixed(2)}</span> : null}
               </p>
               <p className="truncate" style={{ fontSize: '11.5px', color: '#95a0ae' }}>
-                {isOverdue ? 'Overdue' : 'Needs review'} · {homeName}
+                {isOverdue ? 'Overdue' : isPlacement ? 'Needs a property' : 'Needs review'} · {homeName}
               </p>
             </div>
             <ArrowRight style={{ width: '14px', height: '14px', color: '#cbd5e1', flexShrink: 0 }} />
@@ -343,8 +353,8 @@ const PropertiesAtAGlance = ({ onEnter }) => {
     return { dueTotal, dueThisWeek, overdueCount, pendingCount };
   }, [bills]);
 
-  // "Needs your eye" items: overdue bills first, then pending review.
-  // Capped so the row stays a glance, not a list.
+  // "Needs your eye" items: overdue first, then pending review, then confirmed
+  // bills that still need a property ("Needs placement"). Capped to a glance.
   const eyeItems = React.useMemo(() => {
     const now = new Date();
     const overdue = bills
@@ -353,7 +363,13 @@ const PropertiesAtAGlance = ({ onEnter }) => {
     const pending = bills
       .filter(isPending)
       .map((c) => ({ ...c, kind: 'review' }));
-    return [...overdue, ...pending].slice(0, 4);
+    // Needs-placement: confirmed, no property yet, and NOT already counted as
+    // overdue above (overdue takes priority — same bill shouldn't list twice).
+    const overdueIds = new Set(overdue.map((c) => c.id));
+    const placement = bills
+      .filter((c) => needsPlacement(c) && !overdueIds.has(c.id))
+      .map((c) => ({ ...c, kind: 'placement' }));
+    return [...overdue, ...pending, ...placement].slice(0, 4);
   }, [bills]);
 
   const emptySummary = { dueTotal: 0, openCount: 0, overdueCount: 0, pendingCount: 0, nextBill: null, mOverdue: 0, mSoon: 0, mTotal: 0 };
