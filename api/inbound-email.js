@@ -290,11 +290,29 @@ async function pbCreateBill(pbUrl, token, record) {
 // A vendor is the stable biller entity (Comcast). Many invoices reference one
 // vendor. We resolve-or-create per owner, matching on name OR sender domain.
 
+// Consumer / ISP mail domains. A bill FORWARDED from one of these has a "from"
+// that is the USER'S inbox, not the biller — so its domain is meaningless as a
+// vendor signal and must never become a match key, a stored senderDomain, or a
+// "use this domain" guess. Only mail arriving DIRECT from the biller's own
+// domain produces a usable signal. Keep this list in sync with the same list in
+// ServiceCompanyCard.jsx (the card's "Add payment link" finder).
+const CONSUMER_MAIL_DOMAINS = [
+  'gmail.com', 'yahoo.com', 'icloud.com', 'outlook.com', 'hotmail.com',
+  'aol.com', 'me.com', 'proton.me', 'protonmail.com', 'live.com', 'msn.com',
+  'comcast.net', 'comcast.com', 'xfinity.com', 'att.net', 'verizon.net',
+  'sbcglobal.net', 'cox.net', 'charter.net', 'bellsouth.net', 'earthlink.net',
+];
+
 // Pull a bare domain from a "from" header like 'Billing <billing@comcast.com>'.
+// Returns '' for consumer/ISP domains: a forwarded bill's "from" is the user's
+// own inbox, so its domain must not be treated as the biller's.
 function senderDomainFrom(fromRaw) {
   if (!fromRaw) return '';
   const m = String(fromRaw).match(/@([A-Za-z0-9.-]+\.[A-Za-z]{2,})/);
-  return m ? m[1].toLowerCase() : '';
+  if (!m) return '';
+  const domain = m[1].toLowerCase();
+  if (CONSUMER_MAIL_DOMAINS.includes(domain)) return '';
+  return domain;
 }
 
 // Truncate any account number to a masked last-4 (XXXX1234). The FULL number is
