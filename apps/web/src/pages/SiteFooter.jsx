@@ -19,15 +19,6 @@ const sans = "'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sa
 
 const FOOTER_COLS = [
   {
-    heading: 'Product',
-    links: [
-      { label: 'Overview', href: '/product' },
-      { label: 'Bill Pay', href: '/product#bills' },
-      { label: 'Maintenance', href: '/product#maintenance' },
-      { label: 'Documents', href: '/product#documents' },
-    ],
-  },
-  {
     heading: 'Company',
     links: [
       { label: 'About', href: '/about' },
