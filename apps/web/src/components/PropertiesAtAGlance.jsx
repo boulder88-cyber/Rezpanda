@@ -335,11 +335,9 @@ const NeedsYourEye = ({ items, homesById, onGoBill }) => {
         const placement = it.placement || (it.homeId ? 'property' : 'unassigned');
         const bucketLabel = placement === 'other' ? 'Other bills' : placement === 'unassigned' ? 'Needs placement' : null;
         const homeName = homesById[it.homeId]?.name || homesById[it.homeId]?.address || bucketLabel || 'Other bills';
-        const isOverdue = it.kind === 'overdue';
         const isPlacement = it.kind === 'placement';
         const isUndated = it.kind === 'undated';
-        const tint = isOverdue ? '#fef2f2' : '#fffbeb';
-        const reason = isOverdue ? 'Overdue' : isPlacement ? 'Needs a property' : isUndated ? 'No due date' : 'Needs review';
+        const reason = isPlacement ? 'Needs a property' : isUndated ? 'No due date' : 'Needs review';
         return (
           <button
             key={it.id}
@@ -347,12 +345,10 @@ const NeedsYourEye = ({ items, homesById, onGoBill }) => {
             className="w-full flex items-center gap-3 text-left transition-colors hover:bg-[#faf8f4]"
             style={{ padding: '11px 12px', borderTop: i === 0 ? 'none' : '1px solid #f3efe8', borderRadius: '10px' }}
           >
-            <div className="flex items-center justify-center flex-shrink-0" style={{ width: '32px', height: '32px', borderRadius: '9px', background: tint }}>
-              {isOverdue
-                ? <AlertCircle style={{ width: '16px', height: '16px', color: '#dc2626' }} />
-                : isPlacement
-                  ? <Building style={{ width: '16px', height: '16px', color: '#d97706' }} />
-                  : <Inbox style={{ width: '16px', height: '16px', color: '#d97706' }} />}
+            <div className="flex items-center justify-center flex-shrink-0" style={{ width: '32px', height: '32px', borderRadius: '9px', background: '#fffbeb' }}>
+              {isPlacement
+                ? <Building style={{ width: '16px', height: '16px', color: '#d97706' }} />
+                : <Inbox style={{ width: '16px', height: '16px', color: '#d97706' }} />}
             </div>
             <div className="flex-1 min-w-0">
               <p className="font-medium truncate" style={{ fontSize: '13.5px', color: '#1f2733' }}>
@@ -481,29 +477,25 @@ const PropertiesAtAGlance = ({ onEnter }) => {
     });
   }, [bills]);
 
-  // "Needs your eye" items: overdue first, then pending review, then bills that
-  // still need a property, then open bills with no due date. Capped to a glance.
+  // "Needs your eye": the actionable items that DON'T already have a dedicated
+  // surface. Overdue bills are intentionally excluded — the strip's "Past due"
+  // cell owns them (summary number + full drill-down with days-late), so
+  // listing them here too would be redundant. This row covers what's left:
+  // bills to review, bills needing a property, and undated bills. Capped to 4.
   const eyeItems = React.useMemo(() => {
-    const now = new Date();
-    const overdue = bills
-      .filter((c) => isOpen(c) && c.dueDate && new Date(c.dueDate) < now)
-      .map((c) => ({ ...c, kind: 'overdue' }));
     const pending = bills
       .filter(isPending)
       .map((c) => ({ ...c, kind: 'review' }));
-    // Needs-placement: confirmed, no property yet, and NOT already counted as
-    // overdue above (overdue takes priority — same bill shouldn't list twice).
-    const overdueIds = new Set(overdue.map((c) => c.id));
     const placement = bills
-      .filter((c) => needsPlacement(c) && !overdueIds.has(c.id))
+      .filter((c) => needsPlacement(c))
       .map((c) => ({ ...c, kind: 'placement' }));
     // Undated open bills — held but not yet on the timeline. Deduped against
-    // everything above so a bill never lists twice.
-    const seen = new Set([...overdue, ...placement].map((c) => c.id));
+    // placement so a bill never lists twice.
+    const seen = new Set(placement.map((c) => c.id));
     const undated = bills
       .filter((c) => isOpen(c) && !c.dueDate && !seen.has(c.id))
       .map((c) => ({ ...c, kind: 'undated' }));
-    return [...overdue, ...pending, ...placement, ...undated].slice(0, 4);
+    return [...pending, ...placement, ...undated].slice(0, 4);
   }, [bills]);
 
   const emptySummary = { dueTotal: 0, openCount: 0, overdueCount: 0, pendingCount: 0, undatedCount: 0, nextBill: null, nextOverdue: false, mOverdue: 0, mSoon: 0, mTotal: 0 };
