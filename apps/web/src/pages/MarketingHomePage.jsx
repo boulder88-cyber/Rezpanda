@@ -2,8 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { Link } from 'react-router-dom';
 import SiteLayout from './SiteLayout.jsx';
 import {
-  ArrowRight, CheckCircle2, CreditCard, Wrench, FileText,
-  ShieldCheck, Bell, Heart, Star
+  ArrowRight, CheckCircle2, CreditCard, Wrench, FileText, Star
 } from 'lucide-react';
 
 /*
@@ -122,13 +121,13 @@ const HeroSection = () => (
     </div>
     <div style={{ maxWidth: '860px', margin: '0 auto', textAlign: 'center', position: 'relative', zIndex: 1 }}>
       <span style={{ display: 'inline-flex', alignItems: 'center', gap: '7px', fontFamily: sans, fontSize: '13px', fontWeight: 600, color: '#BBD0EC', background: 'rgba(62,107,168,0.22)', border: '1px solid rgba(62,107,168,0.4)', borderRadius: '999px', padding: '6px 16px', marginBottom: '24px' }}>
-        Everything your home needs, in one place
+        No bank logins · no autopay surprises
       </span>
       <h1 style={{ fontFamily: serif, fontSize: 'clamp(2.5rem, 5.6vw, 4rem)', fontWeight: 600, color: '#fff', lineHeight: 1.08, letterSpacing: '-0.015em', marginBottom: '22px' }}>
-        Home admin, made calm.
+        Your home&rsquo;s bills, finally in order.
       </h1>
       <p style={{ fontFamily: sans, fontSize: '19px', lineHeight: 1.65, color: 'rgba(255,255,255,0.74)', maxWidth: '560px', margin: '0 auto 38px' }}>
-        Your bills, your upkeep, and your documents — organized in one place, and finally easy to stay on top of.
+        Forward a bill and it files itself — sorted by who&rsquo;s owed and when it&rsquo;s due. Your upkeep and documents settle in beside it, in one calm place.
       </p>
       <div style={{ display: 'flex', gap: '12px', justifyContent: 'center', flexWrap: 'wrap', marginBottom: '30px' }}>
         <Link to="/signup" style={{ display: 'inline-flex', alignItems: 'center', gap: '8px', fontFamily: sans, padding: '15px 30px', borderRadius: '11px', background: '#fff', color: INK, fontSize: '15px', fontWeight: 700, textDecoration: 'none', transition: 'transform 0.15s' }}
@@ -264,35 +263,44 @@ const PersonasSection = () => (
 );
 
 // ═══════════════════════════════════════════════════════════════════
-// REASSURANCE STRIP
+// SAFE BY DESIGN — the security promise, made explicit (#1 adoption barrier)
 // ═══════════════════════════════════════════════════════════════════
 
+const SAFE_POINTS = [
+  'No bank logins, ever',
+  'No stored passwords or card numbers',
+  'We never move your money',
+  'You always pay on the real site',
+  'We keep the useful details, not your documents',
+  'We quietly flag anything that looks off',
+];
+
 const ReassureSection = () => (
-  <section style={{ background: '#fff', padding: '72px 24px', borderTop: `1px solid ${LINE}` }}>
+  <section style={{ background: '#fff', padding: '84px 24px', borderTop: `1px solid ${LINE}` }}>
     <div style={{ maxWidth: '900px', margin: '0 auto' }}>
       <FadeIn>
-        <p style={{ fontFamily: sans, fontSize: '12px', fontWeight: 700, color: SKY, letterSpacing: '0.16em', textTransform: 'uppercase', textAlign: 'center', marginBottom: '36px' }}>Why <Wordmark /></p>
+        <div style={{ textAlign: 'center', marginBottom: '44px' }}>
+          <p style={{ fontFamily: sans, fontSize: '12px', fontWeight: 700, color: SKY, letterSpacing: '0.16em', textTransform: 'uppercase', marginBottom: '14px' }}>Safe by design</p>
+          <h2 style={{ fontFamily: serif, fontSize: 'clamp(1.85rem, 4vw, 2.6rem)', fontWeight: 600, color: INK, letterSpacing: '-0.015em', marginBottom: '14px' }}>
+            Your home&rsquo;s records are yours alone.
+          </h2>
+          <p style={{ fontFamily: sans, fontSize: '17px', color: STONE, maxWidth: '540px', margin: '0 auto', lineHeight: 1.6 }}>
+            <Wordmark /> organizes your home without ever reaching into your accounts. The control stays with you — we just keep it calm.
+          </p>
+        </div>
       </FadeIn>
-      <div style={{ display: 'flex', flexWrap: 'wrap', gap: '28px', justifyContent: 'center' }}>
-      {[
-        { icon: Bell, label: 'Gentle reminders', sub: 'Before a due date, never after.' },
-        { icon: ShieldCheck, label: 'Private by default', sub: 'Your home’s records are yours alone.' },
-        { icon: Heart, label: 'Simple on purpose', sub: 'No clutter, no jargon, no second job.' },
-      ].map((r, i) => {
-        const Icon = r.icon;
-        return (
-          <div key={i} style={{ display: 'flex', alignItems: 'center', gap: '12px', minWidth: '240px' }}>
-            <div style={{ width: '42px', height: '42px', borderRadius: '11px', background: SAND, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-              <Icon style={{ width: '19px', height: '19px', color: SAGE }} />
+      <FadeIn delay={80}>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(260px, 1fr))', gap: '14px 28px', maxWidth: '760px', margin: '0 auto' }}>
+          {SAFE_POINTS.map((point, i) => (
+            <div key={i} style={{ display: 'flex', alignItems: 'center', gap: '11px' }}>
+              <div style={{ width: '26px', height: '26px', borderRadius: '8px', background: '#EEF2EC', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                <CheckCircle2 style={{ width: '15px', height: '15px', color: SAGE }} />
+              </div>
+              <p style={{ fontFamily: sans, fontSize: '15px', color: INK, lineHeight: 1.4 }}>{point}</p>
             </div>
-            <div>
-              <p style={{ fontFamily: sans, fontSize: '14px', fontWeight: 700, color: INK }}>{r.label}</p>
-              <p style={{ fontFamily: sans, fontSize: '13px', color: STONE }}>{r.sub}</p>
-            </div>
-          </div>
-        );
-      })}
-      </div>
+          ))}
+        </div>
+      </FadeIn>
     </div>
   </section>
 );
