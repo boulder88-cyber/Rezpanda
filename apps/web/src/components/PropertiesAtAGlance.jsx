@@ -198,8 +198,11 @@ const PropertyGlanceTile = ({ home, summary, onEnter }) => {
         </div>
       )}
 
-      {/* Attention chips — bill-related, grouped with the bills box above */}
-      <div className="flex flex-wrap items-center gap-2" style={{ minHeight: '20px', marginBottom: '12px' }}>
+      {/* Attention chips — bill-related, grouped with the bills box above.
+          This region flexes (mb-auto pushes maintenance + Open to the bottom),
+          so however many chips a tile has, the maintenance pill below still
+          lines up tile-to-tile. */}
+      <div className="flex flex-wrap items-center gap-2" style={{ minHeight: '20px', marginBottom: 'auto' }}>
         {overdueCount > 0 && (
           <span className="flex items-center gap-1 font-medium rounded-full" style={{ fontSize: '11px', color: '#fca5a5', background: 'rgba(220,38,38,0.18)', padding: '3px 9px' }}>
             <AlertCircle style={{ width: '11px', height: '11px' }} /> {overdueCount} overdue
@@ -218,8 +221,10 @@ const PropertyGlanceTile = ({ home, summary, onEnter }) => {
       </div>
 
       {/* Maintenance status — always present, same pill shape across states so
-          the rows line up tile-to-tile; only the tone differs. */}
-      <div className="flex items-center gap-2 rounded-lg" style={{ background: maint.bg, border: `1px solid ${maint.border}`, padding: '8px 12px', marginBottom: '16px', color: maint.color }}>
+          the rows line up tile-to-tile; only the tone differs. Bottom-anchored
+          (the chips region above absorbs height variance), so the pill sits at
+          the same vertical position on every tile. */}
+      <div className="flex items-center gap-2 rounded-lg" style={{ background: maint.bg, border: `1px solid ${maint.border}`, padding: '8px 12px', marginTop: '12px', marginBottom: '16px', color: maint.color }}>
         {maint.icon === 'check'
           ? <CheckCircle2 style={{ width: '15px', height: '15px', flexShrink: 0 }} />
           : maint.icon === 'alert'
@@ -228,8 +233,10 @@ const PropertyGlanceTile = ({ home, summary, onEnter }) => {
         <span className="font-semibold" style={{ fontSize: '13px' }}>{maint.text}</span>
       </div>
 
-      {/* Enter */}
-      <div className="flex items-center gap-1.5 font-semibold mt-auto" style={{ fontSize: '13px', color: GOLD }}>
+      {/* Enter — sits directly below the bottom-anchored maintenance pill.
+          (The chips region's mb-auto is the single flex spacer, so no auto
+          margin here or the two would fight and float the pill to the middle.) */}
+      <div className="flex items-center gap-1.5 font-semibold" style={{ fontSize: '13px', color: GOLD }}>
         Open
         <ArrowRight style={{ width: '15px', height: '15px' }} className="group-hover:translate-x-1 transition-transform" />
       </div>
