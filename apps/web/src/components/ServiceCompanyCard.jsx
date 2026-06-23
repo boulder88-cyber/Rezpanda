@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Button } from '@/components/ui/button.jsx';
-import { ExternalLink, Edit2, Trash2, Building, CheckCircle2, Repeat, Plus } from 'lucide-react';
+import { ExternalLink, Edit2, Trash2, Building, CheckCircle2, Repeat, Plus, Search, Sparkles } from 'lucide-react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog.jsx';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog.jsx';
 import AddServiceCompanyForm from './AddServiceCompanyForm.jsx';
@@ -54,6 +54,35 @@ const ServiceCompanyCard = ({ company, onRefresh, onPay, propertyName = null, ho
   const [addingLink, setAddingLink] = useState(false);
   const [linkValue, setLinkValue] = useState('');
   const [savingLink, setSavingLink] = useState(false);
+
+  // ── Payment-link finder helpers ──────────────────────────────────────
+  // A bill that arrived DIRECT from a utility carries the biller's own
+  // address (e.g. billing@xfinity.com). That domain IS effectively the
+  // biller's website, so we can offer it as a one-tap starting guess — no
+  // directory, no payee normalization. Prefer the invoice's own
+  // senderAddress; fall back to the vendor's senderDomain if flattened on.
+  const domainFromEmail = (addr) => {
+    if (!addr || typeof addr !== 'string') return '';
+    const at = addr.lastIndexOf('@');
+    const raw = (at >= 0 ? addr.slice(at + 1) : addr).trim().toLowerCase();
+    // Skip consumer mail domains — a forwarded bill's "from" is the user's
+    // own inbox, not the biller, so guessing from it would be wrong.
+    const consumer = ['gmail.com', 'yahoo.com', 'icloud.com', 'outlook.com', 'hotmail.com', 'aol.com', 'comcast.net', 'me.com', 'proton.me', 'protonmail.com'];
+    if (!raw || raw.indexOf('.') === -1 || consumer.includes(raw)) return '';
+    return raw;
+  };
+
+  const guessedDomain = domainFromEmail(company.senderAddress) || (company.senderDomain || '');
+  const guessedUrl = guessedDomain ? `https://${guessedDomain}` : '';
+
+  // "Search the web" — opens a pre-filled query so the user doesn't have to
+  // think about what to type. They click the right result, copy its URL,
+  // paste it back. Pure convenience; no data leaves to anyone but Google.
+  const webSearchUrl = `https://www.google.com/search?q=${encodeURIComponent(`${company.companyName || ''} pay bill online`.trim())}`;
+
+  const useGuess = () => {
+    if (guessedUrl) setLinkValue(guessedUrl);
+  };
 
   const handleSaveLink = async () => {
     let url = linkValue.trim();
@@ -342,25 +371,54 @@ const ServiceCompanyCard = ({ company, onRefresh, onPay, propertyName = null, ho
               </button>
             )}
             {!company.paymentLink && !isPaid && !autopay && addingLink && (
-              <div className="flex items-center gap-1" onClick={(e) => e.stopPropagation()}>
-                <input
-                  autoFocus
-                  type="text"
-                  value={linkValue}
-                  onChange={(e) => setLinkValue(e.target.value)}
-                  onKeyDown={(e) => { if (e.key === 'Enter') handleSaveLink(); if (e.key === 'Escape') { setAddingLink(false); setLinkValue(''); } }}
-                  placeholder="paste the utility's pay URL"
-                  className="rounded-lg border border-slate-200 focus:outline-none focus:border-slate-400"
-                  style={{ fontSize: '12px', padding: '4px 8px', width: '180px' }}
-                />
-                <button onClick={handleSaveLink} disabled={savingLink}
-                  className="rounded-lg font-medium text-white" style={{ fontSize: '12px', padding: '4px 10px', background: '#1e3a5f' }}>
-                  {savingLink ? '…' : 'Save'}
-                </button>
-                <button onClick={() => { setAddingLink(false); setLinkValue(''); }}
-                  className="text-slate-400 hover:text-slate-600" style={{ fontSize: '12px', padding: '4px 6px' }}>
-                  Cancel
-                </button>
+              <div className="flex flex-col gap-1.5" onClick={(e) => e.stopPropagation()} style={{ minWidth: '240px' }}>
+                <div className="flex items-center gap-1">
+                  <input
+                    autoFocus
+                    type="text"
+                    value={linkValue}
+                    onChange={(e) => setLinkValue(e.target.value)}
+                    onKeyDown={(e) => { if (e.key === 'Enter') handleSaveLink(); if (e.key === 'Escape') { setAddingLink(false); setLinkValue(''); } }}
+                    placeholder="paste the utility's pay URL"
+                    className="rounded-lg border border-slate-200 focus:outline-none focus:border-slate-400"
+                    style={{ fontSize: '12px', padding: '4px 8px', width: '180px' }}
+                  />
+                  <button onClick={handleSaveLink} disabled={savingLink}
+                    className="rounded-lg font-medium text-white" style={{ fontSize: '12px', padding: '4px 10px', background: '#1e3a5f' }}>
+                    {savingLink ? '…' : 'Save'}
+                  </button>
+                  <button onClick={() => { setAddingLink(false); setLinkValue(''); }}
+                    className="text-slate-400 hover:text-slate-600" style={{ fontSize: '12px', padding: '4px 6px' }}>
+                    Cancel
+                  </button>
+                </div>
+
+                {/* Finder helpers: a smart guess (if the bill came direct from the
+                    biller) + a pre-filled web search. Both reduce the "what do I
+                    even paste" friction without a maintained directory. */}
+                <div className="flex flex-wrap items-center gap-x-3 gap-y-1" style={{ paddingLeft: '2px' }}>
+                  {guessedUrl && (
+                    <button
+                      onClick={useGuess}
+                      className="flex items-center gap-1 font-medium hover:underline"
+                      style={{ fontSize: '11px', color: '#c9a96e' }}
+                      title={`Use ${guessedDomain}`}
+                    >
+                      <Sparkles style={{ width: '11px', height: '11px' }} />
+                      Use {guessedDomain}
+                    </button>
+                  )}
+                  <a
+                    href={webSearchUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="flex items-center gap-1 hover:underline"
+                    style={{ fontSize: '11px', color: '#5b6472' }}
+                  >
+                    <Search style={{ width: '11px', height: '11px' }} />
+                    Search the web for it
+                  </a>
+                </div>
               </div>
             )}
           </div>
