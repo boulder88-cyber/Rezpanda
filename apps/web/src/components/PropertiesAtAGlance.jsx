@@ -174,11 +174,6 @@ const PropertyGlanceTile = ({ home, summary, onEnter }) => {
           </p>
           <p style={{ fontSize: '12px', color: 'rgba(255,255,255,0.6)', marginTop: '4px' }}>
             {openCount} {openCount === 1 ? 'bill' : 'bills'} to pay
-            {nextBill && nextBill.dueDate && (
-              nextOverdue
-                ? <span style={{ color: '#fca5a5' }}>{'  ·  past due '}{shortDate(nextBill.dueDate)}</span>
-                : <>{'  ·  next '}{shortDate(nextBill.dueDate)}</>
-            )}
           </p>
         </div>
       )}
@@ -220,33 +215,91 @@ const PropertyGlanceTile = ({ home, summary, onEnter }) => {
 };
 
 // ── Portfolio summary strip: a calm all-properties aging readout ──────────
-const PortfolioStrip = ({ stats }) => {
+// The Past-due cell is clickable: it expands an inline list of exactly which
+// bills are past due (company, amount, how late), each a link into Bill Pay
+// for that home — so "how much is overdue" is one tap from "which ones."
+const PortfolioStrip = ({ stats, pastDueBills, homesById, onGoBill }) => {
+  const [showPastDue, setShowPastDue] = React.useState(false);
   const toneColor = { plain: '#1f2733', amber: '#b45309', red: '#dc2626', green: '#059669' };
   const money = (n) => `$${Math.round(n).toLocaleString()}`;
   const billWord = (n) => `${n} ${n === 1 ? 'bill' : 'bills'}`;
   const a = stats.aging;
+  // How late, in whole days, against today (midnight-normalized).
+  const daysLate = (dateStr) => {
+    const now = new Date(); now.setHours(0, 0, 0, 0);
+    const due = new Date(dateStr); due.setHours(0, 0, 0, 0);
+    return Math.round((now - due) / (24 * 60 * 60 * 1000));
+  };
+
+  const hasPastDue = a.pastDue.count > 0;
   const cells = [
-    { label: 'Due across all homes', value: money(stats.dueTotal), sub: billWord(stats.openCount), tone: 'plain' },
-    { label: 'Past due', value: money(a.pastDue.amount), sub: billWord(a.pastDue.count), tone: a.pastDue.count > 0 ? 'red' : 'green' },
-    { label: 'Next 7 days', value: money(a.next7.amount), sub: billWord(a.next7.count), tone: a.next7.count > 0 ? 'amber' : 'plain' },
-    { label: 'Next 30 days', value: money(a.next30.amount), sub: billWord(a.next30.count), tone: 'plain' },
+    { key: 'total', label: 'Due across all homes', value: money(stats.dueTotal), sub: billWord(stats.openCount), tone: 'plain' },
+    { key: 'pastdue', label: 'Past due', value: money(a.pastDue.amount), sub: billWord(a.pastDue.count), tone: hasPastDue ? 'red' : 'green', clickable: hasPastDue },
+    { key: 'next7', label: 'Next 7 days', value: money(a.next7.amount), sub: billWord(a.next7.count), tone: a.next7.count > 0 ? 'amber' : 'plain' },
+    { key: 'next30', label: 'Next 30 days', value: money(a.next30.amount), sub: billWord(a.next30.count), tone: 'plain' },
   ];
-  // Undated bills are held but can't be placed on the timeline. Surface them
-  // ONLY when present — a quiet amber nudge to add a due date — so the total
-  // always reconciles and nothing the system holds is ever invisible.
   if (a.undated.count > 0) {
-    cells.push({ label: 'No due date', value: money(a.undated.amount), sub: `${billWord(a.undated.count)} · add a date`, tone: 'amber' });
+    cells.push({ key: 'undated', label: 'No due date', value: money(a.undated.amount), sub: `${billWord(a.undated.count)} · add a date`, tone: 'amber' });
   }
 
+  // Past-due bills, soonest-overdue last (most overdue first).
+  const sortedPastDue = [...(pastDueBills || [])].sort((x, y) => new Date(x.dueDate) - new Date(y.dueDate));
+
   return (
-    <div className="grid bg-white" style={{ border: '1px solid #e9e4db', borderRadius: '14px', gridTemplateColumns: 'repeat(auto-fit, minmax(130px, 1fr))', overflow: 'hidden', marginBottom: '28px' }}>
-      {cells.map((c, i) => (
-        <div key={c.label} style={{ padding: '16px 18px', borderLeft: i === 0 ? 'none' : '1px solid #f0ece4' }}>
-          <p style={{ fontSize: '11px', color: '#95a0ae', fontWeight: 600, letterSpacing: '0.02em', marginBottom: '6px' }}>{c.label}</p>
-          <p className="font-bold" style={{ fontSize: '21px', color: toneColor[c.tone], lineHeight: 1 }}>{c.value}</p>
-          {c.sub && <p style={{ fontSize: '11px', color: '#95a0ae', marginTop: '4px' }}>{c.sub}</p>}
+    <div className="bg-white" style={{ border: '1px solid #e9e4db', borderRadius: '14px', overflow: 'hidden', marginBottom: '28px' }}>
+      <div className="grid" style={{ gridTemplateColumns: 'repeat(auto-fit, minmax(130px, 1fr))' }}>
+        {cells.map((c, i) => {
+          const inner = (
+            <>
+              <p style={{ fontSize: '11px', color: '#95a0ae', fontWeight: 600, letterSpacing: '0.02em', marginBottom: '6px' }}>
+                {c.label}
+                {c.clickable && <span style={{ color: '#dc2626', marginLeft: '6px', fontWeight: 700 }}>{showPastDue ? '▲' : '▼'}</span>}
+              </p>
+              <p className="font-bold" style={{ fontSize: '21px', color: toneColor[c.tone], lineHeight: 1 }}>{c.value}</p>
+              {c.sub && <p style={{ fontSize: '11px', color: '#95a0ae', marginTop: '4px' }}>{c.sub}</p>}
+            </>
+          );
+          const cellStyle = { padding: '16px 18px', borderLeft: i === 0 ? 'none' : '1px solid #f0ece4' };
+          return c.clickable ? (
+            <button key={c.key} onClick={() => setShowPastDue((v) => !v)} className="text-left transition-colors hover:bg-[#fef2f2]" style={cellStyle} title="See which bills are past due">
+              {inner}
+            </button>
+          ) : (
+            <div key={c.key} style={cellStyle}>{inner}</div>
+          );
+        })}
+      </div>
+
+      {/* Inline past-due detail — exactly what's overdue, one tap to the bill */}
+      {showPastDue && hasPastDue && (
+        <div style={{ borderTop: '1px solid #f0ece4', background: '#fffafa' }}>
+          {sortedPastDue.map((c) => {
+            const late = daysLate(c.dueDate);
+            const homeName = homesById[c.homeId]?.name || homesById[c.homeId]?.address
+              || (placementOf(c) === 'other' ? 'Other bills' : 'Needs placement');
+            return (
+              <button
+                key={c.id}
+                onClick={() => onGoBill(c.homeId)}
+                className="w-full flex items-center gap-3 text-left transition-colors hover:bg-[#fef2f2]"
+                style={{ padding: '10px 18px', borderTop: '1px solid #faf0f0' }}
+              >
+                <AlertCircle style={{ width: '14px', height: '14px', color: '#dc2626', flexShrink: 0 }} />
+                <div className="flex-1 min-w-0">
+                  <p className="font-medium truncate" style={{ fontSize: '13px', color: '#1f2733' }}>
+                    {c.companyName || 'Bill'}
+                    {c.amount ? <span style={{ color: '#5b6472', fontWeight: 400 }}>{'  ·  $'}{parseFloat(c.amount).toFixed(2)}</span> : null}
+                  </p>
+                  <p className="truncate" style={{ fontSize: '11px', color: '#dc2626' }}>
+                    {late === 1 ? '1 day' : `${late} days`} past due · {homeName}
+                  </p>
+                </div>
+                <ArrowRight style={{ width: '13px', height: '13px', color: '#e2b8b8', flexShrink: 0 }} />
+              </button>
+            );
+          })}
         </div>
-      ))}
+      )}
     </div>
   );
 };
@@ -404,6 +457,16 @@ const PropertiesAtAGlance = ({ onEnter }) => {
     return { dueTotal, openCount: open.length, pendingCount, aging };
   }, [bills]);
 
+  // Past-due open bills, for the strip's expandable detail list.
+  const pastDueBills = React.useMemo(() => {
+    const now = new Date(); now.setHours(0, 0, 0, 0);
+    return bills.filter((c) => {
+      if (!isOpen(c) || !c.dueDate) return false;
+      const due = new Date(c.dueDate); due.setHours(0, 0, 0, 0);
+      return due < now;
+    });
+  }, [bills]);
+
   // "Needs your eye" items: overdue first, then pending review, then bills that
   // still need a property, then open bills with no due date. Capped to a glance.
   const eyeItems = React.useMemo(() => {
@@ -454,7 +517,7 @@ const PropertiesAtAGlance = ({ onEnter }) => {
       </div>
 
       {/* Portfolio summary strip — the all-properties answer, made visible */}
-      {!loadingBills && <PortfolioStrip stats={portfolio} />}
+      {!loadingBills && <PortfolioStrip stats={portfolio} pastDueBills={pastDueBills} homesById={homesById} onGoBill={goHomeBills} />}
 
       {/* Property tiles — equal-width grid columns so tiles render the same
           size, items stretched to equal height. Grid is width-capped and
