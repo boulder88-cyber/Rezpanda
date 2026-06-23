@@ -33,7 +33,7 @@ const PendingReviewSection = ({ onConfirmed }) => {
 
   // Which row is currently expanded for editing, plus its working draft.
   const [editingId, setEditingId] = useState(null);
-  const [draft, setDraft] = useState({ companyName: '', amount: '', dueDate: '', category: '', homeId: '', paymentType: 'Manual' });
+  const [draft, setDraft] = useState({ companyName: '', amount: '', dueDate: '', category: '', homeId: '', paymentType: 'Manual', billingPeriod: '', invoiceNumber: '' });
 
   const fetchPending = async () => {
     if (!currentUser) return;
@@ -79,12 +79,14 @@ const PendingReviewSection = ({ onConfirmed }) => {
       //    us silently pre-picking the selected home and baking in a guess.
       homeId: bill.homeId || (!multiHome && singleHomeId ? singleHomeId : ''),
       paymentType: bill.paymentType || 'Manual',
+      billingPeriod: bill.billingPeriod ?? '',
+      invoiceNumber: bill.invoiceNumber ?? '',
     });
   };
 
   const cancelReview = () => {
     setEditingId(null);
-    setDraft({ companyName: '', amount: '', dueDate: '', category: '', homeId: '', paymentType: 'Manual' });
+    setDraft({ companyName: '', amount: '', dueDate: '', category: '', homeId: '', paymentType: 'Manual', billingPeriod: '', invoiceNumber: '' });
   };
 
   const updateDraft = (field, value) => {
@@ -212,6 +214,10 @@ const PendingReviewSection = ({ onConfirmed }) => {
         payload.placement = 'unassigned';
       }
       if (draft.paymentType) payload.paymentType = draft.paymentType;
+      // Disambiguators — write trimmed (empty clears a bad parse). Capped to
+      // match the ingestion-side cap so the field can't grow unbounded.
+      payload.billingPeriod = (draft.billingPeriod || '').trim().slice(0, 64);
+      payload.invoiceNumber = (draft.invoiceNumber || '').trim().slice(0, 64);
 
       await pb.collection('invoices').update(bill.id, payload, { $autoCancel: false });
       toast({ title: '✅ Bill confirmed', description: `${trimmedName} added to your bills.` });
@@ -365,6 +371,26 @@ const PendingReviewSection = ({ onConfirmed }) => {
                         onChange={(e) => updateDraft('category', e.target.value)}
                         style={fieldInput}
                         placeholder="e.g. Internet, Utilities"
+                      />
+                    </div>
+                    <div>
+                      <label style={fieldLabel}>Billing period</label>
+                      <input
+                        type="text"
+                        value={draft.billingPeriod}
+                        onChange={(e) => updateDraft('billingPeriod', e.target.value)}
+                        style={fieldInput}
+                        placeholder="e.g. Mar 2026"
+                      />
+                    </div>
+                    <div>
+                      <label style={fieldLabel}>Invoice number</label>
+                      <input
+                        type="text"
+                        value={draft.invoiceNumber}
+                        onChange={(e) => updateDraft('invoiceNumber', e.target.value)}
+                        style={fieldInput}
+                        placeholder="optional"
                       />
                     </div>
                     {multiHome && (
