@@ -323,7 +323,7 @@ const ServiceCompanyCard = ({ company, onRefresh, onPay, propertyName = null, ho
 
         {/* Name + meta */}
         <div className="flex-1 min-w-0">
-          <p className="font-semibold text-slate-900 truncate" style={{ fontSize: '15px' }} title={company.companyName}>
+          <p className="font-semibold text-slate-900 truncate" style={{ fontSize: '15px' }} title={company.invoiceNumber ? `${company.companyName} · Invoice ${company.invoiceNumber}` : company.companyName}>
             {company.companyName}
           </p>
           <div className="flex flex-wrap items-center gap-x-4 gap-y-1" style={{ marginTop: '2px' }}>
@@ -361,6 +361,9 @@ const ServiceCompanyCard = ({ company, onRefresh, onPay, propertyName = null, ho
                 <Repeat style={{ width: '11px', height: '11px' }} />
                 {company.paymentType}
               </span>
+            )}
+            {company.billingPeriod && (
+              <span className="text-slate-500" style={{ fontSize: '12px' }}>{company.billingPeriod}</span>
             )}
             {company.category && (
               <span className="text-slate-400" style={{ fontSize: '12px' }}>{company.category}</span>
