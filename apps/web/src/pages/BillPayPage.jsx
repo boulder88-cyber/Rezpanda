@@ -412,6 +412,149 @@ const OtherBillsPeek = ({ scope, setScope, selectedHome, allProperties }) => {
   );
 };
 
+// ═══════════════════════════════════════════════════════════════════════
+// PAST-DUE PENDING ROW — a past-due bill that's still unreviewed.
+// Past due takes precedence, so it lives in the Past Due section (not Bills
+// to Review). But it can't be PAID yet — the amount is unverified — so instead
+// of "Pay Bill" it offers "Review", which opens an inline edit panel right
+// here (company / amount / due date / category / property) and confirms in
+// place. Self-contained so the bill shows exactly once.
+// ═══════════════════════════════════════════════════════════════════════
+const PastDuePendingRow = ({ bill, homes, multiHome, onConfirmed }) => {
+  const { toast } = useToast();
+  const [editing, setEditing] = useState(false);
+  const [saving, setSaving] = useState(false);
+  const [draft, setDraft] = useState({
+    companyName: bill.companyName || '',
+    amount: typeof bill.amount === 'number' ? String(bill.amount) : '',
+    dueDate: bill.dueDate ? String(bill.dueDate).slice(0, 10) : '',
+    category: bill.category || '',
+    homeId: bill.homeId || (homes && homes.length === 1 ? homes[0].id : ''),
+  });
+
+  const upd = (k, v) => setDraft(d => ({ ...d, [k]: v }));
+  const dueStr = bill.dueDate ? new Date(bill.dueDate).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) : '';
+
+  const saveConfirm = async () => {
+    const name = draft.companyName.trim();
+    if (!name) { toast({ title: 'Add a company name', variant: 'destructive' }); return; }
+    let amt;
+    if (draft.amount.trim() !== '') {
+      amt = parseFloat(draft.amount);
+      if (isNaN(amt)) { toast({ title: 'Amount must be a number', variant: 'destructive' }); return; }
+    }
+    // Multi-home users must place it (property, Other, or leave unassigned).
+    const choseOther = draft.homeId === '__other__';
+    const choseUnassigned = draft.homeId === '__unassigned__';
+    const realHome = draft.homeId && !choseOther && !choseUnassigned ? draft.homeId : '';
+    if (multiHome && !realHome && !choseOther && !choseUnassigned) {
+      toast({ title: 'Pick a property', description: 'Choose a property, Other bills, or leave unassigned.', variant: 'destructive' });
+      return;
+    }
+    setSaving(true);
+    try {
+      const payload = {
+        companyName: name,
+        dueDate: draft.dueDate || null,
+        category: draft.category || null,
+        status: 'confirmed',
+      };
+      if (amt !== undefined) payload.amount = amt;
+      if (realHome) { payload.homeId = realHome; payload.placement = 'property'; }
+      else if (choseOther) { payload.homeId = ''; payload.placement = 'other'; }
+      else if (choseUnassigned) { payload.homeId = ''; payload.placement = 'unassigned'; }
+      await pb.collection('invoices').update(bill.id, payload, { $autoCancel: false });
+      toast({ title: 'Bill confirmed', description: `${name} is ready to pay.` });
+      if (onConfirmed) onConfirmed();
+    } catch (e) {
+      toast({ title: 'Could not confirm', description: e?.message || 'Try again.', variant: 'destructive' });
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const fieldLabel = { fontSize: '11px', fontWeight: 600, color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.04em', marginBottom: '4px', display: 'block' };
+  const fieldInput = { width: '100%', border: '1px solid #cbd5e1', borderRadius: '8px', padding: '8px 10px', fontSize: '14px', color: '#0f172a', background: '#fff', outline: 'none' };
+
+  return (
+    <div className="bg-white" style={{ borderRadius: '10px', border: '1px solid #e2e8f0', borderLeft: '4px solid #dc2626', padding: '14px 16px' }}>
+      <div className="flex flex-col sm:flex-row sm:items-center gap-3">
+        <div className="flex-1 min-w-0">
+          <div className="flex items-center gap-2 flex-wrap">
+            <p className="font-semibold text-slate-900" style={{ fontSize: '15px' }}>{bill.companyName || 'Unknown'}</p>
+            <span className="flex items-center gap-1 font-semibold" style={{ fontSize: '11px', color: '#dc2626', background: 'rgba(220,38,38,0.10)', borderRadius: '6px', padding: '1px 8px' }}>
+              <AlertCircle style={{ width: '11px', height: '11px' }} /> Past due
+            </span>
+            <span className="font-medium" style={{ fontSize: '11px', color: '#b45309', background: '#fef3c7', borderRadius: '6px', padding: '1px 8px' }}>Not reviewed yet</span>
+          </div>
+          <p className="text-slate-500" style={{ fontSize: '12.5px', marginTop: '3px' }}>
+            {typeof bill.amount === 'number' ? `$${bill.amount.toFixed(2)}` : 'No amount'}{dueStr ? ` · Due ${dueStr}` : ''}{bill.category ? ` · ${bill.category}` : ''}
+          </p>
+        </div>
+        {!editing && (
+          <button onClick={() => setEditing(true)}
+            className="flex items-center gap-1.5 font-semibold rounded-lg flex-shrink-0"
+            style={{ border: '1px solid #1e3a5f', color: '#1e3a5f', padding: '7px 14px', fontSize: '13px', background: '#fff' }}>
+            Review
+          </button>
+        )}
+      </div>
+
+      {editing && (
+        <div style={{ marginTop: '12px', borderTop: '1px solid #f0ece4', paddingTop: '12px' }}>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <div>
+              <label style={fieldLabel}>Company</label>
+              <input type="text" value={draft.companyName} onChange={(e) => upd('companyName', e.target.value)} style={fieldInput} />
+            </div>
+            <div>
+              <label style={fieldLabel}>Amount</label>
+              <input type="text" inputMode="decimal" value={draft.amount} onChange={(e) => upd('amount', e.target.value)} style={fieldInput} placeholder="0.00" />
+            </div>
+            <div>
+              <label style={fieldLabel}>Due date</label>
+              <input type="date" value={draft.dueDate} onChange={(e) => upd('dueDate', e.target.value)} style={fieldInput} />
+            </div>
+            <div>
+              <label style={fieldLabel}>Category</label>
+              <input type="text" value={draft.category} onChange={(e) => upd('category', e.target.value)} style={fieldInput} placeholder="e.g. Electric" />
+            </div>
+            {multiHome && (
+              <div className="sm:col-span-2">
+                <label style={fieldLabel}>Belongs to {!draft.homeId && <span style={{ color: '#dc2626' }}>• needed</span>}</label>
+                <select value={draft.homeId} onChange={(e) => upd('homeId', e.target.value)}
+                  style={{ ...fieldInput, border: draft.homeId ? fieldInput.border : '1px solid #dc2626' }}>
+                  <option value="">— Choose —</option>
+                  <optgroup label="Properties">
+                    {homes.map(h => <option key={h.id} value={h.id}>{h.name || h.address || 'Property'}</option>)}
+                  </optgroup>
+                  <optgroup label="Not a property bill">
+                    <option value="__other__">Other bills — not tied to a property</option>
+                  </optgroup>
+                  <optgroup label="Not sure yet">
+                    <option value="__unassigned__">Leave unassigned for now</option>
+                  </optgroup>
+                </select>
+              </div>
+            )}
+          </div>
+          <div className="flex items-center gap-2" style={{ marginTop: '12px' }}>
+            <button onClick={saveConfirm} disabled={saving}
+              className="font-semibold text-white rounded-lg"
+              style={{ background: '#1e3a5f', padding: '8px 16px', fontSize: '13px', opacity: saving ? 0.6 : 1 }}>
+              {saving ? 'Saving…' : 'Save & confirm'}
+            </button>
+            <button onClick={() => setEditing(false)} disabled={saving}
+              className="font-medium rounded-lg" style={{ color: '#5b6472', padding: '8px 12px', fontSize: '13px' }}>
+              Cancel
+            </button>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+};
+
 
 const BillPayPage = () => {
   const { currentUser } = useAuth();
@@ -570,9 +713,26 @@ const BillPayPage = () => {
   const openCompanies = openBills;
 
   // Split manual ready-to-pay into past-due vs the rest.
-  const now = new Date();
-  const pastDue = readyToPay.filter(c => c.dueDate && new Date(c.dueDate) < now);
-  const upcomingToPay = readyToPay.filter(c => !(c.dueDate && new Date(c.dueDate) < now));
+  const now = new Date(); now.setHours(0, 0, 0, 0);
+  const isPastDueBill = (c) => {
+    if (isPaid(c) || !c.dueDate) return false;
+    const due = new Date(c.dueDate); due.setHours(0, 0, 0, 0);
+    return due < now;
+  };
+  // PAST DUE TAKES PRECEDENCE: a past-due bill belongs in the Past Due section
+  // regardless of confirm status — including unreviewed ones from the queue —
+  // and is shown ONCE (pulled out of Bills to Review below). Confirmed past-due
+  // bills get a Pay action; unreviewed ones get a Review action (can't pay an
+  // unverified amount). Sorted most-overdue first.
+  const pastDue = propertyFiltered
+    .filter(isPastDueBill)
+    .sort((a, b) => new Date(a.dueDate) - new Date(b.dueDate));
+  // IDs that the Bills-to-Review list must NOT also show (they live in Past Due).
+  const pastDuePendingIds = new Set(
+    pastDue.filter(c => c.status === 'pending_review').map(c => c.id)
+  );
+  // Upcoming = confirmed manual bills that are NOT past due.
+  const upcomingToPay = readyToPay.filter(c => !isPastDueBill(c));
 
   // Show property tags on rows whenever we're looking across properties.
   const showPropertyTags = scope === 'all' && multiHome;
@@ -730,7 +890,11 @@ const BillPayPage = () => {
                     </div>
                     <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', marginBottom: '32px' }}>
                       {pastDue.map(company => (
-                        <ServiceCompanyCard key={company.id} company={company} onRefresh={fetchCompanies} onPay={handleLogPayment} propertyName={showPropertyTags ? homeName(company.homeId) : null} homes={homes} />
+                        company.status === 'pending_review' ? (
+                          <PastDuePendingRow key={company.id} bill={company} homes={homes} multiHome={multiHome} onConfirmed={fetchCompanies} />
+                        ) : (
+                          <ServiceCompanyCard key={company.id} company={company} onRefresh={fetchCompanies} onPay={handleLogPayment} propertyName={showPropertyTags ? homeName(company.homeId) : null} homes={homes} />
+                        )
                       ))}
                     </div>
                   </>
@@ -788,7 +952,7 @@ const BillPayPage = () => {
                 )}
 
                 {/* ── 4. BILLS TO CONFIRM (email-ingested) ── */}
-                <PendingReviewSection onConfirmed={fetchCompanies} />
+                <PendingReviewSection onConfirmed={fetchCompanies} excludeIds={pastDuePendingIds} />
 
                 {/* ── 5. ALL SET — paid (manual) + reviewed (autopay) ── */}
                 <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3" style={{ marginBottom: '12px' }}>
