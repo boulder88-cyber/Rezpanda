@@ -170,16 +170,22 @@ const PendingReviewSection = ({ onConfirmed }) => {
     }
 
     // Property gate. Single-home users auto-attach (nothing to choose).
-    // Multi-home users must make a real choice: a property, or a deliberate
-    // "Leave unassigned for now" (the __unassigned__ sentinel). Only an
-    // untouched blank is blocked — that's the accidental-guess case.
+    // Multi-home users must make a real choice. Three destinations, two of
+    // which carry an empty homeId but mean DIFFERENT things (placement field):
+    //   • a real property            → placement 'property'
+    //   • "Other bills"  (__other__) → placement 'other'      (settled, no nag)
+    //   • "Leave unassigned for now" (__unassigned__) → placement 'unassigned'
+    //                                  (a real to-do; keeps nagging in My Bills)
+    // Only an untouched blank is blocked — that's the accidental-guess case.
+    const choseOther = draft.homeId === '__other__';
     const choseUnassigned = draft.homeId === '__unassigned__';
-    let homeIdToUse = (draft.homeId && !choseUnassigned) ? draft.homeId : '';
-    if (!homeIdToUse && !choseUnassigned && !multiHome && singleHomeId) {
+    const isSentinel = choseOther || choseUnassigned;
+    let homeIdToUse = (draft.homeId && !isSentinel) ? draft.homeId : '';
+    if (!homeIdToUse && !isSentinel && !multiHome && singleHomeId) {
       homeIdToUse = singleHomeId;
     }
-    if (!homeIdToUse && !choseUnassigned && multiHome) {
-      toast({ title: 'Choose where this bill belongs', description: 'Pick a property, or “Leave unassigned for now” if you’re not sure yet.', variant: 'destructive' });
+    if (!homeIdToUse && !isSentinel && multiHome) {
+      toast({ title: 'Choose where this bill belongs', description: 'Pick a property, “Other bills,” or “Leave unassigned for now.”', variant: 'destructive' });
       return;
     }
 
@@ -192,10 +198,19 @@ const PendingReviewSection = ({ onConfirmed }) => {
         status: 'confirmed',
       };
       if (amountValue !== undefined) payload.amount = amountValue;
-      // Write a real property when we have one. On a deliberate unassign, write
-      // empty so it's truthfully unplaced (and overrides any stale homeId).
-      if (homeIdToUse) payload.homeId = homeIdToUse;
-      else if (choseUnassigned) payload.homeId = '';
+      // Write a real property when we have one, else empty homeId. The placement
+      // field is what distinguishes the two empty-homeId states from each other
+      // and from a property bill — readers key off placement, not bare homeId.
+      if (homeIdToUse) {
+        payload.homeId = homeIdToUse;
+        payload.placement = 'property';
+      } else if (choseOther) {
+        payload.homeId = '';
+        payload.placement = 'other';
+      } else if (choseUnassigned) {
+        payload.homeId = '';
+        payload.placement = 'unassigned';
+      }
       if (draft.paymentType) payload.paymentType = draft.paymentType;
 
       await pb.collection('invoices').update(bill.id, payload, { $autoCancel: false });
@@ -367,18 +382,26 @@ const PendingReviewSection = ({ onConfirmed }) => {
                               <option key={h.id} value={h.id}>{h.name || h.address || 'Property'}</option>
                             ))}
                           </optgroup>
-                          {/* Deliberate "I can't place this yet". Confirms the
-                              bill with no property (homeId stays empty) so it
-                              isn't a lingering to-do, but it's an explicit choice
-                              — not an accidental blank — and stays flagged as
-                              unassigned in My Bills to place later. */}
+                          {/* Two empty-homeId destinations that mean different
+                              things. "Other bills" = settled, belongs to no
+                              property (a personal subscription, etc.) — no nag.
+                              "Leave unassigned" = a real to-do; stays flagged
+                              in My Bills so you place it later. */}
+                          <optgroup label="Not a property bill">
+                            <option value="__other__">Other bills — not tied to a property</option>
+                          </optgroup>
                           <optgroup label="Not sure yet">
                             <option value="__unassigned__">Leave unassigned for now</option>
                           </optgroup>
                         </select>
+                        {draft.homeId === '__other__' && (
+                          <p style={{ fontSize: '11px', color: '#5b6472', marginTop: '4px' }}>
+                            It'll live under “Other bills.” Settled — no reminder to place it.
+                          </p>
+                        )}
                         {draft.homeId === '__unassigned__' && (
                           <p style={{ fontSize: '11px', color: '#b45309', marginTop: '4px' }}>
-                            It'll stay flagged as unassigned so you can place it later.
+                            It'll stay flagged under “Needs placement” so you can place it later.
                           </p>
                         )}
                       </div>
