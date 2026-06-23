@@ -34,6 +34,14 @@ const GOLD = '#c9a96e';
 const isPaid = (c) => c.status === 'paid';
 const isPending = (c) => c.status === 'pending_review';
 const isOpen = (c) => !isPaid(c) && !isPending(c); // confirmed, not yet paid
+// Money rule (locked this session): a bill's dollars count from the moment it
+// exists, regardless of confirm status — only PAID bills stop counting. So
+// every due total and aging bucket sums ALL unpaid bills (confirmed AND in
+// review). Confirm status no longer changes a dollar figure; it only drives
+// the "to review" COUNT chips. This is what lets every tile reconcile to the
+// portfolio strip: a pending bill counts its dollars exactly where a confirmed
+// one would, so Σ(tiles) === strip total, always.
+const counts = (c) => !isPaid(c);
 // Past due is a HARD FACT of the calendar, not a workflow state: any unpaid
 // bill whose due date has passed is overdue — whether or not it's been
 // confirmed. This deliberately includes pending_review bills, so an obviously
@@ -77,19 +85,19 @@ const ageBills = (allBills) => {
   for (const c of allBills) {
     if (isPaid(c)) continue;
     const amt = parseFloat(c.amount) || 0;
-    // Past due first, regardless of confirm status.
+    // Every unpaid bill counts its dollars — confirmed or in review. The bucket
+    // is decided purely by the due date, so the five cells sum to the true
+    // total owed and the strip reconciles to the tiles.
     if (c.dueDate) {
       const due = new Date(c.dueDate); due.setHours(0, 0, 0, 0);
       const diffDays = Math.round((due - now) / day);
       if (diffDays < 0) { b.pastDue.count++; b.pastDue.amount += amt; continue; }
-      // Future-dated: only bucket if confirmed (open).
-      if (!isOpen(c)) continue;
       if (diffDays <= 7) { b.next7.count++; b.next7.amount += amt; }
       else if (diffDays <= 30) { b.next30.count++; b.next30.amount += amt; }
       else { b.later.count++; b.later.amount += amt; }
     } else {
-      // Undated: only confirmed bills count as held-but-untimed.
-      if (isOpen(c)) { b.undated.count++; b.undated.amount += amt; }
+      // Undated: held but not yet on the timeline — counts regardless of status.
+      b.undated.count++; b.undated.amount += amt;
     }
   }
   return b;
@@ -106,18 +114,20 @@ const daysUntil = (dateStr) => {
 const summarize = (bills, systems, homeId) => {
   const now = new Date();
   const mine = bills.filter((c) => c.homeId === homeId);
-  const open = mine.filter(isOpen);
-  const dueTotal = open.reduce((s, c) => s + (parseFloat(c.amount) || 0), 0);
+  // Countable = every unpaid bill (confirmed + in review). Dollars and the
+  // "bills" count derive from this, so the tile reconciles to the strip.
+  const live = mine.filter(counts);
+  const dueTotal = live.reduce((s, c) => s + (parseFloat(c.amount) || 0), 0);
   // Overdue is status-agnostic — a past-due bill counts even if still in review.
   const overdueCount = mine.filter(isPastDue).length;
   const pendingCount = mine.filter(isPending).length;
-  // Open bills with no due date — held but not yet placeable on the timeline.
-  const undatedCount = open.filter((c) => !c.dueDate).length;
+  // Unpaid bills with no due date — held but not yet placeable on the timeline.
+  const undatedCount = live.filter((c) => !c.dueDate).length;
 
-  // Next open bill by due date (soonest first). nextOverdue tells the tile
-  // whether that soonest bill is actually past due — so it isn't mislabeled
-  // "next" when its date is already gone.
-  const dated = open.filter((c) => c.dueDate).sort((a, b) => new Date(a.dueDate) - new Date(b.dueDate));
+  // Next bill by due date (soonest first). nextOverdue tells the tile whether
+  // that soonest bill is actually past due — so it isn't mislabeled "next"
+  // when its date is already gone.
+  const dated = live.filter((c) => c.dueDate).sort((a, b) => new Date(a.dueDate) - new Date(b.dueDate));
   const nextBill = dated[0] || null;
   const nextOverdue = !!(nextBill && new Date(nextBill.dueDate) < now);
 
@@ -129,7 +139,7 @@ const summarize = (bills, systems, homeId) => {
     return d !== null && d >= 0 && d <= 30;
   }).length;
 
-  return { dueTotal, openCount: open.length, overdueCount, pendingCount, undatedCount, nextBill, nextOverdue, mOverdue, mSoon, mTotal: homeSystems.length };
+  return { dueTotal, openCount: live.length, overdueCount, pendingCount, undatedCount, nextBill, nextOverdue, mOverdue, mSoon, mTotal: homeSystems.length };
 };
 
 // Summarize the bills that DON'T belong to a property — the two empty-homeId
@@ -139,17 +149,20 @@ const summarize = (bills, systems, homeId) => {
 const summarizeUnplaced = (bills) => {
   const now = new Date();
   const mine = bills.filter((c) => placementOf(c) !== 'property');
-  const open = mine.filter(isOpen);
-  const dueTotal = open.reduce((s, c) => s + (parseFloat(c.amount) || 0), 0);
+  // Countable = every unpaid unplaced bill (confirmed + in review), same basis
+  // as the home tiles, so this tile reconciles into the strip alongside them.
+  const live = mine.filter(counts);
+  const dueTotal = live.reduce((s, c) => s + (parseFloat(c.amount) || 0), 0);
   const overdueCount = mine.filter(isPastDue).length;
   const pendingCount = mine.filter(isPending).length;
-  const undatedCount = open.filter((c) => !c.dueDate).length;
-  // How many still need a real home (unassigned) vs. parked in Other on purpose.
-  const needsPlaceCount = mine.filter((c) => isOpen(c) && placementOf(c) === 'unassigned').length;
-  const dated = open.filter((c) => c.dueDate).sort((a, b) => new Date(a.dueDate) - new Date(b.dueDate));
+  const undatedCount = live.filter((c) => !c.dueDate).length;
+  // How many still need a real home (unassigned) vs. parked in Other on purpose
+  // — status-agnostic, since a pending unassigned bill still needs placing.
+  const needsPlaceCount = live.filter((c) => placementOf(c) === 'unassigned').length;
+  const dated = live.filter((c) => c.dueDate).sort((a, b) => new Date(a.dueDate) - new Date(b.dueDate));
   const nextBill = dated[0] || null;
   const nextOverdue = !!(nextBill && new Date(nextBill.dueDate) < now);
-  return { dueTotal, openCount: open.length, overdueCount, pendingCount, undatedCount, needsPlaceCount, nextBill, nextOverdue, total: mine.length };
+  return { dueTotal, openCount: live.length, overdueCount, pendingCount, undatedCount, needsPlaceCount, nextBill, nextOverdue, total: mine.length };
 };
 
 // Short "Aug 14" style date.
@@ -237,7 +250,7 @@ const PropertyGlanceTile = ({ home, summary, onEnter }) => {
             ${Math.round(dueTotal).toLocaleString()}
           </p>
           <p style={{ fontSize: '12px', color: 'rgba(255,255,255,0.6)', marginTop: '4px' }}>
-            {openCount} {openCount === 1 ? 'bill' : 'bills'} to pay
+            {openCount} {openCount === 1 ? 'bill' : 'bills'} owed
           </p>
         </div>
       )}
@@ -337,7 +350,7 @@ const UnplacedGlanceTile = ({ summary, onEnter }) => {
             ${Math.round(dueTotal).toLocaleString()}
           </p>
           <p style={{ fontSize: '12px', color: 'rgba(255,255,255,0.6)', marginTop: '4px' }}>
-            {openCount} {openCount === 1 ? 'bill' : 'bills'} to pay
+            {openCount} {openCount === 1 ? 'bill' : 'bills'} owed
           </p>
         </div>
       )}
@@ -625,14 +638,15 @@ const PropertiesAtAGlance = ({ onEnter }) => {
     return m;
   }, [homes]);
 
-  // Portfolio-wide stats. dueTotal + forward buckets are confirmed-only, but
-  // the aging fn pulls past-due from ALL bills (incl. review queue) internally.
+  // Portfolio-wide stats. dueTotal and the aging buckets both count EVERY
+  // unpaid bill (confirmed + in review) on the same basis, so the strip's
+  // headline equals the sum of all tiles and equals the sum of its own cells.
   const portfolio = React.useMemo(() => {
-    const open = bills.filter(isOpen);
-    const dueTotal = open.reduce((s, c) => s + (parseFloat(c.amount) || 0), 0);
+    const live = bills.filter(counts);
+    const dueTotal = live.reduce((s, c) => s + (parseFloat(c.amount) || 0), 0);
     const pendingCount = bills.filter(isPending).length;
     const aging = ageBills(bills);
-    return { dueTotal, openCount: open.length, pendingCount, aging };
+    return { dueTotal, openCount: live.length, pendingCount, aging };
   }, [bills]);
 
   // Past-due bills for the strip's expandable detail list — status-agnostic,
