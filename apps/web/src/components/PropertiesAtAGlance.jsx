@@ -39,6 +39,39 @@ const isOpen = (c) => !isPaid(c) && !isPending(c); // confirmed, not yet paid
 const placementOf = (c) => (c && c.placement) ? c.placement : (c && c.homeId ? 'property' : 'unassigned');
 const needsPlacement = (c) => isOpen(c) && placementOf(c) === 'unassigned';
 
+// Aging buckets for a set of OPEN bills, keyed off dueDate against today:
+//   pastDue  — due date already gone
+//   next7    — due within the next 7 days (today through +7)
+//   next30   — due in 8–30 days
+//   later    — dated, but more than 30 days out
+//   undated  — open bill with NO due date: the system holds it but can't place
+//              it on the timeline. This MUST stay visible — a bill that exists
+//              but appears in no bucket is a silent gap the user can't reconcile.
+// Every open bill lands in exactly one bucket. Returns count + summed amount
+// per bucket so the dashboard can show "$X · N" honestly.
+const ageBills = (openBills) => {
+  const now = new Date(); now.setHours(0, 0, 0, 0);
+  const day = 24 * 60 * 60 * 1000;
+  const b = {
+    pastDue: { count: 0, amount: 0 },
+    next7: { count: 0, amount: 0 },
+    next30: { count: 0, amount: 0 },
+    later: { count: 0, amount: 0 },
+    undated: { count: 0, amount: 0 },
+  };
+  for (const c of openBills) {
+    const amt = parseFloat(c.amount) || 0;
+    if (!c.dueDate) { b.undated.count++; b.undated.amount += amt; continue; }
+    const due = new Date(c.dueDate); due.setHours(0, 0, 0, 0);
+    const diffDays = Math.round((due - now) / day);
+    if (diffDays < 0) { b.pastDue.count++; b.pastDue.amount += amt; }
+    else if (diffDays <= 7) { b.next7.count++; b.next7.amount += amt; }
+    else if (diffDays <= 30) { b.next30.count++; b.next30.amount += amt; }
+    else { b.later.count++; b.later.amount += amt; }
+  }
+  return b;
+};
+
 // Days until a date (positive = future, negative = past). Mirrors the
 // management page's ceil-based day math.
 const daysUntil = (dateStr) => {
@@ -54,10 +87,15 @@ const summarize = (bills, systems, homeId) => {
   const dueTotal = open.reduce((s, c) => s + (parseFloat(c.amount) || 0), 0);
   const overdueCount = open.filter((c) => c.dueDate && new Date(c.dueDate) < now).length;
   const pendingCount = mine.filter(isPending).length;
+  // Open bills with no due date — held but not yet placeable on the timeline.
+  const undatedCount = open.filter((c) => !c.dueDate).length;
 
-  // Next open bill by due date (soonest first).
+  // Next open bill by due date (soonest first). nextOverdue tells the tile
+  // whether that soonest bill is actually past due — so it isn't mislabeled
+  // "next" when its date is already gone.
   const dated = open.filter((c) => c.dueDate).sort((a, b) => new Date(a.dueDate) - new Date(b.dueDate));
   const nextBill = dated[0] || null;
+  const nextOverdue = !!(nextBill && new Date(nextBill.dueDate) < now);
 
   // Maintenance standing for this home.
   const homeSystems = systems.filter((s) => s.homeId === homeId);
@@ -67,7 +105,7 @@ const summarize = (bills, systems, homeId) => {
     return d !== null && d >= 0 && d <= 30;
   }).length;
 
-  return { dueTotal, openCount: open.length, overdueCount, pendingCount, nextBill, mOverdue, mSoon, mTotal: homeSystems.length };
+  return { dueTotal, openCount: open.length, overdueCount, pendingCount, undatedCount, nextBill, nextOverdue, mOverdue, mSoon, mTotal: homeSystems.length };
 };
 
 // Short "Aug 14" style date.
@@ -81,7 +119,7 @@ const shortDate = (dateStr) => {
 
 // ── Property tile: navy surface, gold accent, white icon ──────────────────
 const PropertyGlanceTile = ({ home, summary, onEnter }) => {
-  const { dueTotal, openCount, overdueCount, pendingCount, nextBill, mOverdue, mSoon, mTotal } = summary;
+  const { dueTotal, openCount, overdueCount, pendingCount, undatedCount, nextBill, nextOverdue, mOverdue, mSoon, mTotal } = summary;
   const allClear = openCount === 0 && overdueCount === 0;
   // Top accent reflects urgency; gold leads the calm state.
   const accent = overdueCount > 0 ? '#dc2626' : openCount > 0 ? '#f59e0b' : GOLD;
@@ -137,7 +175,9 @@ const PropertyGlanceTile = ({ home, summary, onEnter }) => {
           <p style={{ fontSize: '12px', color: 'rgba(255,255,255,0.6)', marginTop: '4px' }}>
             {openCount} {openCount === 1 ? 'bill' : 'bills'} to pay
             {nextBill && nextBill.dueDate && (
-              <>{'  ·  next '}{shortDate(nextBill.dueDate)}</>
+              nextOverdue
+                ? <span style={{ color: '#fca5a5' }}>{'  ·  past due '}{shortDate(nextBill.dueDate)}</span>
+                : <>{'  ·  next '}{shortDate(nextBill.dueDate)}</>
             )}
           </p>
         </div>
@@ -163,6 +203,11 @@ const PropertyGlanceTile = ({ home, summary, onEnter }) => {
             {pendingCount} to review
           </span>
         )}
+        {undatedCount > 0 && (
+          <span className="flex items-center gap-1 font-medium rounded-full" style={{ fontSize: '11px', color: '#fcd34d', background: 'rgba(245,158,11,0.16)', padding: '3px 9px' }}>
+            {undatedCount} no due date
+          </span>
+        )}
       </div>
 
       {/* Enter */}
@@ -174,15 +219,24 @@ const PropertyGlanceTile = ({ home, summary, onEnter }) => {
   );
 };
 
-// ── Portfolio summary strip: one calm all-properties readout ──────────────
+// ── Portfolio summary strip: a calm all-properties aging readout ──────────
 const PortfolioStrip = ({ stats }) => {
   const toneColor = { plain: '#1f2733', amber: '#b45309', red: '#dc2626', green: '#059669' };
+  const money = (n) => `$${Math.round(n).toLocaleString()}`;
+  const billWord = (n) => `${n} ${n === 1 ? 'bill' : 'bills'}`;
+  const a = stats.aging;
   const cells = [
-    { label: 'Due across all homes', value: `$${Math.round(stats.dueTotal).toLocaleString()}`, tone: 'plain' },
-    { label: 'Due this week', value: `$${Math.round(stats.dueThisWeek).toLocaleString()}`, tone: stats.dueThisWeek > 0 ? 'amber' : 'green' },
-    { label: 'Overdue', value: stats.overdueCount, tone: stats.overdueCount > 0 ? 'red' : 'green' },
-    { label: 'To review', value: stats.pendingCount, tone: stats.pendingCount > 0 ? 'amber' : 'plain' },
+    { label: 'Due across all homes', value: money(stats.dueTotal), sub: billWord(stats.openCount), tone: 'plain' },
+    { label: 'Past due', value: money(a.pastDue.amount), sub: billWord(a.pastDue.count), tone: a.pastDue.count > 0 ? 'red' : 'green' },
+    { label: 'Next 7 days', value: money(a.next7.amount), sub: billWord(a.next7.count), tone: a.next7.count > 0 ? 'amber' : 'plain' },
+    { label: 'Next 30 days', value: money(a.next30.amount), sub: billWord(a.next30.count), tone: 'plain' },
   ];
+  // Undated bills are held but can't be placed on the timeline. Surface them
+  // ONLY when present — a quiet amber nudge to add a due date — so the total
+  // always reconciles and nothing the system holds is ever invisible.
+  if (a.undated.count > 0) {
+    cells.push({ label: 'No due date', value: money(a.undated.amount), sub: `${billWord(a.undated.count)} · add a date`, tone: 'amber' });
+  }
 
   return (
     <div className="grid bg-white" style={{ border: '1px solid #e9e4db', borderRadius: '14px', gridTemplateColumns: 'repeat(auto-fit, minmax(130px, 1fr))', overflow: 'hidden', marginBottom: '28px' }}>
@@ -190,6 +244,7 @@ const PortfolioStrip = ({ stats }) => {
         <div key={c.label} style={{ padding: '16px 18px', borderLeft: i === 0 ? 'none' : '1px solid #f0ece4' }}>
           <p style={{ fontSize: '11px', color: '#95a0ae', fontWeight: 600, letterSpacing: '0.02em', marginBottom: '6px' }}>{c.label}</p>
           <p className="font-bold" style={{ fontSize: '21px', color: toneColor[c.tone], lineHeight: 1 }}>{c.value}</p>
+          {c.sub && <p style={{ fontSize: '11px', color: '#95a0ae', marginTop: '4px' }}>{c.sub}</p>}
         </div>
       ))}
     </div>
@@ -215,7 +270,9 @@ const NeedsYourEye = ({ items, homesById, onGoBill }) => {
         const homeName = homesById[it.homeId]?.name || homesById[it.homeId]?.address || bucketLabel || 'Other bills';
         const isOverdue = it.kind === 'overdue';
         const isPlacement = it.kind === 'placement';
+        const isUndated = it.kind === 'undated';
         const tint = isOverdue ? '#fef2f2' : '#fffbeb';
+        const reason = isOverdue ? 'Overdue' : isPlacement ? 'Needs a property' : isUndated ? 'No due date' : 'Needs review';
         return (
           <button
             key={it.id}
@@ -236,7 +293,7 @@ const NeedsYourEye = ({ items, homesById, onGoBill }) => {
                 {it.amount ? <span style={{ color: '#5b6472', fontWeight: 400 }}>{'  ·  $'}{parseFloat(it.amount).toFixed(2)}</span> : null}
               </p>
               <p className="truncate" style={{ fontSize: '11.5px', color: '#95a0ae' }}>
-                {isOverdue ? 'Overdue' : isPlacement ? 'Needs a property' : 'Needs review'} · {homeName}
+                {reason} · {homeName}
               </p>
             </div>
             <ArrowRight style={{ width: '14px', height: '14px', color: '#cbd5e1', flexShrink: 0 }} />
@@ -340,21 +397,15 @@ const PropertiesAtAGlance = ({ onEnter }) => {
 
   // Portfolio-wide stats across every open bill the user owns.
   const portfolio = React.useMemo(() => {
-    const now = new Date();
-    const weekOut = new Date();
-    weekOut.setDate(weekOut.getDate() + 7);
     const open = bills.filter(isOpen);
     const dueTotal = open.reduce((s, c) => s + (parseFloat(c.amount) || 0), 0);
-    const dueThisWeek = open
-      .filter((c) => c.dueDate && new Date(c.dueDate) >= now && new Date(c.dueDate) <= weekOut)
-      .reduce((s, c) => s + (parseFloat(c.amount) || 0), 0);
-    const overdueCount = open.filter((c) => c.dueDate && new Date(c.dueDate) < now).length;
     const pendingCount = bills.filter(isPending).length;
-    return { dueTotal, dueThisWeek, overdueCount, pendingCount };
+    const aging = ageBills(open);
+    return { dueTotal, openCount: open.length, pendingCount, aging };
   }, [bills]);
 
-  // "Needs your eye" items: overdue first, then pending review, then confirmed
-  // bills that still need a property ("Needs placement"). Capped to a glance.
+  // "Needs your eye" items: overdue first, then pending review, then bills that
+  // still need a property, then open bills with no due date. Capped to a glance.
   const eyeItems = React.useMemo(() => {
     const now = new Date();
     const overdue = bills
@@ -369,10 +420,16 @@ const PropertiesAtAGlance = ({ onEnter }) => {
     const placement = bills
       .filter((c) => needsPlacement(c) && !overdueIds.has(c.id))
       .map((c) => ({ ...c, kind: 'placement' }));
-    return [...overdue, ...pending, ...placement].slice(0, 4);
+    // Undated open bills — held but not yet on the timeline. Deduped against
+    // everything above so a bill never lists twice.
+    const seen = new Set([...overdue, ...placement].map((c) => c.id));
+    const undated = bills
+      .filter((c) => isOpen(c) && !c.dueDate && !seen.has(c.id))
+      .map((c) => ({ ...c, kind: 'undated' }));
+    return [...overdue, ...pending, ...placement, ...undated].slice(0, 4);
   }, [bills]);
 
-  const emptySummary = { dueTotal: 0, openCount: 0, overdueCount: 0, pendingCount: 0, nextBill: null, mOverdue: 0, mSoon: 0, mTotal: 0 };
+  const emptySummary = { dueTotal: 0, openCount: 0, overdueCount: 0, pendingCount: 0, undatedCount: 0, nextBill: null, nextOverdue: false, mOverdue: 0, mSoon: 0, mTotal: 0 };
 
   return (
     <div className="max-w-5xl mx-auto" style={{ padding: '8px 0 80px' }}>
