@@ -139,7 +139,7 @@ async function extractBillWithClaude(apiKey, content) {
     '"category": one of ' + JSON.stringify(CATEGORIES) + ', ' +
     '"amountConfidence": "high"|"medium"|"low", "amountReason": string, ' +
     '"payUrl": string|null, "phone": string|null, "address": string|null, ' +
-    '"accountNumber": string|null}. ' +
+    '"accountNumber": string|null, "invoiceNumber": string|null, "billingPeriod": string|null}. ' +
     'Rules: use null only if a field is truly not present anywhere in the document. ' +
     // ── Vendor enrichment fields ─────────────────────────────────────────
     // These describe the BILLER (the company), not this month\'s charge. They
@@ -174,6 +174,16 @@ async function extractBillWithClaude(apiKey, content) {
     'messy or text-only with no clear total, or you are genuinely unsure. ' +
     'amountReason = a short phrase (under 12 words) naming WHERE the amount came from, ' +
     'e.g. "boxed Total Amount Due" or "inferred from body text, no clear label". ' +
+    // ── Disambiguation fields ────────────────────────────────────────────
+    // These distinguish two bills from the SAME biller (which otherwise look
+    // identical). Pull only if printed; never invent.
+    'invoiceNumber = the invoice, statement, or bill number for THIS bill as printed ' +
+    "(labeled 'Invoice #', 'Invoice Number', 'Statement Number', 'Bill Number', or similar). " +
+    'It identifies this one bill, NOT the account number. Return exactly as printed; null if absent. ' +
+    'billingPeriod = the service or billing period this bill covers, as a short human label. ' +
+    "If a date range is printed (e.g. 'Feb 12 - Mar 11, 2026'), return it compactly as " +
+    '"Feb 12 – Mar 11, 2026". If only a single month/cycle is shown (e.g. "March 2026"), ' +
+    'return that. Prefer the SERVICE period over the statement date. null if no period appears. ' +
     'Output only the JSON object.';
 
   const res = await fetch('https://api.anthropic.com/v1/messages', {
@@ -567,6 +577,11 @@ export default async function handler(req, res) {
       homeId: '',
       senderAddress: extracted.from || '',
       forwardedAt: new Date().toISOString(),
+      // Disambiguators — identify THIS bill among same-biller siblings. Plain
+      // strings, not secret (unlike accountNumber): stored as-is, capped to a
+      // sane length so a malformed parse can't write something huge.
+      invoiceNumber: typeof parsed.invoiceNumber === 'string' ? parsed.invoiceNumber.trim().slice(0, 64) : '',
+      billingPeriod: typeof parsed.billingPeriod === 'string' ? parsed.billingPeriod.trim().slice(0, 64) : '',
       vendorId: vendorId || '',
     };
 
