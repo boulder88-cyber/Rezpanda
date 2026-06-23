@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Helmet } from 'react-helmet';
-import { Link } from 'react-router-dom';
+import { Link, useSearchParams } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext.jsx';
 import { useHome } from '@/contexts/HomeContext.jsx';
 import pb from '@/lib/pocketbaseClient.js';
@@ -558,7 +558,7 @@ const PastDuePendingRow = ({ bill, homes, multiHome, onConfirmed }) => {
 
 const BillPayPage = () => {
   const { currentUser } = useAuth();
-  const { selectedHome, homes, allProperties } = useHome();
+  const { selectedHome, homes, allProperties, switchHome } = useHome();
   const { toast } = useToast();
 
   const [activeTab, setActiveTab] = useState('dashboard');
@@ -572,12 +572,43 @@ const BillPayPage = () => {
 
   const multiHome = (homes || []).length > 1;
 
+  // Read an incoming scope hint from the URL. The dashboard's "Other &
+  // unassigned" tile links here with ?scope=other so the page lands filtered
+  // to exactly the no-property bills — the same way a home tile lands scoped
+  // to that home. Read once for the initial scope; cleared after consumption
+  // so it doesn't pin the view if the user later switches properties.
+  const [searchParams, setSearchParams] = useSearchParams();
+  const incomingScope = searchParams.get('scope');
+
   // ── Bill-Pay-local scope ──
   // 'property' = selected home's bills · 'all' = every property · 'other' =
   // the no-property "Other bills" bucket. Seeded from the GLOBAL context
   // (allProperties) so switching the property selector still feels right, but
   // owned locally so "Other bills" never leaks into the global HomeSwitcher.
-  const [scope, setScope] = useState(allProperties && multiHome ? 'all' : 'property');
+  // An explicit ?scope=other from the dashboard wins over the global default.
+  const [scope, setScope] = useState(
+    incomingScope === 'other'
+      ? 'other'
+      : (allProperties && multiHome ? 'all' : 'property')
+  );
+
+  // Consume the URL hint once: strip ?scope from the address bar after it's
+  // seeded the initial scope, so a later property switch isn't fighting a
+  // sticky param and the URL stays clean to share/bookmark. When the hint is
+  // 'other', also drop out of global all-properties mode (which otherwise
+  // hides the Other-scope filter UI and shows everything) so the filtered
+  // "Other & unassigned" view renders cleanly regardless of prior state.
+  useEffect(() => {
+    if (incomingScope) {
+      if (incomingScope === 'other' && allProperties && selectedHome) {
+        switchHome(selectedHome); // turns off all-properties, keeps same home
+      }
+      const next = new URLSearchParams(searchParams);
+      next.delete('scope');
+      setSearchParams(next, { replace: true });
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   // ── All-properties view preference ──
   // In All-Properties mode the default is grouped-by-bucket (each property and
