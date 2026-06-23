@@ -29,6 +29,21 @@ import BillerConnectChecklist from '@/components/BillerConnectChecklist.jsx';
 // and counted. This is a BILL-PAY-LOCAL concept — deliberately NOT a home in
 // the global HomeSwitcher, which stays purely about properties.
 const OTHER_BILLS_LABEL = 'Other bills';
+const NEEDS_PLACEMENT_LABEL = 'Needs placement';
+
+// placement distinguishes three states, two of which carry an empty homeId:
+//   'property'   → tied to a real home (homeId set)
+//   'other'      → deliberately not a property bill — settled, lives under
+//                  "Other bills", no nag
+//   'unassigned' → confirmed but not yet placed — a real to-do, lives under
+//                  "Needs placement" and shows the amber reassign control
+// LEGACY FALLBACK: bills written before this field existed have no placement.
+// Infer it from homeId so old data behaves exactly as before until touched:
+// a home → 'property'; no home → 'unassigned' (the old amber-flag behavior).
+const placementOf = (c) => {
+  if (c && c.placement) return c.placement;
+  return c && c.homeId ? 'property' : 'unassigned';
+};
 
 // Time-frame options for how far back the paid/history section reaches.
 const TIMEFRAMES = [
@@ -303,21 +318,24 @@ const AnnualSpendSummary = ({ companies }) => {
 // ═══════════════════════════════════════════════════════════════════════
 
 const OTHER_KEY = '__other__';
+const NEEDS_KEY = '__needs__';
 
 const PropertyGroupedList = ({ companies, homeName, renderCard }) => {
-  // Bucket bills by homeId; no-home bills go under the Other-bills catch-all.
+  // Bucket bills by homeId. Empty-homeId bills split by placement: settled
+  // "Other bills" vs still-unplaced "Needs placement" — two distinct sections.
   const groups = {};
   for (const c of companies) {
-    const key = c.homeId || OTHER_KEY;
+    let key;
+    const p = placementOf(c);
+    if (c.homeId && p === 'property') key = c.homeId;
+    else if (p === 'other') key = OTHER_KEY;
+    else key = NEEDS_KEY; // 'unassigned' or any legacy no-home bill
     if (!groups[key]) groups[key] = [];
     groups[key].push(c);
   }
-  // Order keys so real properties come first and "Other bills" sits last.
-  const keys = Object.keys(groups).sort((a, b) => {
-    if (a === OTHER_KEY) return 1;
-    if (b === OTHER_KEY) return -1;
-    return 0;
-  });
+  // Order: real properties first, then Other bills, then Needs placement last.
+  const rank = (k) => (k === NEEDS_KEY ? 2 : k === OTHER_KEY ? 1 : 0);
+  const keys = Object.keys(groups).sort((a, b) => rank(a) - rank(b));
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
@@ -325,11 +343,12 @@ const PropertyGroupedList = ({ companies, homeName, renderCard }) => {
         const bills = groups[key];
         const subtotal = bills.reduce((sum, c) => sum + (parseFloat(c.amount) || 0), 0);
         const isOther = key === OTHER_KEY;
-        const label = isOther ? OTHER_BILLS_LABEL : (homeName(key) || 'Property');
+        const isNeeds = key === NEEDS_KEY;
+        const label = isOther ? OTHER_BILLS_LABEL : isNeeds ? NEEDS_PLACEMENT_LABEL : (homeName(key) || 'Property');
         return (
           <div key={key}>
             <div className="flex items-center justify-between" style={{ marginBottom: '8px' }}>
-              <span className="font-semibold flex items-center gap-1.5" style={{ fontSize: '13px', textTransform: 'uppercase', letterSpacing: '0.03em', color: isOther ? '#5b6472' : '#334155' }}>
+              <span className="font-semibold flex items-center gap-1.5" style={{ fontSize: '13px', textTransform: 'uppercase', letterSpacing: '0.03em', color: isNeeds ? '#b45309' : isOther ? '#5b6472' : '#334155' }}>
                 {isOther && <Package style={{ width: '13px', height: '13px', color: '#95a0ae' }} />}
                 {label} <span className="text-slate-400 font-normal">({bills.length})</span>
               </span>
@@ -483,12 +502,15 @@ const BillPayPage = () => {
   // ── Split bills by status ──
   const isPaid = (c) => c.status === 'paid';
   const isAuto = (c) => c.paymentType === 'Autopay (card)' || c.paymentType === 'Autopay (bank)';
-  const hasNoHome = (c) => !c.homeId;
+  // "No property" = anything not placed on a real home (placement 'other' or
+  // 'unassigned'). The grouped list splits these into two sections; this just
+  // gates them out of single-property views and into the local 'other' scope.
+  const hasNoHome = (c) => placementOf(c) !== 'property';
 
   // ── Property scope (LOCAL) ──
-  //   'other'    → only bills with no home (the Other-bills bucket)
-  //   'all'      → every bill across properties AND the no-home bucket
-  //   'property' → the selected home's bills ONLY (no-home bills are NOT
+  //   'other'    → bills not tied to a property (Other + Needs placement)
+  //   'all'      → every bill across properties AND the no-property buckets
+  //   'property' → the selected home's bills ONLY (no-property bills are NOT
   //                mixed in here — they have their own 'other' scope, which
   //                fixes the old leak where !homeId bills showed on a single
   //                property). If no real home is selected, fall back to all.
@@ -496,7 +518,7 @@ const BillPayPage = () => {
     if (scope === 'other') return hasNoHome(c);
     if (scope === 'all') return true;
     if (!selectedHome) return true;
-    return c.homeId === selectedHome.id;
+    return placementOf(c) === 'property' && c.homeId === selectedHome.id;
   });
 
   // Not-yet-closed bills (excludes pending_review and paid).
