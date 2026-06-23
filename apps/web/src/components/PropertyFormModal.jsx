@@ -38,7 +38,9 @@ const US_STATES = [
 ];
 
 const PROPERTY_TYPES = [
-  { value: 'home', label: 'Home' },
+  // value MUST match the `homes` collection's propertyType select choices:
+  // personal · vacation · rental. (Label is display-only.)
+  { value: 'personal', label: 'Home' },
   { value: 'vacation', label: 'Vacation' },
   { value: 'rental', label: 'Rental' },
 ];
@@ -60,7 +62,7 @@ const EMPTY = {
   city: '',
   state: '',
   zip: '',
-  propertyType: 'home',
+  propertyType: 'personal',
   bedrooms: '',
   bathrooms: '',
   squareFootage: '',
@@ -86,7 +88,7 @@ const PropertyFormModal = ({ isOpen, onClose, onSuccess, initialData = null }) =
         city: initialData.city || '',
         state: initialData.state || '',
         zip: initialData.zip || '',
-        propertyType: initialData.propertyType || 'home',
+        propertyType: initialData.propertyType || 'personal',
         bedrooms: initialData.bedrooms || '',
         bathrooms: initialData.bathrooms || '',
         squareFootage: initialData.squareFootage || '',
