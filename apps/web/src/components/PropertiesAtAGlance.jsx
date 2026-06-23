@@ -34,6 +34,16 @@ const GOLD = '#c9a96e';
 const isPaid = (c) => c.status === 'paid';
 const isPending = (c) => c.status === 'pending_review';
 const isOpen = (c) => !isPaid(c) && !isPending(c); // confirmed, not yet paid
+// Past due is a HARD FACT of the calendar, not a workflow state: any unpaid
+// bill whose due date has passed is overdue — whether or not it's been
+// confirmed. This deliberately includes pending_review bills, so an obviously
+// late bill sitting in the review queue still counts and flags as past due.
+const isPastDue = (c) => {
+  if (isPaid(c) || !c.dueDate) return false;
+  const now = new Date(); now.setHours(0, 0, 0, 0);
+  const due = new Date(c.dueDate); due.setHours(0, 0, 0, 0);
+  return due < now;
+};
 // Mirror of BillPayPage.placementOf — old bills with no placement field are
 // inferred from homeId so existing data behaves as before.
 const placementOf = (c) => (c && c.placement) ? c.placement : (c && c.homeId ? 'property' : 'unassigned');
@@ -47,9 +57,14 @@ const needsPlacement = (c) => isOpen(c) && placementOf(c) === 'unassigned';
 //   undated  — open bill with NO due date: the system holds it but can't place
 //              it on the timeline. This MUST stay visible — a bill that exists
 //              but appears in no bucket is a silent gap the user can't reconcile.
-// Every open bill lands in exactly one bucket. Returns count + summed amount
-// per bucket so the dashboard can show "$X · N" honestly.
-const ageBills = (openBills) => {
+// Buckets bills by timing. IMPORTANT status rule:
+//   • pastDue is status-AGNOSTIC — any unpaid bill past its due date counts,
+//     including pending_review (a late bill is late even before you confirm it).
+//   • forward buckets (next7/next30/later/undated) are CONFIRMED-only — they
+//     describe acknowledged upcoming obligations, so unreviewed bills don't
+//     inflate them. (An unreviewed FUTURE bill simply isn't bucketed yet.)
+// Pass the full bill list; this sorts out status internally.
+const ageBills = (allBills) => {
   const now = new Date(); now.setHours(0, 0, 0, 0);
   const day = 24 * 60 * 60 * 1000;
   const b = {
@@ -59,15 +74,23 @@ const ageBills = (openBills) => {
     later: { count: 0, amount: 0 },
     undated: { count: 0, amount: 0 },
   };
-  for (const c of openBills) {
+  for (const c of allBills) {
+    if (isPaid(c)) continue;
     const amt = parseFloat(c.amount) || 0;
-    if (!c.dueDate) { b.undated.count++; b.undated.amount += amt; continue; }
-    const due = new Date(c.dueDate); due.setHours(0, 0, 0, 0);
-    const diffDays = Math.round((due - now) / day);
-    if (diffDays < 0) { b.pastDue.count++; b.pastDue.amount += amt; }
-    else if (diffDays <= 7) { b.next7.count++; b.next7.amount += amt; }
-    else if (diffDays <= 30) { b.next30.count++; b.next30.amount += amt; }
-    else { b.later.count++; b.later.amount += amt; }
+    // Past due first, regardless of confirm status.
+    if (c.dueDate) {
+      const due = new Date(c.dueDate); due.setHours(0, 0, 0, 0);
+      const diffDays = Math.round((due - now) / day);
+      if (diffDays < 0) { b.pastDue.count++; b.pastDue.amount += amt; continue; }
+      // Future-dated: only bucket if confirmed (open).
+      if (!isOpen(c)) continue;
+      if (diffDays <= 7) { b.next7.count++; b.next7.amount += amt; }
+      else if (diffDays <= 30) { b.next30.count++; b.next30.amount += amt; }
+      else { b.later.count++; b.later.amount += amt; }
+    } else {
+      // Undated: only confirmed bills count as held-but-untimed.
+      if (isOpen(c)) { b.undated.count++; b.undated.amount += amt; }
+    }
   }
   return b;
 };
@@ -85,7 +108,8 @@ const summarize = (bills, systems, homeId) => {
   const mine = bills.filter((c) => c.homeId === homeId);
   const open = mine.filter(isOpen);
   const dueTotal = open.reduce((s, c) => s + (parseFloat(c.amount) || 0), 0);
-  const overdueCount = open.filter((c) => c.dueDate && new Date(c.dueDate) < now).length;
+  // Overdue is status-agnostic — a past-due bill counts even if still in review.
+  const overdueCount = mine.filter(isPastDue).length;
   const pendingCount = mine.filter(isPending).length;
   // Open bills with no due date — held but not yet placeable on the timeline.
   const undatedCount = open.filter((c) => !c.dueDate).length;
@@ -474,24 +498,19 @@ const PropertiesAtAGlance = ({ onEnter }) => {
     return m;
   }, [homes]);
 
-  // Portfolio-wide stats across every open bill the user owns.
+  // Portfolio-wide stats. dueTotal + forward buckets are confirmed-only, but
+  // the aging fn pulls past-due from ALL bills (incl. review queue) internally.
   const portfolio = React.useMemo(() => {
     const open = bills.filter(isOpen);
     const dueTotal = open.reduce((s, c) => s + (parseFloat(c.amount) || 0), 0);
     const pendingCount = bills.filter(isPending).length;
-    const aging = ageBills(open);
+    const aging = ageBills(bills);
     return { dueTotal, openCount: open.length, pendingCount, aging };
   }, [bills]);
 
-  // Past-due open bills, for the strip's expandable detail list.
-  const pastDueBills = React.useMemo(() => {
-    const now = new Date(); now.setHours(0, 0, 0, 0);
-    return bills.filter((c) => {
-      if (!isOpen(c) || !c.dueDate) return false;
-      const due = new Date(c.dueDate); due.setHours(0, 0, 0, 0);
-      return due < now;
-    });
-  }, [bills]);
+  // Past-due bills for the strip's expandable detail list — status-agnostic,
+  // so an overdue bill still in the review queue shows here too.
+  const pastDueBills = React.useMemo(() => bills.filter(isPastDue), [bills]);
 
   // "Needs your eye": the actionable items that DON'T already have a dedicated
   // surface. Overdue bills are intentionally excluded — the strip's "Past due"
