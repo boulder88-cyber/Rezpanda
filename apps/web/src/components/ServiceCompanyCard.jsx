@@ -129,14 +129,23 @@ const ServiceCompanyCard = ({ company, onRefresh, onPay, propertyName = null, ho
   const autopay = isAutopay(company);
 
   // Backfill: assign this bill to a property (for bills missing homeId).
-  const handleAssignHome = async (homeId) => {
-    if (!homeId) return;
+  // placement legacy fallback (mirror of BillPayPage.placementOf): bills with
+  // no placement field are inferred from homeId so old data behaves as before.
+  const placement = company.placement || (company.homeId ? 'property' : 'unassigned');
+
+  const handleAssignHome = async (value) => {
+    if (!value) return;
     setIsAssigning(true);
     try {
-      await pb.collection('invoices').update(company.id, { homeId }, { $autoCancel: false });
+      // "Other bills" is a real destination, not a property: empty homeId,
+      // placement 'other' (settled — stops the nag). A real id places it.
+      const patch = value === '__other__'
+        ? { homeId: '', placement: 'other' }
+        : { homeId: value, placement: 'property' };
+      await pb.collection('invoices').update(company.id, patch, { $autoCancel: false });
       if (onRefresh) onRefresh();
     } catch {
-      toast({ title: 'Could not set property', variant: 'destructive' });
+      toast({ title: 'Could not place this bill', variant: 'destructive' });
     } finally {
       setIsAssigning(false);
     }
@@ -323,19 +332,29 @@ const ServiceCompanyCard = ({ company, onRefresh, onPay, propertyName = null, ho
                 {propertyName}
               </span>
             )}
-            {!company.homeId && homes && homes.length > 1 && (
+            {placement === 'unassigned' && homes && homes.length > 1 && (
               <select
                 value=""
                 disabled={isAssigning}
                 onChange={(e) => handleAssignHome(e.target.value)}
-                title="This bill isn't assigned to a property yet"
+                title="This bill isn't placed yet"
                 style={{ fontSize: '11px', color: '#b45309', fontWeight: 500, border: '1px solid #f59e0b', borderRadius: '6px', padding: '1px 6px', background: '#fffbeb' }}
               >
-                <option value="">Unassigned · pick a property</option>
-                {homes.map(h => (
-                  <option key={h.id} value={h.id}>{h.name || h.address || 'Property'}</option>
-                ))}
+                <option value="">Needs placement · choose</option>
+                <optgroup label="Properties">
+                  {homes.map(h => (
+                    <option key={h.id} value={h.id}>{h.name || h.address || 'Property'}</option>
+                  ))}
+                </optgroup>
+                <optgroup label="Not a property bill">
+                  <option value="__other__">Other bills</option>
+                </optgroup>
               </select>
+            )}
+            {placement === 'other' && (
+              <span className="font-medium" style={{ fontSize: '11px', color: '#5b6472', background: '#f1f5f9', borderRadius: '6px', padding: '1px 8px' }}>
+                Other bills
+              </span>
             )}
             {autopay && (
               <span className="flex items-center gap-1 font-medium" style={{ fontSize: '11px', color: '#7c3aed', background: '#f5f3ff', borderRadius: '6px', padding: '1px 8px' }}>
