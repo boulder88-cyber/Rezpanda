@@ -7,6 +7,17 @@ import AddServiceCompanyForm from './AddServiceCompanyForm.jsx';
 import pb from '@/lib/pocketbaseClient.js';
 import { useToast } from '@/hooks/use-toast.js';
 
+// Consumer / ISP mail domains. A bill FORWARDED from one of these has a "from"
+// that is the user's own inbox, not the biller — so guessing a payment URL from
+// it would be wrong. Suppress the "Use [domain]" chip for these. Keep in sync
+// with CONSUMER_MAIL_DOMAINS in api/inbound-email.js (the ingestion function).
+const CONSUMER_MAIL_DOMAINS = [
+  'gmail.com', 'yahoo.com', 'icloud.com', 'outlook.com', 'hotmail.com',
+  'aol.com', 'me.com', 'proton.me', 'protonmail.com', 'live.com', 'msn.com',
+  'comcast.net', 'comcast.com', 'xfinity.com', 'att.net', 'verizon.net',
+  'sbcglobal.net', 'cox.net', 'charter.net', 'bellsouth.net', 'earthlink.net',
+];
+
 // ═══════════════════════════════════════════════════════════════════════
 // SERVICE COMPANY ROW
 //
@@ -67,8 +78,7 @@ const ServiceCompanyCard = ({ company, onRefresh, onPay, propertyName = null, ho
     const raw = (at >= 0 ? addr.slice(at + 1) : addr).trim().toLowerCase();
     // Skip consumer mail domains — a forwarded bill's "from" is the user's
     // own inbox, not the biller, so guessing from it would be wrong.
-    const consumer = ['gmail.com', 'yahoo.com', 'icloud.com', 'outlook.com', 'hotmail.com', 'aol.com', 'comcast.net', 'me.com', 'proton.me', 'protonmail.com'];
-    if (!raw || raw.indexOf('.') === -1 || consumer.includes(raw)) return '';
+    if (!raw || raw.indexOf('.') === -1 || CONSUMER_MAIL_DOMAINS.includes(raw)) return '';
     return raw;
   };
 
