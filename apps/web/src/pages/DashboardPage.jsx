@@ -9,8 +9,61 @@ import { Button } from '@/components/ui/button.jsx';
 import {
   Wrench, CreditCard, FolderOpen,
   Home, ChevronDown, Plus, MapPin, Check, Bell, AlertCircle,
-  TrendingUp, ArrowRight, ArrowLeft, Sparkles, Compass
+  TrendingUp, ArrowRight, ArrowLeft, Sparkles, Compass, LogOut, User, Settings
 } from 'lucide-react';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu.jsx';
+
+// ─── User menu ────────────────────────────────────────────────────────
+// Replaces the static initial-only avatar with a real account menu: name,
+// email, manage homes, and log out. Reuses the same logout from AuthContext
+// that the global Header uses, so behavior is consistent everywhere.
+const UserMenu = () => {
+  const { currentUser, logout } = useAuth();
+  const initial = currentUser?.name?.[0]?.toUpperCase() || 'U';
+  return (
+    <DropdownMenu>
+      <DropdownMenuTrigger asChild>
+        <button
+          className="w-9 h-9 rounded-xl flex items-center justify-center text-white font-bold text-sm hover:opacity-90 transition-opacity focus:outline-none focus:ring-2 focus:ring-offset-2"
+          style={{ background: '#1e3a5f' }}
+          title="Account"
+          aria-label="Account menu"
+        >
+          {initial}
+        </button>
+      </DropdownMenuTrigger>
+      <DropdownMenuContent className="w-56 bg-white text-slate-700 shadow-lg" style={{ borderColor: '#e9e4db' }} align="end" forceMount>
+        <DropdownMenuLabel className="font-normal">
+          <div className="flex flex-col space-y-1">
+            <p className="text-sm font-bold leading-none" style={{ color: '#1f2733' }}>{currentUser?.name || 'User'}</p>
+            {currentUser?.email && (
+              <p className="text-xs leading-none" style={{ color: '#95a0ae' }}>{currentUser.email}</p>
+            )}
+          </div>
+        </DropdownMenuLabel>
+        <DropdownMenuSeparator style={{ background: '#e9e4db' }} />
+        <DropdownMenuItem asChild className="cursor-pointer">
+          <Link to="/manage-homes">
+            <Settings className="mr-2 h-4 w-4" />
+            <span>Manage homes</span>
+          </Link>
+        </DropdownMenuItem>
+        <DropdownMenuSeparator style={{ background: '#e9e4db' }} />
+        <DropdownMenuItem onClick={logout} className="text-red-600 focus:text-red-700 focus:bg-red-50 cursor-pointer font-medium transition-colors">
+          <LogOut className="mr-2 h-4 w-4" />
+          <span>Log out</span>
+        </DropdownMenuItem>
+      </DropdownMenuContent>
+    </DropdownMenu>
+  );
+};
 
 // ─── Property Switcher ────────────────────────────────────────────────
 const PropertySwitcher = () => {
@@ -299,9 +352,7 @@ const DashboardPage = () => {
                 Casa<span style={{ color: '#c9a96e' }}>CEO</span>
               </span>
             </Link>
-            <div className="w-9 h-9 rounded-xl flex items-center justify-center text-white font-bold text-sm" style={{ background: '#1e3a5f' }}>
-              {currentUser?.name?.[0] || 'U'}
-            </div>
+            <UserMenu />
           </header>
 
           <main className="px-4 sm:px-6 lg:px-8 py-8">
@@ -354,9 +405,7 @@ const DashboardPage = () => {
               <Home className="w-4 h-4" />
               Ready to Sell
             </Link>
-            <div className="w-9 h-9 rounded-xl flex items-center justify-center text-white font-bold text-sm" style={{background:'#1e3a5f'}}>
-              {currentUser?.name?.[0] || 'U'}
-            </div>
+            <UserMenu />
           </div>
         </header>
 
