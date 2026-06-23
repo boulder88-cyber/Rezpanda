@@ -55,10 +55,10 @@ const FadeIn = ({ children, delay = 0 }) => {
 };
 
 const VALUES = [
-  { icon: Feather, label: 'Simple on purpose', desc: 'Running a home is already complicated enough. Every feature has to earn its place — or it doesn\u2019t ship.' },
+  { icon: Feather, label: 'Simple on purpose', desc: 'Running a home is already complicated enough. Every feature has to earn its place — or it doesn’t ship.' },
   { icon: ShieldCheck, label: 'Yours, and private', desc: 'No bank access, no ads, no selling your data. What we hold, we hold lightly — and you can take it or delete it anytime.' },
-  { icon: Heart, label: 'Calm over clever', desc: 'The goal isn\u2019t a dashboard to admire. It\u2019s the quiet feeling that the thing is handled.' },
-  { icon: Home, label: 'A place that\u2019s yours', desc: 'CasaCEO is for the person running their own home — not a portal someone else manages on your behalf.' },
+  { icon: Heart, label: 'Calm over clever', desc: 'The goal isn’t a dashboard to admire. It’s the quiet feeling that the thing is handled.' },
+  { icon: Home, label: 'A place that’s yours', desc: 'CasaCEO is for the person running their own home — not a portal someone else manages on your behalf.' },
 ];
 
 const AboutPage = () => (
@@ -71,9 +71,6 @@ const AboutPage = () => (
       </div>
       <div style={{ maxWidth: '700px', margin: '0 auto', position: 'relative', zIndex: 1 }}>
         <p style={{ fontFamily: sans, fontSize: '12px', fontWeight: 700, color: '#BBD0EC', letterSpacing: '0.16em', textTransform: 'uppercase', marginBottom: '16px' }}>About</p>
-        <h1 style={{ fontFamily: serif, fontSize: 'clamp(2.2rem, 5vw, 3.2rem)', fontWeight: 600, color: '#fff', lineHeight: 1.1, letterSpacing: '-0.015em', marginBottom: '18px' }}>
-          Home admin shouldn\u2019t feel like a second job.
-        </h1>
         <p style={{ fontFamily: sans, fontSize: '18px', color: 'rgba(255,255,255,0.74)', lineHeight: 1.65, maxWidth: '540px', margin: '0 auto' }}>
           <Wordmark /> exists to make running a home calm — to take the bills, the upkeep, and the paperwork off your mental tab and put them somewhere quiet and findable.
         </p>
@@ -93,7 +90,7 @@ const AboutPage = () => (
               'The bills live in five inboxes. The warranty is in a drawer. The maintenance lives in your head.',
               'Most tools that promise to fix this pile on features until they become another thing to manage — a household OS you need a manual for.',
               'CasaCEO is the opposite bet: a small, calm product that does a few things well, stays out of your way, and never asks for your bank login.',
-              'A place that\u2019s yours, where the home finally feels handled.',
+              'A place that’s yours, where the home finally feels handled.',
             ].map((line, i) => (
               <p key={i} style={{ fontFamily: sans, fontSize: '16px', color: STONE, lineHeight: 1.75 }}>{line}</p>
             ))}
@@ -123,7 +120,7 @@ const AboutPage = () => (
         <FadeIn>
           <div style={{ textAlign: 'center', marginBottom: '46px' }}>
             <p style={{ fontFamily: sans, fontSize: '12px', fontWeight: 700, color: SKY, letterSpacing: '0.16em', textTransform: 'uppercase', marginBottom: '14px' }}>What we stand for</p>
-            <h2 style={{ fontFamily: serif, fontSize: 'clamp(1.7rem, 3.5vw, 2.3rem)', fontWeight: 600, color: INK, letterSpacing: '-0.015em' }}>A few things we won\u2019t compromise on.</h2>
+            <h2 style={{ fontFamily: serif, fontSize: 'clamp(1.7rem, 3.5vw, 2.3rem)', fontWeight: 600, color: INK, letterSpacing: '-0.015em' }}>A few things we won’t compromise on.</h2>
           </div>
         </FadeIn>
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: '18px', alignItems: 'stretch' }}>
