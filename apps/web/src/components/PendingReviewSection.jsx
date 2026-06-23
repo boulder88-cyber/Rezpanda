@@ -3,7 +3,17 @@ import pb from '@/lib/pocketbaseClient.js';
 import { useAuth } from '@/contexts/AuthContext.jsx';
 import { useHome } from '@/contexts/HomeContext.jsx';
 import { useToast } from '@/hooks/use-toast.js';
-import { Sparkles, Check, Calendar, Tag, Pencil, X, ExternalLink, Mail, Trash2, Clock } from 'lucide-react';
+import { Sparkles, Check, Calendar, Tag, Pencil, X, ExternalLink, Mail, Trash2, Clock, AlertCircle } from 'lucide-react';
+
+// A bill is past due the moment its due date has passed — review status is
+// irrelevant. An obviously-late bill in the queue should announce itself so
+// the user prioritizes it, rather than looking like any other pending item.
+const isPastDueDate = (dueDate) => {
+  if (!dueDate) return false;
+  const now = new Date(); now.setHours(0, 0, 0, 0);
+  const due = new Date(dueDate); due.setHours(0, 0, 0, 0);
+  return due < now;
+};
 
 // ═══════════════════════════════════════════════════════════════════════
 // PENDING REVIEW SECTION
@@ -272,9 +282,15 @@ const PendingReviewSection = ({ onConfirmed }) => {
                       <span className="font-bold text-slate-900" style={{ fontSize: '14px' }}>${bill.amount.toFixed(2)}</span>
                     )}
                     {bill.dueDate && (
-                      <span className="flex items-center gap-1 text-slate-500" style={{ fontSize: '13px' }}>
+                      <span className="flex items-center gap-1" style={{ fontSize: '13px', color: isPastDueDate(bill.dueDate) ? '#dc2626' : '#64748b', fontWeight: isPastDueDate(bill.dueDate) ? 600 : 400 }}>
                         <Calendar style={{ width: '13px', height: '13px' }} />
                         Due {new Date(bill.dueDate).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
+                      </span>
+                    )}
+                    {isPastDueDate(bill.dueDate) && (
+                      <span className="flex items-center gap-1 font-semibold" style={{ fontSize: '12px', color: '#dc2626', background: 'rgba(220,38,38,0.10)', borderRadius: '6px', padding: '1px 8px' }}>
+                        <AlertCircle style={{ width: '12px', height: '12px' }} />
+                        Past due
                       </span>
                     )}
                     {bill.category && (
