@@ -621,11 +621,13 @@ const PropertiesAtAGlance = ({ onEnter }) => {
     navigate('/bill-pay');
   };
 
-  // Open Bill Pay in all-properties scope for the Other & unassigned tile —
-  // these bills have no home to switch into, so we widen scope instead.
+  // Open Bill Pay filtered to ONLY the unplaced bills — the dashboard tile's
+  // equivalent of entering a home. We pass ?scope=other (Bill Pay already has
+  // an "Other & unassigned" scope that filters to exactly placement !==
+  // 'property'), and deliberately do NOT switch on all-properties mode, since
+  // that mode hides the Other-scope filter and shows everything instead.
   const goUnplaced = () => {
-    if (viewAllProperties) viewAllProperties();
-    navigate('/bill-pay');
+    navigate('/bill-pay?scope=other');
   };
 
   const firstName = currentUser?.name?.split(' ')[0] || 'there';
