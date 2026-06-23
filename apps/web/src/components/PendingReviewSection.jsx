@@ -33,7 +33,7 @@ const isPastDueDate = (dueDate) => {
 // Bills left untouched simply remain here for "review later".
 // ═══════════════════════════════════════════════════════════════════════
 
-const PendingReviewSection = ({ onConfirmed }) => {
+const PendingReviewSection = ({ onConfirmed, excludeIds }) => {
   const { currentUser } = useAuth();
   const { homes, selectedHome } = useHome();
   const { toast } = useToast();
@@ -244,8 +244,15 @@ const PendingReviewSection = ({ onConfirmed }) => {
   // While loading the very first time, show nothing (avoids a flash).
   if (loading) return null;
 
-  // No pending bills → render nothing at all.
-  if (pending.length === 0) return null;
+  // Bills the parent is already showing elsewhere (past-due bills surface in
+  // the Past Due section, which takes precedence) are excluded here so each
+  // bill appears exactly once.
+  const visiblePending = excludeIds
+    ? pending.filter(b => !excludeIds.has(b.id))
+    : pending;
+
+  // No pending bills to show here → render nothing at all.
+  if (visiblePending.length === 0) return null;
 
   // Shared input styling so the editor reads as one clean form.
   const fieldLabel = { fontSize: '11px', fontWeight: 600, color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.04em', marginBottom: '4px', display: 'block' };
@@ -257,7 +264,7 @@ const PendingReviewSection = ({ onConfirmed }) => {
         <Sparkles style={{ width: '18px', height: '18px', color: '#1e3a5f' }} />
         <h2 className="font-semibold text-slate-900" style={{ fontSize: '18px' }}>Bills to Review</h2>
         <span className="font-medium text-white rounded-full" style={{ background: '#1e3a5f', padding: '2px 10px', fontSize: '12px' }}>
-          {pending.length}
+          {visiblePending.length}
         </span>
       </div>
       <p className="text-slate-400" style={{ fontSize: '13px', marginBottom: '16px' }}>
@@ -265,7 +272,7 @@ const PendingReviewSection = ({ onConfirmed }) => {
       </p>
 
       <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
-        {pending.map(bill => {
+        {visiblePending.map(bill => {
           const isEditing = editingId === bill.id;
           const isBusy = confirmingId === bill.id;
 
