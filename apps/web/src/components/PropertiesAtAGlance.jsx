@@ -124,12 +124,18 @@ const PropertyGlanceTile = ({ home, summary, onEnter }) => {
   // Top accent reflects urgency; gold leads the calm state.
   const accent = overdueCount > 0 ? '#dc2626' : openCount > 0 ? '#f59e0b' : GOLD;
 
-  // Maintenance one-liner (real maintenance_systems data).
-  let maintLine = null;
-  if (mTotal > 0) {
-    if (mOverdue > 0) maintLine = { text: `${mOverdue} maintenance ${mOverdue === 1 ? 'task' : 'tasks'} overdue`, color: '#fca5a5' };
-    else if (mSoon > 0) maintLine = { text: `${mSoon} due this month`, color: '#fcd34d' };
-    else maintLine = { text: 'Maintenance on track', color: 'rgba(255,255,255,0.55)' };
+  // Maintenance one-liner (real maintenance_systems data). ALWAYS present so
+  // every tile carries a maintenance status and the cards stay symmetric — a
+  // home with nothing tracked reads as an invitation to add some, not silence.
+  let maintLine;
+  if (mTotal === 0) {
+    maintLine = { text: 'No maintenance tracked', color: 'rgba(255,255,255,0.45)' };
+  } else if (mOverdue > 0) {
+    maintLine = { text: `${mOverdue} maintenance ${mOverdue === 1 ? 'task' : 'tasks'} overdue`, color: '#fca5a5' };
+  } else if (mSoon > 0) {
+    maintLine = { text: `${mSoon} due this month`, color: '#fcd34d' };
+  } else {
+    maintLine = { text: 'Maintenance on track', color: 'rgba(255,255,255,0.55)' };
   }
 
   return (
@@ -178,16 +184,8 @@ const PropertyGlanceTile = ({ home, summary, onEnter }) => {
         </div>
       )}
 
-      {/* Maintenance line — real data from maintenance_systems */}
-      {maintLine && (
-        <div className="flex items-center gap-1.5" style={{ marginBottom: '12px' }}>
-          <Wrench style={{ width: '12px', height: '12px', color: maintLine.color, flexShrink: 0 }} />
-          <span style={{ fontSize: '12px', color: maintLine.color }}>{maintLine.text}</span>
-        </div>
-      )}
-
-      {/* Attention chips */}
-      <div className="flex flex-wrap items-center gap-2" style={{ minHeight: '20px', marginBottom: '16px' }}>
+      {/* Attention chips — bill-related, grouped with the bills box above */}
+      <div className="flex flex-wrap items-center gap-2" style={{ minHeight: '20px', marginBottom: '12px' }}>
         {overdueCount > 0 && (
           <span className="flex items-center gap-1 font-medium rounded-full" style={{ fontSize: '11px', color: '#fca5a5', background: 'rgba(220,38,38,0.18)', padding: '3px 9px' }}>
             <AlertCircle style={{ width: '11px', height: '11px' }} /> {overdueCount} overdue
@@ -203,6 +201,13 @@ const PropertyGlanceTile = ({ home, summary, onEnter }) => {
             {undatedCount} no due date
           </span>
         )}
+      </div>
+
+      {/* Maintenance status — always present, its own row at the bottom so the
+          tiles stay symmetric whether or not systems are tracked. */}
+      <div className="flex items-center gap-1.5" style={{ marginBottom: '16px' }}>
+        <Wrench style={{ width: '12px', height: '12px', color: maintLine.color, flexShrink: 0 }} />
+        <span style={{ fontSize: '12px', color: maintLine.color }}>{maintLine.text}</span>
       </div>
 
       {/* Enter */}
