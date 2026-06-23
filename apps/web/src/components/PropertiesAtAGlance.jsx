@@ -124,18 +124,19 @@ const PropertyGlanceTile = ({ home, summary, onEnter }) => {
   // Top accent reflects urgency; gold leads the calm state.
   const accent = overdueCount > 0 ? '#dc2626' : openCount > 0 ? '#f59e0b' : GOLD;
 
-  // Maintenance one-liner (real maintenance_systems data). ALWAYS present so
-  // every tile carries a maintenance status and the cards stay symmetric — a
-  // home with nothing tracked reads as an invitation to add some, not silence.
+  // Maintenance status — ALWAYS present so every tile carries it and the cards
+  // stay symmetric. The healthy "on track" state is a pillar worth celebrating,
+  // so it gets a green pill with real stature (matching the bills all-clear),
+  // while warnings stay inline-colored and "nothing tracked" stays quiet.
   let maintLine;
   if (mTotal === 0) {
-    maintLine = { text: 'No maintenance tracked', color: 'rgba(255,255,255,0.45)' };
+    maintLine = { text: 'No maintenance tracked', color: 'rgba(255,255,255,0.45)', kind: 'none' };
   } else if (mOverdue > 0) {
-    maintLine = { text: `${mOverdue} maintenance ${mOverdue === 1 ? 'task' : 'tasks'} overdue`, color: '#fca5a5' };
+    maintLine = { text: `${mOverdue} maintenance ${mOverdue === 1 ? 'task' : 'tasks'} overdue`, color: '#fca5a5', kind: 'overdue' };
   } else if (mSoon > 0) {
-    maintLine = { text: `${mSoon} due this month`, color: '#fcd34d' };
+    maintLine = { text: `${mSoon} maintenance ${mSoon === 1 ? 'task' : 'tasks'} due this month`, color: '#fcd34d', kind: 'soon' };
   } else {
-    maintLine = { text: 'Maintenance on track', color: 'rgba(255,255,255,0.55)' };
+    maintLine = { text: 'Maintenance on track', kind: 'ontrack' };
   }
 
   return (
@@ -204,11 +205,19 @@ const PropertyGlanceTile = ({ home, summary, onEnter }) => {
       </div>
 
       {/* Maintenance status — always present, its own row at the bottom so the
-          tiles stay symmetric whether or not systems are tracked. */}
-      <div className="flex items-center gap-1.5" style={{ marginBottom: '16px' }}>
-        <Wrench style={{ width: '12px', height: '12px', color: maintLine.color, flexShrink: 0 }} />
-        <span style={{ fontSize: '12px', color: maintLine.color }}>{maintLine.text}</span>
-      </div>
+          tiles stay symmetric. The healthy state gets a green pill (pillar
+          worth celebrating); warnings and the no-data state stay inline. */}
+      {maintLine.kind === 'ontrack' ? (
+        <div className="flex items-center gap-2 rounded-lg" style={{ background: 'rgba(110,231,183,0.10)', border: '1px solid rgba(110,231,183,0.22)', padding: '8px 12px', marginBottom: '16px', color: '#6ee7b7' }}>
+          <CheckCircle2 style={{ width: '15px', height: '15px', flexShrink: 0 }} />
+          <span className="font-semibold" style={{ fontSize: '13px' }}>{maintLine.text}</span>
+        </div>
+      ) : (
+        <div className="flex items-center gap-1.5" style={{ marginBottom: '16px' }}>
+          <Wrench style={{ width: '12px', height: '12px', color: maintLine.color, flexShrink: 0 }} />
+          <span style={{ fontSize: '12px', color: maintLine.color }}>{maintLine.text}</span>
+        </div>
+      )}
 
       {/* Enter */}
       <div className="flex items-center gap-1.5 font-semibold mt-auto" style={{ fontSize: '13px', color: GOLD }}>
