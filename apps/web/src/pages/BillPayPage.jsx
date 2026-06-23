@@ -366,16 +366,17 @@ const PropertyGroupedList = ({ companies, homeName, renderCard }) => {
 
 // ═══════════════════════════════════════════════════════════════════════
 // SCOPE TOGGLE — Bill-Pay-local control: This property / All properties /
-// Other bills. Local to this page; does NOT touch the global HomeSwitcher.
+// non-property bills. Local to this page; does NOT touch the global
+// HomeSwitcher, which stays purely about properties by design.
 // ═══════════════════════════════════════════════════════════════════════
 
-// On a specific home, a quiet way to peek at the no-property "Other bills"
-// bucket and a clear way back. Property selection itself lives in the top
-// dropdown — this only surfaces the one bucket the dropdown can't express.
-// In All-Properties mode this renders nothing (everything's already shown,
-// grouped by bucket).
+// On a specific home, a quiet way to peek at the bills that aren't on a
+// property — BOTH "Other bills" (settled) and "Needs placement" (to-do). The
+// grouped list inside this scope shows them as two separate headered sections,
+// so one toggle surfaces both buckets the property dropdown can't express.
+// In All-Properties mode this renders nothing (everything's already shown).
 const OtherBillsPeek = ({ scope, setScope, selectedHome, allProperties }) => {
-  if (allProperties) return null; // All Properties already includes Other bills
+  if (allProperties) return null; // All Properties already includes these buckets
 
   const homeLabel = selectedHome ? (selectedHome.name || selectedHome.address || 'this property') : 'this property';
 
@@ -383,7 +384,7 @@ const OtherBillsPeek = ({ scope, setScope, selectedHome, allProperties }) => {
     return (
       <div className="flex items-center gap-2 bg-white border border-slate-200 rounded-xl" style={{ padding: '6px 12px' }}>
         <Package style={{ width: '14px', height: '14px', color: '#5b6472' }} />
-        <span className="font-medium" style={{ fontSize: '12px', color: '#1f2733' }}>Viewing: {OTHER_BILLS_LABEL}</span>
+        <span className="font-medium" style={{ fontSize: '12px', color: '#1f2733' }}>Viewing: Other &amp; unassigned</span>
         <button onClick={() => setScope('property')}
           className="font-semibold hover:opacity-70 transition-opacity"
           style={{ fontSize: '12px', color: '#1e3a5f' }}>
@@ -398,7 +399,7 @@ const OtherBillsPeek = ({ scope, setScope, selectedHome, allProperties }) => {
       className="flex items-center gap-1.5 bg-white border border-slate-200 rounded-xl font-medium hover:border-slate-300 transition-colors"
       style={{ padding: '7px 12px', fontSize: '12px', color: '#5b6472' }}>
       <Package style={{ width: '14px', height: '14px' }} />
-      Other bills
+      Other &amp; unassigned bills
     </button>
   );
 };
