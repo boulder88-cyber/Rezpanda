@@ -58,11 +58,19 @@ const TIMEFRAMES = [
 // Slim, single row: Total Due, Overdue, Providers, Quick Pay Ready.
 // ═══════════════════════════════════════════════════════════════════════
 
-const SummaryStrip = ({ companies }) => {
-  const today = new Date();
+const SummaryStrip = ({ companies, allInScope }) => {
+  const today = new Date(); today.setHours(0, 0, 0, 0);
   const in7 = new Date(today.getTime() + 7 * 24 * 60 * 60 * 1000);
   const totalDue = companies.reduce((sum, c) => sum + (parseFloat(c.amount) || 0), 0);
-  const overdue = companies.filter(c => c.dueDate && new Date(c.dueDate) < today).length;
+  // Overdue is a hard date fact — count every in-scope unpaid bill past its due
+  // date, including ones still in review. (Falls back to confirmed list if the
+  // wider set wasn't passed.)
+  const overdueSource = allInScope || companies;
+  const overdue = overdueSource.filter(c => {
+    if (c.status === 'paid' || !c.dueDate) return false;
+    const due = new Date(c.dueDate); due.setHours(0, 0, 0, 0);
+    return due < today;
+  }).length;
   const providers = companies.length;
   const dueThisWeek = companies.filter(c => {
     if (!c.dueDate) return false;
@@ -707,7 +715,7 @@ const BillPayPage = () => {
                 )}
 
                 {/* Quick glance: the four stats. */}
-                <SummaryStrip companies={openCompanies} />
+                <SummaryStrip companies={openCompanies} allInScope={propertyFiltered} />
 
                 {/* ── 1. PAST DUE — top priority, loud ──
                     In "By property" view this standalone block is suppressed;
