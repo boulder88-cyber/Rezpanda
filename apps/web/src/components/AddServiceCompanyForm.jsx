@@ -43,7 +43,11 @@ const AddServiceCompanyForm = ({ onSuccess, onCancel, onCompanyAdded, initialDat
     category: '',
     paymentLink: '',
     homeId: '',
-    paymentType: 'Manual'
+    paymentType: 'Manual',
+    amount: '',
+    dueDate: '',
+    billingPeriod: '',
+    invoiceNumber: ''
   });
 
   // Seed the form when initialData changes.
@@ -56,7 +60,11 @@ const AddServiceCompanyForm = ({ onSuccess, onCancel, onCompanyAdded, initialDat
         category: initialData.category || '',
         paymentLink: initialData.payment_portal_url || initialData.paymentLink || '',
         homeId: initialData.homeId || (initialData.id ? '' : (selectedHome?.id || '')),
-        paymentType: initialData.paymentType || 'Manual'
+        paymentType: initialData.paymentType || 'Manual',
+        amount: (initialData.amount ?? '') === '' ? '' : String(initialData.amount),
+        dueDate: initialData.dueDate ? String(initialData.dueDate).slice(0, 10) : '',
+        billingPeriod: initialData.billingPeriod || '',
+        invoiceNumber: initialData.invoiceNumber || ''
       });
     } else {
       setFormData({
@@ -64,7 +72,11 @@ const AddServiceCompanyForm = ({ onSuccess, onCancel, onCompanyAdded, initialDat
         category: '',
         paymentLink: '',
         homeId: selectedHome?.id || '',
-        paymentType: 'Manual'
+        paymentType: 'Manual',
+        amount: '',
+        dueDate: '',
+        billingPeriod: '',
+        invoiceNumber: ''
       });
     }
   }, [initialData, selectedHome]);
@@ -207,6 +219,28 @@ const AddServiceCompanyForm = ({ onSuccess, onCancel, onCompanyAdded, initialDat
         dataToSave.paymentType = formData.paymentType;
       }
 
+      // Amount: parse to a number. On EDIT, write even when cleared (null) so a
+      // correction to "no amount yet" sticks; on CREATE, only write when given.
+      const parsedAmount = formData.amount === '' ? null : parseFloat(formData.amount);
+      if (isEditing) {
+        dataToSave.amount = (parsedAmount === null || Number.isNaN(parsedAmount)) ? null : parsedAmount;
+      } else if (parsedAmount !== null && !Number.isNaN(parsedAmount)) {
+        dataToSave.amount = parsedAmount;
+      }
+
+      // Due date: on EDIT write even when cleared (''→ clears it); on CREATE
+      // only when provided. These three are the same correction fields the
+      // review editor exposes, so the edit pencil now matches it.
+      if (isEditing) {
+        dataToSave.dueDate = formData.dueDate || '';
+        dataToSave.billingPeriod = formData.billingPeriod || '';
+        dataToSave.invoiceNumber = formData.invoiceNumber || '';
+      } else {
+        if (formData.dueDate) dataToSave.dueDate = formData.dueDate;
+        if (formData.billingPeriod) dataToSave.billingPeriod = formData.billingPeriod;
+        if (formData.invoiceNumber) dataToSave.invoiceNumber = formData.invoiceNumber;
+      }
+
       // Property assignment:
       //  - Creating: only attach when a property is chosen/defaulted (don't
       //    write an empty string on create).
@@ -233,7 +267,7 @@ const AddServiceCompanyForm = ({ onSuccess, onCancel, onCompanyAdded, initialDat
 
       // Reset form fields after a successful create (keep current-home default).
       if (!isEditing) {
-        setFormData({ companyName: '', category: '', paymentLink: '', homeId: selectedHome?.id || '', paymentType: 'Manual' });
+        setFormData({ companyName: '', category: '', paymentLink: '', homeId: selectedHome?.id || '', paymentType: 'Manual', amount: '', dueDate: '', billingPeriod: '', invoiceNumber: '' });
       }
       setErrors({});
 
@@ -292,6 +326,32 @@ const AddServiceCompanyForm = ({ onSuccess, onCancel, onCompanyAdded, initialDat
         {errors.companyName && <p className="text-sm text-red-500">{errors.companyName}</p>}
       </div>
 
+      <div className="grid grid-cols-2 gap-3">
+        <div className="space-y-2">
+          <Label htmlFor="amount">Amount <span className="text-slate-400 font-normal">(optional)</span></Label>
+          <Input
+            id="amount"
+            name="amount"
+            type="number"
+            step="0.01"
+            inputMode="decimal"
+            placeholder="0.00"
+            value={formData.amount}
+            onChange={handleChange}
+          />
+        </div>
+        <div className="space-y-2">
+          <Label htmlFor="dueDate">Due date <span className="text-slate-400 font-normal">(optional)</span></Label>
+          <Input
+            id="dueDate"
+            name="dueDate"
+            type="date"
+            value={formData.dueDate}
+            onChange={handleChange}
+          />
+        </div>
+      </div>
+
       {/* Property assignment.
           - Multiple homes: show a picker, pre-selected to the current property.
           - Single home: no picker (nothing to choose); the bill silently
@@ -341,6 +401,29 @@ const AddServiceCompanyForm = ({ onSuccess, onCancel, onCompanyAdded, initialDat
             <SelectItem value="Autopay (card)">Autopay (card)</SelectItem>
           </SelectContent>
         </Select>
+      </div>
+
+      <div className="grid grid-cols-2 gap-3">
+        <div className="space-y-2">
+          <Label htmlFor="billingPeriod">Billing period <span className="text-slate-400 font-normal">(optional)</span></Label>
+          <Input
+            id="billingPeriod"
+            name="billingPeriod"
+            placeholder="e.g. Mar 2026"
+            value={formData.billingPeriod}
+            onChange={handleChange}
+          />
+        </div>
+        <div className="space-y-2">
+          <Label htmlFor="invoiceNumber">Invoice # <span className="text-slate-400 font-normal">(optional)</span></Label>
+          <Input
+            id="invoiceNumber"
+            name="invoiceNumber"
+            placeholder="e.g. 4471-22"
+            value={formData.invoiceNumber}
+            onChange={handleChange}
+          />
+        </div>
       </div>
 
       <div className="space-y-2">
