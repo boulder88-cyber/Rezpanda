@@ -1111,7 +1111,7 @@ const BillPayPage = () => {
                 Add some bills to see what's coming.
               </div>
             ) : (
-              <CashNeedsTab companies={propertyFiltered} homes={homes} homeName={homeName} scope={scope} otherBillsLabel={OTHER_BILLS_LABEL} />
+              <CashNeedsTab companies={propertyFiltered} homes={homes} homeName={homeName} scope={scope} otherBillsLabel={OTHER_BILLS_LABEL} onRefresh={fetchCompanies} />
             )}
           </TabsContent>
 
