@@ -3,6 +3,9 @@ import pb from '@/lib/pocketbaseClient.js';
 import { useAuth } from '@/contexts/AuthContext.jsx';
 import { useHome } from '@/contexts/HomeContext.jsx';
 import { useToast } from '@/hooks/use-toast.js';
+
+// Bill amount: two decimals, comma-grouped ($1,604.00 — never 1604).
+const money2 = (n) => `$${(parseFloat(n) || 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
 import { Sparkles, Check, Calendar, Tag, Pencil, X, ExternalLink, Mail, Trash2, Clock, AlertCircle } from 'lucide-react';
 
 // A bill is past due the moment its due date has passed — review status is
@@ -286,7 +289,7 @@ const PendingReviewSection = ({ onConfirmed, excludeIds }) => {
                   <p className="font-semibold text-slate-900" style={{ fontSize: '15px' }}>{bill.companyName}</p>
                   <div className="flex flex-wrap items-center gap-x-4 gap-y-1" style={{ marginTop: '4px' }}>
                     {typeof bill.amount === 'number' && (
-                      <span className="font-bold text-slate-900" style={{ fontSize: '14px' }}>${bill.amount.toFixed(2)}</span>
+                      <span className="font-bold text-slate-900" style={{ fontSize: '14px' }}>{money2(bill.amount)}</span>
                     )}
                     {bill.dueDate && (
                       <span className="flex items-center gap-1" style={{ fontSize: '13px', color: isPastDueDate(bill.dueDate) ? '#dc2626' : '#64748b', fontWeight: isPastDueDate(bill.dueDate) ? 600 : 400 }}>
