@@ -66,6 +66,14 @@ const monthKey = (d) => {
   return `${dt.getFullYear()}-${String(dt.getMonth() + 1).padStart(2, '0')}`;
 };
 
+// The date a bill should be attributed to for YTD / month bucketing. dueDate is
+// the truest (service period), but MANY bills have no dueDate — a bill with no
+// date must still count, or spend silently leaks out of YTD and the trend.
+// Fall back through the dates a bill realistically carries, newest-meaning
+// first, so an undated bill lands in the period it actually arrived.
+const billDate = (b) =>
+  b.dueDate || b.paidDate || b.reviewedDate || b.forwardedAt || b.created || null;
+
 // Build a 12-slot monthly series (oldest→newest) of summed amounts for a set
 // of bills, keyed off dueDate. Returns [{ key, total }]. Empty months are 0 so
 // the sparkline reads an honest gap rather than collapsing time.
@@ -78,7 +86,7 @@ const monthlySeries = (bills) => {
   }
   const idx = Object.fromEntries(slots.map((s, i) => [s.key, i]));
   for (const b of bills) {
-    const mk = monthKey(b.dueDate);
+    const mk = monthKey(billDate(b));
     if (mk != null && mk in idx) slots[idx[mk]].total += parseFloat(b.amount) || 0;
   }
   return slots;
@@ -145,23 +153,30 @@ const InsightsTab = ({ companies = [] }) => {
       const count = g.bills.length;
       const avg = count > 0 ? total / count : 0;
 
-      // YTD: bills whose dueDate falls in the current calendar year.
+      // YTD: bills attributed to the current calendar year, using the best
+      // available date (so an undated bill still counts — it can't vanish).
       const ytd = g.bills
-        .filter(b => { const d = new Date(b.dueDate); return !isNaN(d) && d.getFullYear() === thisYear; })
+        .filter(b => { const d = new Date(billDate(b)); return !isNaN(d) && d.getFullYear() === thisYear; })
         .reduce((s, b) => s + amt(b), 0);
 
-      // Latest: most recent dueDate (a real bill amount).
-      const dated = g.bills.filter(b => b.dueDate && !isNaN(new Date(b.dueDate)));
+      // Latest: most recent bill by best-available date (a real bill amount).
+      // Uses the date fallback so an undated bill still surfaces its amount
+      // rather than collapsing to "—".
+      const dated = g.bills
+        .map(b => ({ b, d: billDate(b) }))
+        .filter(x => x.d && !isNaN(new Date(x.d)));
       let latest = null;
       if (dated.length) {
-        latest = dated.reduce((best, b) =>
-          new Date(b.dueDate) > new Date(best.dueDate) ? b : best, dated[0]);
+        const top = dated.reduce((best, x) =>
+          new Date(x.d) > new Date(best.d) ? x : best, dated[0]);
+        latest = top.b;
       }
 
       rows.push({
         ...g, total, count, avg, ytd,
         latestAmount: latest ? amt(latest) : null,
-        latestDate: latest ? latest.dueDate : null,
+        latestDate: latest ? billDate(latest) : null,
+        latestDated: latest ? !!latest.dueDate : false,
         series: monthlySeries(g.bills),
       });
     }
@@ -261,7 +276,7 @@ const InsightsTab = ({ companies = [] }) => {
               <div className="grid grid-cols-3" style={{ gap: '8px' }}>
                 <Figure label="Latest bill"
                   value={r.latestAmount != null ? money2(r.latestAmount) : '—'}
-                  sub={r.latestDate ? fmtDate(r.latestDate) : 'no dated bill'} />
+                  sub={r.latestDate ? (r.latestDated ? fmtDate(r.latestDate) : `${fmtDate(r.latestDate)} · received`) : 'no bills'} />
                 <Figure label="Average" value={money0(r.avg)} sub={`over ${r.count}`} />
                 <Figure label={`YTD ${thisYear}`} value={money0(r.ytd)} sub="this year" />
               </div>
