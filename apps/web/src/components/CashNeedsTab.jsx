@@ -201,30 +201,11 @@ const CashNeedsTab = ({ companies = [], homes = [], homeName = () => null, scope
         <p className="font-semibold" style={{ fontSize: '15px', color: '#1f2733' }}>{reassurance.text}</p>
       </div>
 
-      {/* ── Past due (own section, own subtotal — always shown when present) ── */}
-      {pastDue.length > 0 && (
-        <div style={{ ...cardStyle, padding: '20px', border: '1px solid #fecaca' }}>
-          <div className="flex items-center justify-between" style={{ marginBottom: '12px' }}>
-            <h3 className="font-semibold flex items-center gap-2" style={{ fontSize: '16px', color: '#dc2626' }}>
-              <AlertCircle style={{ width: '18px', height: '18px' }} />
-              Past due
-            </h3>
-            <span className="font-bold" style={{ fontSize: '16px', color: '#dc2626' }}>{money(pastDueTotal)}</span>
-          </div>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
-            {pastDue.map(c => renderRow(c, { pastDue: true }))}
-          </div>
-          <p style={{ fontSize: '12px', color: '#5b6472', marginTop: '12px' }}>
-            These were due before today. Head to My Bills to pay or update them.
-          </p>
-        </div>
-      )}
-
-      {/* ── 2. Timeline (spine) ── */}
+      {/* ── Timeline (spine): past due, then coming up — one continuous flow ── */}
       <div style={{ ...cardStyle, padding: '20px' }}>
-        {/* window toggle */}
+        {/* header + window toggle */}
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3" style={{ marginBottom: '16px' }}>
-          <h3 className="font-semibold" style={{ fontSize: '16px', color: '#1f2733' }}>What's coming</h3>
+          <h3 className="font-semibold" style={{ fontSize: '16px', color: '#1f2733' }}>Your bills, in time order</h3>
           <div className="flex items-center gap-1" style={{ background: '#faf8f4', border: '1px solid #e9e4db', borderRadius: '10px', padding: '4px' }}>
             {WINDOWS.map(w => (
               <button key={w.days} onClick={() => setWindowDays(w.days)}
@@ -238,22 +219,41 @@ const CashNeedsTab = ({ companies = [], homes = [], homeName = () => null, scope
           </div>
         </div>
 
-        {/* running total */}
-        <div className="flex items-baseline gap-2" style={{ marginBottom: '4px' }}>
-          <span className="font-extrabold" style={{ fontSize: '30px', color: '#1e3a5f', lineHeight: 1 }}>{money0(total)}</span>
-          <span style={{ fontSize: '13px', color: '#95a0ae' }}>total over the {windowLabel.toLowerCase()}</span>
+        {/* ── PAST DUE block (red, top of the list) ── */}
+        {pastDue.length > 0 && (
+          <div style={{ marginBottom: '20px' }}>
+            <div className="flex items-center justify-between" style={{
+              background: '#fef2f2', border: '1px solid #fecaca', borderRadius: '8px',
+              padding: '8px 12px', marginBottom: '4px',
+            }}>
+              <span className="font-semibold flex items-center gap-2" style={{ fontSize: '13px', color: '#dc2626' }}>
+                <AlertCircle style={{ width: '15px', height: '15px' }} />
+                Past due · pay these first
+              </span>
+              <span className="font-bold" style={{ fontSize: '14px', color: '#dc2626' }}>{money(pastDueTotal)}</span>
+            </div>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
+              {pastDue.map(c => renderRow(c, { pastDue: true }))}
+            </div>
+          </div>
+        )}
+
+        {/* ── COMING UP block ── */}
+        <div className="flex items-baseline justify-between" style={{ marginBottom: '4px' }}>
+          <span className="font-semibold" style={{ fontSize: '13px', color: '#5b6472', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
+            Coming up · next {windowLabel.toLowerCase()}
+          </span>
+          <span className="font-bold" style={{ fontSize: '14px', color: '#1e3a5f' }}>{money(total)}</span>
         </div>
         {total > 0 && (
-          <p style={{ fontSize: '12px', color: '#5b6472', marginBottom: '16px' }}>
+          <p style={{ fontSize: '12px', color: '#5b6472', marginBottom: '12px' }}>
             {money0(bankAutoTotal)} drafts from bank · {money0(manualTotal)} needs you to pay
             {cardTotal > 0 && <> · {money0(cardTotal)} on a card <span style={{ color: '#95a0ae' }}>(paid later)</span></>}
           </p>
         )}
-
-        {/* the outflows, date order */}
         {outflows.length === 0 ? (
-          <div className="text-center" style={{ background: '#faf8f4', border: '1px solid #e9e4db', borderRadius: '10px', padding: '24px', fontSize: '14px', color: '#95a0ae' }}>
-            Nothing scheduled in this window.
+          <div className="text-center" style={{ background: '#faf8f4', border: '1px solid #e9e4db', borderRadius: '10px', padding: '20px', fontSize: '14px', color: '#95a0ae', marginTop: '8px' }}>
+            Nothing due in this window.
           </div>
         ) : (
           <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
