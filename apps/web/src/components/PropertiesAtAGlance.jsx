@@ -545,16 +545,21 @@ const FunctionBox = ({ icon: Icon, label, onClick }) => (
   <button
     onClick={onClick}
     className="flex items-center gap-3 transition-all hover:-translate-y-0.5 hover:shadow-md group bg-white"
-    style={{ border: '1px solid #e9e4db', borderRadius: '14px', padding: '14px 16px' }}
+    style={{
+      border: '1px solid #ddd6ca',
+      borderRadius: '14px',
+      padding: '15px 16px',
+      boxShadow: '0 2px 6px rgba(30,58,95,0.07)',
+    }}
   >
-    <div className="flex items-center justify-center flex-shrink-0" style={{ width: '38px', height: '38px', borderRadius: '10px', background: '#eef2f8' }}>
-      <Icon style={{ width: '19px', height: '19px', color: NAVY }} />
+    <div className="flex items-center justify-center flex-shrink-0" style={{ width: '40px', height: '40px', borderRadius: '11px', background: '#e7edf6', border: '1px solid #d8e1ee' }}>
+      <Icon style={{ width: '20px', height: '20px', color: NAVY }} />
     </div>
     <div className="text-left flex-1 min-w-0">
       <p className="font-semibold" style={{ fontSize: '14px', color: '#1f2733' }}>{label}</p>
       <p style={{ fontSize: '11px', color: '#95a0ae' }}>All properties</p>
     </div>
-    <ArrowRight style={{ width: '15px', height: '15px', color: '#cbd5e1' }} className="group-hover:translate-x-1 transition-transform" />
+    <ArrowRight style={{ width: '15px', height: '15px', color: '#b7c2d2' }} className="group-hover:translate-x-1 transition-transform" />
   </button>
 );
 
