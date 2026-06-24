@@ -22,6 +22,15 @@ export const HomeProvider = ({ children }) => {
   // working untouched. Pages opt in by checking `allProperties`.
   const [allProperties, setAllProperties] = useState(false);
 
+  // ── Other & unassigned scope ──
+  // A second SEPARATE flag (same idea as allProperties): a portfolio scope for
+  // the bills not tied to any property — "Other bills" + "Needs placement".
+  // It is NOT a home and creates NO row in `homes`; `selectedHome` still points
+  // at a real home underneath, so pages that don't understand this flag keep
+  // working. Only surfaces (Bill Pay's "other" view, the switcher label/item)
+  // opt in. Mutually exclusive with allProperties and with picking a home.
+  const [otherScope, setOtherScope] = useState(false);
+
   useEffect(() => {
     if (isAuthenticated && currentUser) {
       loadHomes();
@@ -29,6 +38,7 @@ export const HomeProvider = ({ children }) => {
       setHomes([]);
       setSelectedHome(null);
       setAllProperties(false);
+      setOtherScope(false);
       setLoading(false);
     }
   }, [isAuthenticated, currentUser]);
@@ -44,6 +54,13 @@ export const HomeProvider = ({ children }) => {
       // Restore the all-properties preference if it was set.
       const savedAll = localStorage.getItem('allProperties') === 'true';
       setAllProperties(savedAll && records.length > 1);
+
+      // Restore the Other-scope preference. Available even with a single home
+      // (unplaced bills can exist regardless of how many properties there are).
+      // Mutually exclusive with all-properties — all-properties wins if both
+      // somehow persisted.
+      const savedOther = localStorage.getItem('otherScope') === 'true';
+      setOtherScope(savedOther && !(savedAll && records.length > 1));
 
       // Try to restore previously selected home from localStorage, or pick the first one
       const savedHomeId = localStorage.getItem('selectedHomeId');
@@ -66,7 +83,9 @@ export const HomeProvider = ({ children }) => {
   const switchHome = (home) => {
     setSelectedHome(home);
     setAllProperties(false);
+    setOtherScope(false);
     localStorage.setItem('allProperties', 'false');
+    localStorage.setItem('otherScope', 'false');
     if (home) {
       localStorage.setItem('selectedHomeId', home.id);
     } else {
@@ -77,7 +96,18 @@ export const HomeProvider = ({ children }) => {
   // pages that don't understand the flag keep working on that home.
   const viewAllProperties = () => {
     setAllProperties(true);
+    setOtherScope(false);
     localStorage.setItem('allProperties', 'true');
+    localStorage.setItem('otherScope', 'false');
+  };
+  // Turn on the Other & unassigned scope. Like viewAllProperties, this leaves
+  // selectedHome pointing at a real home underneath; only opted-in surfaces
+  // react to the flag. Mutually exclusive with all-properties.
+  const viewOther = () => {
+    setOtherScope(true);
+    setAllProperties(false);
+    localStorage.setItem('otherScope', 'true');
+    localStorage.setItem('allProperties', 'false');
   };
   const addHome = async (homeData) => {
     try {
@@ -101,8 +131,10 @@ export const HomeProvider = ({ children }) => {
     homes,
     selectedHome,
     allProperties,
+    otherScope,
     switchHome,
     viewAllProperties,
+    viewOther,
     addHome,
     loading,
     refreshHomes
