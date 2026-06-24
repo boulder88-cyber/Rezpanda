@@ -10,11 +10,11 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu.jsx';
-import { Home, Plus, ChevronDown, Building, Layers, Pencil, Settings } from 'lucide-react';
+import { Home, Plus, ChevronDown, Building, Layers, Pencil, Settings, Package } from 'lucide-react';
 import PropertyFormModal from '@/components/PropertyFormModal.jsx';
 
 const HomeSwitcher = () => {
-  const { homes, selectedHome, allProperties, switchHome, viewAllProperties, refreshHomes } = useHome();
+  const { homes, selectedHome, allProperties, otherScope, switchHome, viewAllProperties, viewOther, refreshHomes } = useHome();
 
   // One modal, two modes. `editingHome` null → add mode; a home → edit mode.
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -30,9 +30,11 @@ const HomeSwitcher = () => {
   };
 
   // What the trigger button shows.
-  const triggerLabel = allProperties
-    ? 'All Properties'
-    : (selectedHome ? (selectedHome.name || selectedHome.address) : 'Select a Property');
+  const triggerLabel = otherScope
+    ? 'Other & unassigned'
+    : allProperties
+      ? 'All Properties'
+      : (selectedHome ? (selectedHome.name || selectedHome.address) : 'Select a Property');
 
   return (
     <>
@@ -40,9 +42,11 @@ const HomeSwitcher = () => {
         <DropdownMenuTrigger asChild>
           <Button variant="outline" className="w-[240px] justify-between bg-white border-slate-200">
             <div className="flex items-center gap-2 truncate">
-              {allProperties
-                ? <Layers className="w-4 h-4" style={{ color: '#1e3a5f' }} />
-                : <Home className="w-4 h-4" style={{ color: '#1e3a5f' }} />}
+              {otherScope
+                ? <Package className="w-4 h-4" style={{ color: '#1e3a5f' }} />
+                : allProperties
+                  ? <Layers className="w-4 h-4" style={{ color: '#1e3a5f' }} />
+                  : <Home className="w-4 h-4" style={{ color: '#1e3a5f' }} />}
               <span className="truncate font-medium">{triggerLabel}</span>
             </div>
             <ChevronDown className="w-4 h-4 opacity-50" />
@@ -71,7 +75,7 @@ const HomeSwitcher = () => {
           )}
 
           {homes.map((home) => {
-            const isActive = !allProperties && selectedHome?.id === home.id;
+            const isActive = !allProperties && !otherScope && selectedHome?.id === home.id;
             return (
               <div
                 key={home.id}
@@ -102,6 +106,22 @@ const HomeSwitcher = () => {
             );
           })}
 
+          <DropdownMenuSeparator />
+          {/* Other & unassigned — a scope, not a home. Bills not tied to any
+              property (car, phone, subscriptions) plus anything still needing
+              placement. Selectable like a destination; sets the global flag so
+              Bill Pay filters to exactly these bills and the label reflects it. */}
+          <DropdownMenuItem
+            onClick={() => viewOther()}
+            className="cursor-pointer"
+            style={otherScope ? { background: '#eef2f8', color: '#1e3a5f' } : undefined}
+          >
+            <Package className="w-4 h-4 mr-2 opacity-70" />
+            <div className="flex flex-col">
+              <span>Other &amp; unassigned</span>
+              <span className="text-xs opacity-70">Bills not tied to a property</span>
+            </div>
+          </DropdownMenuItem>
           <DropdownMenuSeparator />
           <DropdownMenuItem onClick={openAdd} className="cursor-pointer" style={{ color: '#1e3a5f' }}>
             <Plus className="w-4 h-4 mr-2" />
