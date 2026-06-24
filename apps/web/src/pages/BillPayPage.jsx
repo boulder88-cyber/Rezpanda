@@ -61,18 +61,18 @@ const TIMEFRAMES = [
 const SummaryStrip = ({ companies, allInScope }) => {
   const today = new Date(); today.setHours(0, 0, 0, 0);
   const in7 = new Date(today.getTime() + 7 * 24 * 60 * 60 * 1000);
-  const totalDue = companies.reduce((sum, c) => sum + (parseFloat(c.amount) || 0), 0);
-  // Overdue is a hard date fact — count every in-scope unpaid bill past its due
-  // date, including ones still in review. (Falls back to confirmed list if the
-  // wider set wasn't passed.)
-  const overdueSource = allInScope || companies;
-  const overdue = overdueSource.filter(c => {
-    if (c.status === 'paid' || !c.dueDate) return false;
+  // Every stat derives from the all-open set (not paid, not cleared, incl. in
+  // review) so My Bills ties to the dashboard and Cash Needs. Falls back to the
+  // confirmed list if the wider set wasn't passed.
+  const src = allInScope || companies;
+  const totalDue = src.reduce((sum, c) => sum + (parseFloat(c.amount) || 0), 0);
+  const overdue = src.filter(c => {
+    if (!c.dueDate) return false;
     const due = new Date(c.dueDate); due.setHours(0, 0, 0, 0);
     return due < today;
   }).length;
-  const providers = companies.length;
-  const dueThisWeek = companies.filter(c => {
+  const providers = src.length;
+  const dueThisWeek = src.filter(c => {
     if (!c.dueDate) return false;
     const d = new Date(c.dueDate);
     return d >= today && d <= in7;
@@ -750,7 +750,10 @@ const BillPayPage = () => {
   const handleSelectDirectoryCompany = (company) => { setPrefillData(company); setIsAddModalOpen(true); };
 
   // ── Split bills by status ──
-  const isPaid = (c) => c.status === 'paid';
+  // A bill is CLOSED — off the open views, into history — when it's paid OR
+  // cleared. One off-switch, same rule the dashboard and Cash Needs use.
+  const isClosed = (c) => c.status === 'paid' || c.cleared;
+  const isPaid = isClosed;  // alias: existing call sites read "isPaid" but mean "closed"
   const isAuto = (c) => c.paymentType === 'Autopay (card)' || c.paymentType === 'Autopay (bank)';
   // "No property" = anything not placed on a real home (placement 'other' or
   // 'unassigned'). The grouped list splits these into two sections; this just
@@ -773,6 +776,12 @@ const BillPayPage = () => {
 
   // Not-yet-closed bills (excludes pending_review and paid).
   const openBills = propertyFiltered.filter(c => !isPaid(c) && c.status !== 'pending_review');
+
+  // Every OPEN bill in scope (not paid, not cleared) INCLUDING pending_review.
+  // "If it's open, it's a cash need." This is what Total Due / the stats tie to,
+  // matching the dashboard and Cash Needs. (openBills stays confirmed-only
+  // because an unreviewed bill can't be PAID yet — but it still counts as due.)
+  const allOpenInScope = propertyFiltered.filter(c => !isClosed(c));
 
   // Manual bills needing payment, sorted soonest-due first.
   const readyToPay = openBills
@@ -989,7 +998,7 @@ const BillPayPage = () => {
                 )}
 
                 {/* Quick glance: the four stats. */}
-                <SummaryStrip companies={openCompanies} allInScope={propertyFiltered} />
+                <SummaryStrip companies={openCompanies} allInScope={allOpenInScope} />
 
                 {/* ── 1. PAST DUE — top priority, loud ──
                     In "By property" view this standalone block is suppressed;
