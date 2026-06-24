@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Repeat, TrendingDown, AlertCircle, CheckCircle2, ChevronRight } from 'lucide-react';
+import { Repeat, TrendingDown, AlertCircle, CheckCircle2 } from 'lucide-react';
 
 // ═══════════════════════════════════════════════════════════════════════
 // CASH NEEDS — a forward-looking lens on bills you already have.
@@ -8,11 +8,18 @@ import { Repeat, TrendingDown, AlertCircle, CheckCircle2, ChevronRight } from 'l
 // dueDate, paymentType, homeId). It re-asks the data one question —
 // "what's leaving my accounts, and when" — instead of "what do I owe."
 //
-// Shape (blend, timeline-first, reassurance-led):
+// "If it's open, it's a cash need." Every unpaid bill (confirmed AND still
+// in review) counts, so this view ties out to My Bills' Total Due.
+//
+// Shape (timeline-first, reassurance-led, nothing hidden):
 //   1. Reassurance line   — plain-language "am I okay?" before any numbers
-//   2. Timeline (spine)   — windowed (7/30/60/90d) outflows, date order,
-//                           auto vs manual distinguished, running total
-//   3. Breakdown          — same window sliced: auto vs manual, by property
+//   2. Timeline (spine)   — windowed outflows in date order, THEN a
+//                           "Further out" catch-all sweeping up everything
+//                           past the window so the timeline always ties to
+//                           every unpaid dollar regardless of window.
+//   3. Cash split         — two SEPARATE groups: what leaves your accounts
+//                           now (bank + manual) vs. what goes on a card.
+//   4. By grouping        — every unpaid dollar split by property / Other.
 //
 // Deliberately NOT here: spending history/trends (that's Analysis), editing
 // bills (that's My Bills), any new data. Forward-looking only.
@@ -42,12 +49,12 @@ const CashNeedsTab = ({ companies = [], homes = [], homeName = () => null, scope
 
   // ── Bucket EVERY unpaid bill into exactly one place, so the screen ties out ──
   // Four mutually-exclusive, exhaustive buckets over unpaid bills:
-  //   pastDue      — due before today (shown as rows, own subtotal)
-  //   outflows     — due today..horizon, the forward window (shown as rows)
-  //   beyondWindow — due after horizon (summarized — out of the window)
-  //   undatedBills — no due date (summarized — can't be placed in time)
+  //   pastDue      — due before today
+  //   outflows     — due today..horizon (the forward window)
+  //   beyondWindow — due after horizon (dated, just further out)
+  //   undatedBills — no due date yet
   // pastDueTotal + total + beyondTotal + undatedTotal === every unpaid dollar
-  // (= allUnpaidTotal), which should equal My Bills' Total Due. Nothing hides.
+  // (= allUnpaidTotal), which equals My Bills' Total Due. Nothing hides.
   const unpaid = companies.filter(c => c.status !== 'paid');
   const sum = (arr) => arr.reduce((s, c) => s + (parseFloat(c.amount) || 0), 0);
 
@@ -63,37 +70,43 @@ const CashNeedsTab = ({ companies = [], homes = [], homeName = () => null, scope
     })
     .sort((a, b) => new Date(a.dueDate) - new Date(b.dueDate));
 
-  const beyondWindow = unpaid.filter(c => c.dueDate && new Date(c.dueDate) > horizon);
+  const beyondWindow = unpaid
+    .filter(c => c.dueDate && new Date(c.dueDate) > horizon)
+    .sort((a, b) => new Date(a.dueDate) - new Date(b.dueDate));
   const undatedBills = unpaid.filter(c => !c.dueDate);
 
   const pastDueTotal = sum(pastDue);
-  const total = sum(outflows);                 // in-window total (the spine)
+  const total = sum(outflows);                 // in-window total
   const beyondTotal = sum(beyondWindow);
   const undatedTotal = sum(undatedBills);
   const allUnpaidTotal = pastDueTotal + total + beyondTotal + undatedTotal;
 
-  // in-window cash split (past-due handled in its own section)
-  const cardTotal = sum(outflows.filter(isCard));
-  const bankAutoTotal = sum(outflows.filter(isBankAuto));
-  const manualTotal = sum(outflows.filter(c => !isAuto(c)));
-  const cashNowTotal = bankAutoTotal + manualTotal; // leaves the bank this period; card is paid later
+  // Everything past the selected window, swept into one catch-all so the
+  // timeline never drops a bill just because the window is short.
+  const furtherOutTotal = beyondTotal + undatedTotal;
+  const furtherOutCount = beyondWindow.length + undatedBills.length;
 
-  // overdue alias kept for the reassurance line (same set as pastDue)
-  const overdue = pastDue;
-  const overdueTotal = pastDueTotal;
+  // ── Cash split over ALL unpaid dated/undated bills (not just in-window) ──
+  // Two clean groups the user actually cares about:
+  //   leaves your accounts now  = bank autopay + manual (real cash out)
+  //   goes on a credit card     = card autopay (paid later, when the card bill lands)
+  const cardTotal = sum(unpaid.filter(isCard));
+  const bankAutoTotal = sum(unpaid.filter(isBankAuto));
+  const manualTotal = sum(unpaid.filter(c => !isAuto(c)));
+  const cashNowTotal = bankAutoTotal + manualTotal;
 
   const windowLabel = (WINDOWS.find(w => w.days === windowDays) || {}).label || `${windowDays} days`;
 
   // ── 1. Reassurance line ──
   const reassurance = (() => {
-    if (overdue.length > 0) {
+    if (pastDue.length > 0) {
       return {
         tone: 'red',
         icon: AlertCircle,
-        text: `${overdue.length} ${overdue.length === 1 ? 'bill is' : 'bills are'} overdue — ${money0(overdueTotal)} to catch up on.`,
+        text: `${pastDue.length} ${pastDue.length === 1 ? 'bill is' : 'bills are'} past due — ${money0(pastDueTotal)} to catch up on.`,
       };
     }
-    if (outflows.length === 0 && allUnpaidTotal === 0) {
+    if (allUnpaidTotal === 0) {
       return {
         tone: 'green',
         icon: CheckCircle2,
@@ -104,15 +117,13 @@ const CashNeedsTab = ({ companies = [], homes = [], homeName = () => null, scope
       return {
         tone: 'calm',
         icon: TrendingDown,
-        text: `Nothing in the next ${windowLabel.toLowerCase()}, but ${money0(allUnpaidTotal)} in bills sits outside this window — see below.`,
+        text: `Nothing in the next ${windowLabel.toLowerCase()}, but ${money0(furtherOutTotal)} in bills sits further out — see below.`,
       };
     }
     return {
       tone: 'calm',
       icon: TrendingDown,
-      text: cardTotal > 0
-        ? `About ${money0(total)} in bills over the ${windowLabel.toLowerCase()} — ${money0(cashNowTotal)} leaves your accounts, ${money0(cardTotal)} goes on a card.`
-        : `About ${money0(total)} leaving your accounts over the ${windowLabel.toLowerCase()}, based on what you've added.`,
+      text: `About ${money0(total)} due in the next ${windowLabel.toLowerCase()}, and ${money0(allUnpaidTotal)} unpaid in all.`,
     };
   })();
 
@@ -121,16 +132,13 @@ const CashNeedsTab = ({ companies = [], homes = [], homeName = () => null, scope
   const toneBorder = { red: '#fecaca', green: '#a7f3d0', calm: '#c7d7eb' };
   const RIcon = reassurance.icon;
 
-  // Only show the by-property breakdown when there's more than one property
-  // AND we're not scoped to the Other-bills bucket (where every bill is, by
-  // definition, no-property — so a by-property split is meaningless).
-  const showByProperty = (homes || []).length > 1 && scope !== 'other';
-
-  // by-property grouping for the breakdown. No-home bills surface under the
-  // Other-bills label.
-  const byProperty = (() => {
+  // By-grouping over ALL unpaid bills (not just in-window) so it ties to the
+  // overall unpaid total. No-property bills surface under the Other label.
+  // Built from the bills themselves, so a property with unpaid bills always
+  // gets a row regardless of how many homes exist.
+  const byGrouping = (() => {
     const groups = {};
-    for (const c of outflows) {
+    for (const c of unpaid) {
       const key = c.homeId || '__other__';
       groups[key] = (groups[key] || 0) + (parseFloat(c.amount) || 0);
     }
@@ -141,25 +149,39 @@ const CashNeedsTab = ({ companies = [], homes = [], homeName = () => null, scope
         amt,
       }))
       .sort((a, b) => {
-        // keep Other bills last
-        if (a.key === '__other__') return 1;
+        if (a.key === '__other__') return 1;   // keep Other last
         if (b.key === '__other__') return -1;
         return b.amt - a.amt;
       });
   })();
 
+  // Show the breakdown whenever it actually says something — i.e. there's more
+  // than one group (multiple properties, or a property plus Other bills). A
+  // single group is just the total restated, so it's hidden as redundant.
+  // When scoped to "other", every bill is no-property, so there's no split.
+  const showByGrouping = scope !== 'other' && byGrouping.length > 1;
+
   const cardStyle = { background: '#fff', border: '1px solid #e9e4db', borderRadius: '12px', boxShadow: '0 1px 3px rgba(31,39,51,0.06)' };
 
-  // one row renderer shared by past-due and in-window lists
-  const renderRow = (c, { pastDue: isPast = false } = {}) => {
+  // one row renderer shared by past-due, in-window, and further-out lists
+  const renderRow = (c, { pastDue: isPast = false, undated = false } = {}) => {
     const auto = isAuto(c);
     const card = isCard(c);
-    const d = new Date(c.dueDate).toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+    const d = c.dueDate ? new Date(c.dueDate).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }) : null;
     const tag = card
       ? { text: 'Card', color: '#534ab7', bg: '#eeedfe', icon: true }
       : auto
       ? { text: 'Auto', color: '#059669', bg: '#ecfdf5', icon: true }
       : { text: 'Manual', color: '#b45309', bg: '#fffbeb', icon: false };
+    const when = undated
+      ? 'no due date'
+      : isPast
+      ? `due ${d} · overdue`
+      : card
+      ? `~${d} (card)`
+      : auto
+      ? `drafts ~${d}`
+      : `due ${d}`;
     return (
       <div key={c.id} className="flex items-center justify-between" style={{ padding: '8px 0', borderBottom: '1px solid #f1ece3' }}>
         <div className="flex items-center gap-3 min-w-0">
@@ -171,12 +193,12 @@ const CashNeedsTab = ({ companies = [], homes = [], homeName = () => null, scope
             {tag.icon ? <><Repeat style={{ width: '10px', height: '10px' }} /> {tag.text}</> : tag.text}
           </span>
           <span className="font-medium truncate" style={{ fontSize: '14px', color: '#1f2733' }}>{c.companyName}</span>
-          {showByProperty && homeName(c.homeId) && (
+          {showByGrouping && homeName(c.homeId) && (
             <span style={{ fontSize: '11px', color: '#1e3a5f', background: '#eef2f8', borderRadius: '6px', padding: '1px 7px' }}>
               {homeName(c.homeId)}
             </span>
           )}
-          {showByProperty && !c.homeId && (
+          {showByGrouping && !c.homeId && (
             <span style={{ fontSize: '11px', color: '#5b6472', background: '#f1ece3', borderRadius: '6px', padding: '1px 7px' }}>
               {otherBillsLabel}
             </span>
@@ -184,7 +206,7 @@ const CashNeedsTab = ({ companies = [], homes = [], homeName = () => null, scope
         </div>
         <div className="flex items-center gap-3 flex-shrink-0">
           <span style={{ fontSize: '12px', color: isPast ? '#dc2626' : '#95a0ae', fontWeight: isPast ? 600 : 400 }}>
-            {isPast ? `due ${d} · overdue` : card ? `~${d} (card)` : auto ? `drafts ~${d}` : `due ${d}`}
+            {when}
           </span>
           <span className="font-semibold" style={{ fontSize: '14px', color: '#1f2733', minWidth: '70px', textAlign: 'right' }}>{money(c.amount)}</span>
         </div>
@@ -201,7 +223,10 @@ const CashNeedsTab = ({ companies = [], homes = [], homeName = () => null, scope
         <p className="font-semibold" style={{ fontSize: '15px', color: '#1f2733' }}>{reassurance.text}</p>
       </div>
 
-      {/* ── Timeline (spine): past due, then coming up — one continuous flow ── */}
+      {/* ── 2. Timeline (spine): past due → coming up → further out ──
+          Every unpaid bill appears somewhere here, so the timeline's running
+          parts sum to All unpaid below. The window toggle only decides where
+          the line between "coming up" and "further out" falls. */}
       <div style={{ ...cardStyle, padding: '20px' }}>
         {/* header + window toggle */}
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3" style={{ marginBottom: '16px' }}>
@@ -228,7 +253,7 @@ const CashNeedsTab = ({ companies = [], homes = [], homeName = () => null, scope
             }}>
               <span className="font-semibold flex items-center gap-2" style={{ fontSize: '13px', color: '#dc2626' }}>
                 <AlertCircle style={{ width: '15px', height: '15px' }} />
-                Past due · pay these first
+                Past due
               </span>
               <span className="font-bold" style={{ fontSize: '14px', color: '#dc2626' }}>{money(pastDueTotal)}</span>
             </div>
@@ -238,19 +263,13 @@ const CashNeedsTab = ({ companies = [], homes = [], homeName = () => null, scope
           </div>
         )}
 
-        {/* ── COMING UP block ── */}
+        {/* ── COMING UP block (in-window) ── */}
         <div className="flex items-baseline justify-between" style={{ marginBottom: '4px' }}>
           <span className="font-semibold" style={{ fontSize: '13px', color: '#5b6472', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
             Coming up · next {windowLabel.toLowerCase()}
           </span>
           <span className="font-bold" style={{ fontSize: '14px', color: '#1e3a5f' }}>{money(total)}</span>
         </div>
-        {total > 0 && (
-          <p style={{ fontSize: '12px', color: '#5b6472', marginBottom: '12px' }}>
-            {money0(bankAutoTotal)} drafts from bank · {money0(manualTotal)} needs you to pay
-            {cardTotal > 0 && <> · {money0(cardTotal)} on a card <span style={{ color: '#95a0ae' }}>(paid later)</span></>}
-          </p>
-        )}
         {outflows.length === 0 ? (
           <div className="text-center" style={{ background: '#faf8f4', border: '1px solid #e9e4db', borderRadius: '10px', padding: '20px', fontSize: '14px', color: '#95a0ae', marginTop: '8px' }}>
             Nothing due in this window.
@@ -260,66 +279,86 @@ const CashNeedsTab = ({ companies = [], homes = [], homeName = () => null, scope
             {outflows.map(c => renderRow(c))}
           </div>
         )}
-      </div>
 
-      {/* ── 3. Breakdown ── */}
-      {outflows.length > 0 && (
-        <div className={`grid grid-cols-1 ${showByProperty ? 'lg:grid-cols-2' : ''} gap-4`}>
-          {/* How it pulls */}
-          <div style={{ ...cardStyle, padding: '18px 20px' }}>
-            <h4 className="font-semibold" style={{ fontSize: '13px', color: '#1f2733', marginBottom: '14px' }}>How it pulls</h4>
-            <Bar label="Drafts from bank" sub="autopay — cash now" amount={bankAutoTotal} total={total} color="#059669" />
-            <div style={{ height: '10px' }} />
-            <Bar label="Needs you to pay" sub="manual — cash now" amount={manualTotal} total={total} color="#f59e0b" />
-            {cardTotal > 0 && (
-              <>
-                <div style={{ height: '10px' }} />
-                <Bar label="On a credit card" sub="not cash now — paid later" amount={cardTotal} total={total} color="#7c5cff" />
-              </>
-            )}
-            <p style={{ fontSize: '11px', color: '#95a0ae', marginTop: '12px', paddingTop: '10px', borderTop: '1px solid #f1ece3' }}>
-              {money0(cashNowTotal)} actually leaves your accounts this period. Card charges are paid later when your card bill comes due.
-            </p>
-          </div>
-
-          {/* By property */}
-          {showByProperty && (
-            <div style={{ ...cardStyle, padding: '18px 20px' }}>
-              <h4 className="font-semibold" style={{ fontSize: '13px', color: '#1f2733', marginBottom: '14px' }}>By property</h4>
-              {byProperty.map((p, i) => (
-                <div key={p.key}>
-                  {i > 0 && <div style={{ height: '10px' }} />}
-                  <Bar label={p.label} amount={p.amt} total={total} color="#1e3a5f" />
-                </div>
-              ))}
+        {/* ── FURTHER OUT catch-all: everything past the window + undated ──
+            So no bill disappears just because the window is narrow. */}
+        {furtherOutCount > 0 && (
+          <div style={{ marginTop: '20px' }}>
+            <div className="flex items-baseline justify-between" style={{ marginBottom: '4px' }}>
+              <span className="font-semibold" style={{ fontSize: '13px', color: '#5b6472', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
+                Further out
+              </span>
+              <span className="font-bold" style={{ fontSize: '14px', color: '#5b6472' }}>{money(furtherOutTotal)}</span>
             </div>
-          )}
-        </div>
-      )}
+            <p style={{ fontSize: '12px', color: '#95a0ae', marginBottom: '8px' }}>
+              Beyond the {windowLabel.toLowerCase()} — widen the window to bring these into the list above.
+            </p>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
+              {beyondWindow.map(c => renderRow(c))}
+              {undatedBills.map(c => renderRow(c, { undated: true }))}
+            </div>
+          </div>
+        )}
 
-      {/* ── Reconciliation: account for every unpaid dollar so it ties out ── */}
-      <div style={{ ...cardStyle, padding: '18px 20px' }}>
-        <h4 className="font-semibold" style={{ fontSize: '13px', color: '#1f2733', marginBottom: '12px' }}>The full picture</h4>
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-          {pastDueTotal > 0 && (
-            <ReconLine label="Past due" sub={`${pastDue.length} ${pastDue.length === 1 ? 'bill' : 'bills'}`} amount={pastDueTotal} color="#dc2626" />
-          )}
-          <ReconLine label={`Due in the ${windowLabel.toLowerCase()}`} sub={`${outflows.length} ${outflows.length === 1 ? 'bill' : 'bills'}`} amount={total} color="#1e3a5f" />
-          {beyondTotal > 0 && (
-            <ReconLine label="Later — beyond this window" sub={`${beyondWindow.length} ${beyondWindow.length === 1 ? 'bill' : 'bills'}, widen the window to see`} amount={beyondTotal} color="#5b6472" />
-          )}
-          {undatedTotal > 0 && (
-            <ReconLine label="No due date yet" sub={`${undatedBills.length} ${undatedBills.length === 1 ? 'bill' : 'bills'}, add a date in My Bills`} amount={undatedTotal} color="#b45309" />
-          )}
-        </div>
-        <div className="flex items-center justify-between" style={{ marginTop: '12px', paddingTop: '12px', borderTop: '2px solid #e9e4db' }}>
+        {/* running tie-out: the three blocks above sum to every unpaid dollar */}
+        <div className="flex items-center justify-between" style={{ marginTop: '16px', paddingTop: '12px', borderTop: '2px solid #e9e4db' }}>
           <span className="font-bold" style={{ fontSize: '14px', color: '#1f2733' }}>All unpaid bills</span>
           <span className="font-bold" style={{ fontSize: '15px', color: '#1f2733' }}>{money(allUnpaidTotal)}</span>
         </div>
-        <p style={{ fontSize: '11px', color: '#95a0ae', marginTop: '10px' }}>
-          This is every unpaid bill you've added, in one place — it should match Total Due in My Bills. The timeline above shows only what falls inside the {windowLabel.toLowerCase()}; the rest is accounted for here so nothing hides.
+        <p style={{ fontSize: '11px', color: '#95a0ae', marginTop: '8px' }}>
+          Every unpaid bill you've added is on this list — it matches Total Due in My Bills. Nothing hides.
         </p>
       </div>
+
+      {/* ── 3. Cash split: two SEPARATE groups ── */}
+      {allUnpaidTotal > 0 && (
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          {/* Group A — leaves your accounts now */}
+          <div style={{ ...cardStyle, padding: '18px 20px' }}>
+            <h4 className="font-semibold" style={{ fontSize: '13px', color: '#1f2733', marginBottom: '4px' }}>Leaves your accounts now</h4>
+            <p style={{ fontSize: '11px', color: '#95a0ae', marginBottom: '14px' }}>Real cash out — bank drafts and bills you pay yourself.</p>
+            <Bar label="Drafts from bank" sub="autopay" amount={bankAutoTotal} total={cashNowTotal || 1} color="#059669" />
+            <div style={{ height: '10px' }} />
+            <Bar label="Needs you to pay" sub="manual" amount={manualTotal} total={cashNowTotal || 1} color="#f59e0b" />
+            <div className="flex items-center justify-between" style={{ marginTop: '14px', paddingTop: '10px', borderTop: '1px solid #f1ece3' }}>
+              <span className="font-semibold" style={{ fontSize: '13px', color: '#1f2733' }}>Cash now</span>
+              <span className="font-bold" style={{ fontSize: '14px', color: '#1f2733' }}>{money(cashNowTotal)}</span>
+            </div>
+          </div>
+
+          {/* Group B — goes on a credit card */}
+          <div style={{ ...cardStyle, padding: '18px 20px' }}>
+            <h4 className="font-semibold" style={{ fontSize: '13px', color: '#1f2733', marginBottom: '4px' }}>Goes on a credit card</h4>
+            <p style={{ fontSize: '11px', color: '#95a0ae', marginBottom: '14px' }}>Paid later, when your card statement comes due — not cash out today.</p>
+            {cardTotal > 0 ? (
+              <Bar label="Card autopay" sub="paid later" amount={cardTotal} total={cardTotal} color="#7c5cff" />
+            ) : (
+              <p style={{ fontSize: '13px', color: '#95a0ae' }}>No bills set to a credit card.</p>
+            )}
+            <div className="flex items-center justify-between" style={{ marginTop: '14px', paddingTop: '10px', borderTop: '1px solid #f1ece3' }}>
+              <span className="font-semibold" style={{ fontSize: '13px', color: '#1f2733' }}>On a card</span>
+              <span className="font-bold" style={{ fontSize: '14px', color: '#1f2733' }}>{money(cardTotal)}</span>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ── 4. By grouping (properties + Other), ties to all unpaid ── */}
+      {showByGrouping && (
+        <div style={{ ...cardStyle, padding: '18px 20px' }}>
+          <h4 className="font-semibold" style={{ fontSize: '13px', color: '#1f2733', marginBottom: '14px' }}>By grouping</h4>
+          {byGrouping.map((p, i) => (
+            <div key={p.key}>
+              {i > 0 && <div style={{ height: '10px' }} />}
+              <Bar label={p.label} amount={p.amt} total={allUnpaidTotal || 1} color={p.key === '__other__' ? '#5b6472' : '#1e3a5f'} />
+            </div>
+          ))}
+          <div className="flex items-center justify-between" style={{ marginTop: '14px', paddingTop: '10px', borderTop: '1px solid #f1ece3' }}>
+            <span className="font-semibold" style={{ fontSize: '13px', color: '#1f2733' }}>All unpaid</span>
+            <span className="font-bold" style={{ fontSize: '14px', color: '#1f2733' }}>{money(allUnpaidTotal)}</span>
+          </div>
+        </div>
+      )}
 
       {/* closing note */}
       <p style={{ fontSize: '12px', color: '#95a0ae', textAlign: 'center' }}>
@@ -329,18 +368,7 @@ const CashNeedsTab = ({ companies = [], homes = [], homeName = () => null, scope
   );
 };
 
-// reconciliation line: label + small sub on the left, amount on the right
-const ReconLine = ({ label, sub, amount, color }) => (
-  <div className="flex items-center justify-between">
-    <div className="min-w-0">
-      <span className="font-medium" style={{ fontSize: '13px', color: color || '#1f2733' }}>{label}</span>
-      {sub && <span style={{ fontSize: '11px', color: '#95a0ae', marginLeft: '6px' }}>{sub}</span>}
-    </div>
-    <span className="font-semibold flex-shrink-0" style={{ fontSize: '13px', color: '#1f2733' }}>{`$${(parseFloat(amount) || 0).toFixed(2)}`}</span>
-  </div>
-);
-
-// little labeled progress bar used in the breakdown
+// little labeled progress bar used in the breakdowns
 const Bar = ({ label, sub, amount, total, color }) => {
   const pct = total > 0 ? Math.round((amount / total) * 100) : 0;
   return (
