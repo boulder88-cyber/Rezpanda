@@ -155,7 +155,7 @@ const OutflowLine = ({ series }) => {
       <div className="flex items-baseline justify-between" style={{ marginBottom: '4px' }}>
         <div>
           <p className="font-semibold" style={{ fontSize: '15px', color: INK }}>Total outflow</p>
-          <p style={{ fontSize: '11px', color: INK_LIGHT }}>What your home cost each month · last 13 months</p>
+          <p style={{ fontSize: '11px', color: INK_LIGHT }}>Your tracked bills monthly outflow · last 13 months</p>
         </div>
         <div className="text-right">
           <p className="font-bold" style={{ fontSize: '22px', color: NAVY, lineHeight: 1 }}>{money0(last.total)}</p>
