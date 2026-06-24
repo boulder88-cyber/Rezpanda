@@ -487,7 +487,7 @@ const ServiceCompanyCard = ({ company, onRefresh, onPay, propertyName = null, ho
                     style={{ background: '#059669' }}
                     disabled={isMarking}
                     onClick={handleClear}
-                    title="Paid by autopay, but the charge is on a card statement you pay later. Clear it once that statement is paid.">
+                    title="Paid by autopay, but the charge lands on a card statement you pay later. Clear it once the charge hits your card.">
                     {isMarking ? 'Clearing…' : 'Clear'}
                   </Button>
                 ) : (
