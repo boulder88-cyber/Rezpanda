@@ -30,7 +30,6 @@ const BORDER = '#e9e4db';
 const NAVY = '#1e3a5f';
 
 const money0 = (n) => `$${Math.round(parseFloat(n) || 0).toLocaleString('en-US')}`;
-const money2 = (n) => `$${(parseFloat(n) || 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
 
 // Light category normalization: trim + lower for the key, Title Case for label.
 // We group on what the user actually tagged rather than guessing from the name.
@@ -74,13 +73,14 @@ const monthKey = (d) => {
 const billDate = (b) =>
   b.dueDate || b.paidDate || b.reviewedDate || b.forwardedAt || b.created || null;
 
-// Build a 12-slot monthly series (oldest→newest) of summed amounts for a set
-// of bills, keyed off dueDate. Returns [{ key, total }]. Empty months are 0 so
-// the sparkline reads an honest gap rather than collapsing time.
-const monthlySeries = (bills) => {
+// Build a monthly series (oldest→newest) of summed amounts for a set of bills,
+// keyed off the best-available date. Empty months are 0 so the line reads an
+// honest gap rather than collapsing time. `months` defaults to 12 (per-card
+// sparkline); the headline outflow line passes 13 (a full year + this month).
+const monthlySeries = (bills, months = 12) => {
   const now = new Date();
   const slots = [];
-  for (let i = 11; i >= 0; i--) {
+  for (let i = months - 1; i >= 0; i--) {
     const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
     slots.push({ key: `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`, total: 0 });
   }
@@ -119,6 +119,76 @@ const Sparkline = ({ series, color }) => {
         strokeLinejoin="round" strokeLinecap="round" />
       <circle cx={x(n - 1)} cy={y(last.total)} r="2.5" fill={color} />
     </svg>
+  );
+};
+
+// ── Headline: total monthly outflow over the last 13 months ──
+// The story the tab opens with — is the cost of running this home drifting?
+// One navy area/line, month ticks, latest month + MoM delta called out.
+const OutflowLine = ({ series }) => {
+  const w = 720, h = 150;
+  const padL = 8, padR = 8, padT = 14, padB = 26;
+  const vals = series.map(s => s.total);
+  const max = Math.max(...vals, 0);
+  const n = series.length;
+  const x = (i) => padL + (i * (w - padL - padR)) / (n - 1);
+  const y = (v) => max > 0 ? (h - padB - (v / max) * (h - padT - padB)) : (h - padB);
+
+  const monthLabel = (key) => {
+    const [yr, mo] = key.split('-').map(Number);
+    return new Date(yr, mo - 1, 1).toLocaleDateString('en-US', { month: 'short' });
+  };
+
+  const pts = series.map((s, i) => `${x(i)},${y(s.total)}`);
+  const linePath = `M ${pts.join(' L ')}`;
+  const areaPath = `M ${x(0)},${h - padB} L ${pts.join(' L ')} L ${x(n - 1)},${h - padB} Z`;
+
+  const last = series[n - 1];
+  const prev = series[n - 2] || { total: 0 };
+  const delta = last.total - prev.total;
+  const deltaPct = prev.total > 0 ? Math.round((delta / prev.total) * 100) : null;
+
+  const tickEvery = Math.max(1, Math.round(n / 6));
+
+  return (
+    <div className="bg-white" style={{ borderRadius: '12px', border: `1px solid ${BORDER}`, padding: '20px', boxShadow: '0 1px 3px rgba(0,0,0,0.06)', marginBottom: '20px' }}>
+      <div className="flex items-baseline justify-between" style={{ marginBottom: '4px' }}>
+        <div>
+          <p className="font-semibold" style={{ fontSize: '15px', color: INK }}>Total outflow</p>
+          <p style={{ fontSize: '11px', color: INK_LIGHT }}>What your home cost each month · last 13 months</p>
+        </div>
+        <div className="text-right">
+          <p className="font-bold" style={{ fontSize: '22px', color: NAVY, lineHeight: 1 }}>{money0(last.total)}</p>
+          <p style={{ fontSize: '11px', color: INK_LIGHT, marginTop: '2px' }}>
+            {monthLabel(last.key)}
+            {deltaPct != null && (
+              <span style={{ color: delta > 0 ? '#dc2626' : delta < 0 ? '#059669' : INK_LIGHT, marginLeft: '6px', fontWeight: 600 }}>
+                {delta > 0 ? '▲' : delta < 0 ? '▼' : ''} {Math.abs(deltaPct)}% vs prev
+              </span>
+            )}
+          </p>
+        </div>
+      </div>
+      {max <= 0 ? (
+        <div className="text-center" style={{ padding: '24px 0', fontSize: '13px', color: INK_LIGHT }}>
+          No dated spend yet — your monthly trend fills in as bills come through.
+        </div>
+      ) : (
+        <svg viewBox={`0 0 ${w} ${h}`} style={{ width: '100%', height: 'auto', display: 'block' }} preserveAspectRatio="none" aria-hidden="true">
+          <path d={areaPath} fill={NAVY} opacity="0.07" />
+          <path d={linePath} fill="none" stroke={NAVY} strokeWidth="2"
+            strokeLinejoin="round" strokeLinecap="round" vectorEffect="non-scaling-stroke" />
+          {series.map((s, i) => (
+            <circle key={i} cx={x(i)} cy={y(s.total)} r={i === n - 1 ? 3.5 : 2}
+              fill={i === n - 1 ? NAVY : '#fff'} stroke={NAVY} strokeWidth="1.25" vectorEffect="non-scaling-stroke" />
+          ))}
+          {series.map((s, i) => (i % tickEvery === 0 || i === n - 1) ? (
+            <text key={`t${i}`} x={x(i)} y={h - 8} textAnchor="middle"
+              style={{ fontSize: '10px', fill: INK_LIGHT }}>{monthLabel(s.key)}</text>
+          ) : null)}
+        </svg>
+      )}
+    </div>
   );
 };
 
@@ -189,6 +259,9 @@ const InsightsTab = ({ companies = [] }) => {
   const grandMeasure = groups.reduce(
     (s, r) => s + (measure === 'count' ? r.count : r.total), 0);
 
+  // Headline trend: total spend per month across ALL bills in scope, 13 months.
+  const outflowSeries = useMemo(() => monthlySeries(companies, 13), [companies]);
+
   const fmtDate = (d) => {
     const dt = new Date(d);
     if (isNaN(dt)) return '';
@@ -221,6 +294,9 @@ const InsightsTab = ({ companies = [] }) => {
 
   return (
     <div>
+      {/* Headline: total monthly outflow over 13 months */}
+      <OutflowLine series={outflowSeries} />
+
       {/* Controls: dimension + measure */}
       <div className="flex flex-wrap items-center justify-between gap-3" style={{ marginBottom: '20px' }}>
         <Toggle
@@ -275,7 +351,7 @@ const InsightsTab = ({ companies = [] }) => {
               {/* Three figures: latest / average / YTD */}
               <div className="grid grid-cols-3" style={{ gap: '8px' }}>
                 <Figure label="Latest bill"
-                  value={r.latestAmount != null ? money2(r.latestAmount) : '—'}
+                  value={r.latestAmount != null ? money0(r.latestAmount) : '—'}
                   sub={r.latestDate ? (r.latestDated ? fmtDate(r.latestDate) : `${fmtDate(r.latestDate)} · received`) : 'no bills'} />
                 <Figure label="Average" value={money0(r.avg)} sub={`over ${r.count}`} />
                 <Figure label={`YTD ${thisYear}`} value={money0(r.ytd)} sub="this year" />
