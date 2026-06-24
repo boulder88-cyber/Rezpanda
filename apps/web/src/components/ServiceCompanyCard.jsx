@@ -111,8 +111,15 @@ const ServiceCompanyCard = ({ company, onRefresh, onPay, propertyName = null, ho
   // A card-autopay bill is NEVER marked paid — autopay drafts to the card, but
   // the charge sits on a statement you pay later, so the bill stays OPEN
   // (counted everywhere) until you CLEAR it. Clear is its only close action.
-  // So a card bill shows "Clear" whenever it's not yet cleared.
-  const needsClear = isCard && !company.cleared;
+  //
+  // Card lifecycle is TWO steps, gated on reviewedDate:
+  //   1. unreviewed (!reviewedDate) -> "Mark Reviewed" (stamps reviewedDate
+  //      ONLY — never status:paid; the bill stays open). This is needsCardReview.
+  //   2. reviewed but not cleared    -> "Clear" (the close action). needsClear.
+  // So Clear no longer jumps ahead of review — a card bill shows review first,
+  // then Clear once a human has eyeballed the charge.
+  const needsCardReview = isCard && !company.cleared && !company.reviewedDate;
+  const needsClear = isCard && !company.cleared && !!company.reviewedDate;
 
   // Backfill: assign this bill to a property (for bills missing homeId).
   // placement legacy fallback (mirror of BillPayPage.placementOf): bills with
@@ -270,6 +277,28 @@ const ServiceCompanyCard = ({ company, onRefresh, onPay, propertyName = null, ho
     }
   };
 
+  // Card autopay: "Mark Reviewed" stamps reviewedDate ONLY. Unlike bank autopay
+  // it does NOT set status:paid — the charge still lands on a card statement,
+  // so the bill stays OPEN (open = !cleared) and Clear remains its close action.
+  // Review just records that a human eyeballed the charge; Clear comes after.
+  const handleMarkCardReviewed = async () => {
+    setIsMarking(true);
+    try {
+      await pb.collection('invoices').update(
+        company.id,
+        { reviewedDate: new Date().toISOString() },
+        { $autoCancel: false }
+      );
+      if (onPay) await onPay(company);
+      toast({ title: '✅ Reviewed', description: `${company.companyName} checked — clear it once the charge hits your statement.` });
+      if (onRefresh) onRefresh();
+    } catch {
+      toast({ title: 'Could not mark reviewed', variant: 'destructive' });
+    } finally {
+      setIsMarking(false);
+    }
+  };
+
   // Undo: a paid/reviewed bill goes back to its open state. This is the
   // safety net for an accidental "paid" or a mistake noticed after the fact.
   // Flip status back to "confirmed" and clear BOTH date stamps so the bill
@@ -393,6 +422,11 @@ const ServiceCompanyCard = ({ company, onRefresh, onPay, propertyName = null, ho
                 Autopay · Reviewed{reviewedLabel ? ` ${reviewedLabel}` : ''}{dueLabel ? ` · drafts ~${dueLabel}` : ''}
               </span>
             )}
+            {needsCardReview && (
+              <span className="text-slate-400" style={{ fontSize: '11px', fontStyle: 'italic' }}>
+                On autopay (card) — review the charge, then clear it once it hits your statement.
+              </span>
+            )}
             {needsClear && (
               <span className="text-slate-400" style={{ fontSize: '11px', fontStyle: 'italic' }}>
                 On your card — clear it once the charge hits your statement.
@@ -482,9 +516,22 @@ const ServiceCompanyCard = ({ company, onRefresh, onPay, propertyName = null, ho
             the confirm pair pushed the pill left and alignment drifted. */}
         <div className="flex items-center flex-shrink-0" style={{ gap: '8px' }}>
           <div className="flex items-center" style={{ width: '170px', justifyContent: 'flex-end', gap: '8px' }}>
-            {needsClear ? (
-              // Card-autopay: open until cleared. Clear is its close action —
-              // it's never "paid" because the charge sits on a card statement.
+            {needsCardReview ? (
+              // Card-autopay, not yet reviewed: review comes FIRST. Stamps
+              // reviewedDate only (never status:paid) — the bill stays open and
+              // Clear becomes the action on the next render.
+              <Button
+                size="sm"
+                className="font-semibold"
+                style={{ background: '#7c3aed' }}
+                disabled={isMarking}
+                onClick={handleMarkCardReviewed}
+                title="Autopay drafts this to your card. Reviewing just confirms the charge looks right — you'll clear it once it hits your statement.">
+                {isMarking ? 'Saving…' : 'Mark Reviewed'}
+              </Button>
+            ) : needsClear ? (
+              // Card-autopay, reviewed: open until cleared. Clear is its close
+              // action — it's never "paid" because the charge sits on a statement.
               <Button
                 size="sm"
                 className="font-semibold"
