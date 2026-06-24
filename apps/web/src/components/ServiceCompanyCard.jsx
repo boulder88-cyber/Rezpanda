@@ -470,46 +470,61 @@ const ServiceCompanyCard = ({ company, onRefresh, onPay, propertyName = null, ho
           </div>
         </div>
 
-        {/* Amount */}
-        <div className="font-bold text-slate-900 flex-shrink-0" style={{ fontSize: '15px', minWidth: '70px', textAlign: 'right' }}>
+        {/* Amount — fixed width (not min-width) so the action column always
+            starts at the same x across every card, regardless of how wide the
+            dollar figure is. A min-width let long amounts ($1,334.50) shove the
+            buttons right while short ones ($41.00) didn't, breaking vertical
+            alignment of Pay Bill / Mark as Paid down the list. */}
+        <div className="font-bold text-slate-900 flex-shrink-0" style={{ fontSize: '15px', width: '90px', textAlign: 'right' }}>
           {typeof company.amount === 'number' ? `$${company.amount.toFixed(2)}` : '—'}
         </div>
 
-        {/* Action area */}
-        <div className="flex items-center gap-2 flex-shrink-0" style={{ minWidth: '190px', justifyContent: 'flex-end' }}>
-          {isPaid ? (
-            <div className="flex items-center gap-2">
-              <span className="font-medium" style={{ color: '#94a3b8', fontSize: '13px' }}>All set</span>
-              <button
-                onClick={handleUndoPaid}
-                disabled={isMarking}
-                className="font-medium text-slate-400 hover:text-slate-700 transition-colors underline"
-                style={{ fontSize: '12px', textUnderlineOffset: '2px', opacity: isMarking ? 0.5 : 1 }}>
-                {isMarking ? 'Undoing…' : 'Undo'}
-              </button>
-            </div>
-          ) : autopay ? (
-            // Autopay: the action is to REVIEW, not pay.
-            <Button size="sm" className="font-semibold" style={{ background: '#7c3aed' }} disabled={isMarking} onClick={handleMarkReviewed}>
-              {isMarking ? 'Saving…' : 'Mark Reviewed'}
-            </Button>
-          ) : awaitingConfirm ? (
-            <>
-              <Button variant="outline" size="sm" disabled={isMarking || isCheckingDupe} onClick={() => { setAwaitingConfirm(false); setDupePaid(null); }}>
-                Not yet
+        {/* Action area — two fixed slots so the primary action lines up
+            vertically across every card:
+              • primary slot: fixed width, right-aligned, holds whichever
+                button this row's state needs (Pay Bill / Mark as Paid /
+                Mark Reviewed / the confirm pair / the All-set+Undo pair).
+              • tools slot: fixed width, always reserves space for the hover
+                edit/delete icons so they never shove the primary button.
+            Previously both shared one min-width flex box, so a wider label or
+            the confirm pair pushed the pill left and alignment drifted. */}
+        <div className="flex items-center flex-shrink-0" style={{ gap: '8px' }}>
+          <div className="flex items-center" style={{ width: '170px', justifyContent: 'flex-end', gap: '8px' }}>
+            {isPaid ? (
+              <div className="flex items-center gap-2">
+                <span className="font-medium" style={{ color: '#94a3b8', fontSize: '13px' }}>All set</span>
+                <button
+                  onClick={handleUndoPaid}
+                  disabled={isMarking}
+                  className="font-medium text-slate-400 hover:text-slate-700 transition-colors underline"
+                  style={{ fontSize: '12px', textUnderlineOffset: '2px', opacity: isMarking ? 0.5 : 1 }}>
+                  {isMarking ? 'Undoing…' : 'Undo'}
+                </button>
+              </div>
+            ) : autopay ? (
+              // Autopay: the action is to REVIEW, not pay.
+              <Button size="sm" className="font-semibold" style={{ background: '#7c3aed' }} disabled={isMarking} onClick={handleMarkReviewed}>
+                {isMarking ? 'Saving…' : 'Mark Reviewed'}
               </Button>
-              <Button size="sm" className="font-semibold" style={{ background: '#059669' }} disabled={isMarking || isCheckingDupe} onClick={handleConfirmPaidClick}>
-                {isCheckingDupe ? 'Checking…' : isMarking ? 'Saving…' : 'Yes, paid'}
+            ) : awaitingConfirm ? (
+              <>
+                <Button variant="outline" size="sm" disabled={isMarking || isCheckingDupe} onClick={() => { setAwaitingConfirm(false); setDupePaid(null); }}>
+                  Not yet
+                </Button>
+                <Button size="sm" className="font-semibold" style={{ background: '#059669' }} disabled={isMarking || isCheckingDupe} onClick={handleConfirmPaidClick}>
+                  {isCheckingDupe ? 'Checking…' : isMarking ? 'Saving…' : 'Yes, paid'}
+                </Button>
+              </>
+            ) : (
+              <Button size="sm" className="font-semibold" style={{ background: '#1e3a5f' }} onClick={handlePayClick}>
+                {company.paymentLink ? 'Pay Bill' : 'Mark as Paid'}
               </Button>
-            </>
-          ) : (
-            <Button size="sm" className="font-semibold" style={{ background: '#1e3a5f' }} onClick={handlePayClick}>
-              {company.paymentLink ? 'Pay Bill' : 'Mark as Paid'}
-            </Button>
-          )}
+            )}
+          </div>
 
-          {/* Edit / delete (hover) */}
-          <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+          {/* Edit / delete (hover) — fixed-width slot, always present so the
+              primary button above never shifts when these fade in. */}
+          <div className="flex gap-1 flex-shrink-0 opacity-0 group-hover:opacity-100 transition-opacity" style={{ width: '72px' }}>
             <Button variant="ghost" size="icon" className="h-8 w-8 text-slate-400 hover:text-primary" onClick={() => setIsEditModalOpen(true)}>
               <Edit2 className="w-4 h-4" />
             </Button>
