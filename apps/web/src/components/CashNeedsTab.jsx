@@ -106,11 +106,6 @@ const CashNeedsTab = ({ companies = [], homes = [], homeName = () => null, scope
   const bankAutoTotal = sum(unpaid.filter(isBankAuto));
   const manualTotal = sum(unpaid.filter(c => !isAuto(c)));
   const cashNowTotal = bankAutoTotal + manualTotal;
-  // Shared denominator for the split bars: every unpaid dollar across all three
-  // ways a bill is paid (bank + card + manual). Measuring each bar against this
-  // one total makes the widths true shares of the whole — bank and card take
-  // their slice, and "needs you to pay" reads as the remainder.
-  const splitTotal = bankAutoTotal + cardTotal + manualTotal;
 
   // ── Paid-but-not-cleared autopay bills ──────────────────────────────────
   // An autopay bill marked paid isn't necessarily a closed cash need:
@@ -132,6 +127,16 @@ const CashNeedsTab = ({ companies = [], homes = [], homeName = () => null, scope
   // Column totals now include the lingering paid-but-uncleared items.
   const bankColumnTotal = bankAutoTotal + manualTotal + pendingBankTotal;
   const cardColumnTotal = cardTotal + pendingCardTotal;
+
+  // Bar amounts: include the paid-but-uncleared statements so each bar reflects
+  // the FULL obligation in its lane — a paid card bill still sits on a statement,
+  // a paid bank draft still shows until cleared. Manual has no lingering state.
+  const bankBarTotal = bankAutoTotal + pendingBankTotal;
+  const cardBarTotal = cardTotal + pendingCardTotal;
+  const manualBarTotal = manualTotal;
+  // Shared denominator for the split bars: every dollar across all three lanes,
+  // including pending statements, so widths are true shares of the whole.
+  const splitTotal = bankBarTotal + cardBarTotal + manualBarTotal;
 
   const windowLabel = (WINDOWS.find(w => w.days === windowDays) || {}).label || `${windowDays} days`;
 
@@ -364,9 +369,9 @@ const CashNeedsTab = ({ companies = [], homes = [], homeName = () => null, scope
           <div style={{ ...cardStyle, padding: '18px 20px' }}>
             <h4 className="font-semibold" style={{ fontSize: '13px', color: '#1f2733', marginBottom: '4px' }}>Leaves your accounts now</h4>
             <p style={{ fontSize: '11px', color: '#95a0ae', marginBottom: '14px' }}>Real cash out — bank drafts and bills you pay yourself.</p>
-            <Bar label="Drafts from bank" sub="autopay" amount={bankAutoTotal} total={splitTotal || 1} color="#059669" />
+            <Bar label="Drafts from bank" sub="autopay" amount={bankBarTotal} total={splitTotal || 1} color="#059669" />
             <div style={{ height: '10px' }} />
-            <Bar label="Needs you to pay" sub="manual" amount={manualTotal} total={splitTotal || 1} color="#f59e0b" />
+            <Bar label="Needs you to pay" sub="manual" amount={manualBarTotal} total={splitTotal || 1} color="#f59e0b" />
 
             {pendingBank.length > 0 && (
               <div style={{ marginTop: '14px' }}>
@@ -387,10 +392,10 @@ const CashNeedsTab = ({ companies = [], homes = [], homeName = () => null, scope
           <div style={{ ...cardStyle, padding: '18px 20px' }}>
             <h4 className="font-semibold" style={{ fontSize: '13px', color: '#1f2733', marginBottom: '4px' }}>Goes on a credit card</h4>
             <p style={{ fontSize: '11px', color: '#95a0ae', marginBottom: '14px' }}>Paid later, when your card statement comes due — not cash out today.</p>
-            {cardTotal > 0 ? (
-              <Bar label="Card autopay" sub="not yet drafted" amount={cardTotal} total={splitTotal || 1} color="#7c5cff" />
+            {cardBarTotal > 0 ? (
+              <Bar label="Card autopay" sub="paid later" amount={cardBarTotal} total={splitTotal || 1} color="#7c5cff" />
             ) : (
-              pendingCard.length === 0 && <p style={{ fontSize: '13px', color: '#95a0ae' }}>No bills set to a credit card.</p>
+              <p style={{ fontSize: '13px', color: '#95a0ae' }}>No bills set to a credit card.</p>
             )}
 
             {pendingCard.length > 0 && (
