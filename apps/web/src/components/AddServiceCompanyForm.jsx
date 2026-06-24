@@ -42,7 +42,8 @@ const AddServiceCompanyForm = ({ onSuccess, onCancel, onCompanyAdded, initialDat
     companyName: '',
     category: '',
     paymentLink: '',
-    homeId: ''
+    homeId: '',
+    paymentType: 'Manual'
   });
 
   // Seed the form when initialData changes.
@@ -54,14 +55,16 @@ const AddServiceCompanyForm = ({ onSuccess, onCancel, onCompanyAdded, initialDat
         companyName: initialData.name || initialData.companyName || '',
         category: initialData.category || '',
         paymentLink: initialData.payment_portal_url || initialData.paymentLink || '',
-        homeId: initialData.homeId || (initialData.id ? '' : (selectedHome?.id || ''))
+        homeId: initialData.homeId || (initialData.id ? '' : (selectedHome?.id || '')),
+        paymentType: initialData.paymentType || 'Manual'
       });
     } else {
       setFormData({
         companyName: '',
         category: '',
         paymentLink: '',
-        homeId: selectedHome?.id || ''
+        homeId: selectedHome?.id || '',
+        paymentType: 'Manual'
       });
     }
   }, [initialData, selectedHome]);
@@ -107,6 +110,10 @@ const AddServiceCompanyForm = ({ onSuccess, onCancel, onCompanyAdded, initialDat
     // Map the sentinel back to '' so the form's homeId stays the real value.
     const next = value === NO_PROPERTY ? '' : value;
     setFormData(prev => ({ ...prev, homeId: next }));
+  };
+
+  const handlePaymentTypeChange = (value) => {
+    setFormData(prev => ({ ...prev, paymentType: value }));
   };
 
   const handleSubmit = async (e) => {
@@ -193,6 +200,13 @@ const AddServiceCompanyForm = ({ onSuccess, onCancel, onCompanyAdded, initialDat
         dataToSave.category = formData.category;
       }
 
+      // How it's paid — drives the Cash Needs cash-vs-card split and the autopay
+      // badge. Always write it (it always has a value: Manual is the default),
+      // so editing a bill to "Autopay (card)" actually persists.
+      if (formData.paymentType) {
+        dataToSave.paymentType = formData.paymentType;
+      }
+
       // Property assignment:
       //  - Creating: only attach when a property is chosen/defaulted (don't
       //    write an empty string on create).
@@ -219,7 +233,7 @@ const AddServiceCompanyForm = ({ onSuccess, onCancel, onCompanyAdded, initialDat
 
       // Reset form fields after a successful create (keep current-home default).
       if (!isEditing) {
-        setFormData({ companyName: '', category: '', paymentLink: '', homeId: selectedHome?.id || '' });
+        setFormData({ companyName: '', category: '', paymentLink: '', homeId: selectedHome?.id || '', paymentType: 'Manual' });
       }
       setErrors({});
 
@@ -313,6 +327,20 @@ const AddServiceCompanyForm = ({ onSuccess, onCancel, onCompanyAdded, initialDat
           </SelectContent>
         </Select>
         {errors.category && <p className="text-sm text-red-500">{errors.category}</p>}
+      </div>
+
+      <div className="space-y-2">
+        <Label htmlFor="paymentType">How it's paid</Label>
+        <Select value={formData.paymentType} onValueChange={handlePaymentTypeChange}>
+          <SelectTrigger>
+            <SelectValue placeholder="Manual" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="Manual">Manual</SelectItem>
+            <SelectItem value="Autopay (bank)">Autopay (bank)</SelectItem>
+            <SelectItem value="Autopay (card)">Autopay (card)</SelectItem>
+          </SelectContent>
+        </Select>
       </div>
 
       <div className="space-y-2">
