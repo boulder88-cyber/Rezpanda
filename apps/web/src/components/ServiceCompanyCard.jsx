@@ -105,6 +105,10 @@ const ServiceCompanyCard = ({ company, onRefresh, onPay, propertyName = null, ho
 
   const isPaid = company.status === 'paid';
   const autopay = isAutopay(company);
+  // A paid autopay bill (bank or card) that hasn't been cleared yet is still a
+  // pending obligation in Cash Needs — bank draft to confirm, or a card
+  // statement paid later. Clearing it here settles it for good.
+  const needsClear = isPaid && autopay && !company.cleared;
 
   // Backfill: assign this bill to a property (for bills missing homeId).
   // placement legacy fallback (mirror of BillPayPage.placementOf): bills with
@@ -285,6 +289,19 @@ const ServiceCompanyCard = ({ company, onRefresh, onPay, propertyName = null, ho
     }
   };
 
+  const handleClear = async () => {
+    setIsMarking(true);
+    try {
+      await pb.collection('invoices').update(company.id, { cleared: true }, { $autoCancel: false });
+      toast({ title: 'Cleared', description: `${company.companyName} is fully settled.` });
+      if (onRefresh) onRefresh();
+    } catch {
+      toast({ title: 'Could not clear', variant: 'destructive' });
+    } finally {
+      setIsMarking(false);
+    }
+  };
+
   const getDomain = (url) => {
     try { return new URL(url).hostname.replace('www.', ''); }
     catch (e) { return url; }
@@ -458,7 +475,13 @@ const ServiceCompanyCard = ({ company, onRefresh, onPay, propertyName = null, ho
           <div className="flex items-center" style={{ width: '170px', justifyContent: 'flex-end', gap: '8px' }}>
             {isPaid ? (
               <div className="flex items-center gap-2">
-                <span className="font-medium" style={{ color: '#94a3b8', fontSize: '13px' }}>All set</span>
+                {needsClear ? (
+                  <Button size="sm" className="font-semibold" style={{ background: '#1e3a5f' }} disabled={isMarking} onClick={handleClear}>
+                    {isMarking ? 'Clearing…' : 'Clear'}
+                  </Button>
+                ) : (
+                  <span className="font-medium" style={{ color: '#94a3b8', fontSize: '13px' }}>All set</span>
+                )}
                 <button
                   onClick={handleUndoPaid}
                   disabled={isMarking}
