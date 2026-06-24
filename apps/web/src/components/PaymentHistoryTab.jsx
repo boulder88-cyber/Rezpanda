@@ -3,6 +3,9 @@ import { useAuth } from '@/contexts/AuthContext.jsx';
 import pb from '@/lib/pocketbaseClient.js';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table.jsx';
 import { Skeleton } from '@/components/ui/skeleton.jsx';
+
+// Bill amount: two decimals, comma-grouped ($1,604.00 — never 1604).
+const money2 = (n) => `$${(parseFloat(n) || 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
 import { History, Search } from 'lucide-react';
 import { Input } from '@/components/ui/input.jsx';
 
@@ -109,7 +112,7 @@ const PaymentHistoryTab = ({ refreshTrigger }) => {
                     {record.accountUsed || '-'}
                   </TableCell>
                   <TableCell className="text-right font-medium">
-                    {record.amount ? `$${record.amount.toFixed(2)}` : '-'}
+                    {record.amount ? money2(record.amount) : '-'}
                   </TableCell>
                 </TableRow>
               ))
