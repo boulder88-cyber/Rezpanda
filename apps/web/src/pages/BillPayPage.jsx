@@ -383,7 +383,7 @@ const PropertyGroupedList = ({ companies, homeName, renderCard }) => {
 // grouped list inside this scope shows them as two separate headered sections,
 // so one toggle surfaces both buckets the property dropdown can't express.
 // In All-Properties mode this renders nothing (everything's already shown).
-const OtherBillsPeek = ({ scope, setScope, selectedHome, allProperties }) => {
+const OtherBillsPeek = ({ scope, onEnterOther, onExitOther, selectedHome, allProperties }) => {
   if (allProperties) return null; // All Properties already includes these buckets
 
   const homeLabel = selectedHome ? (selectedHome.name || selectedHome.address || 'this property') : 'this property';
@@ -393,7 +393,7 @@ const OtherBillsPeek = ({ scope, setScope, selectedHome, allProperties }) => {
       <div className="flex items-center gap-2 bg-white border border-slate-200 rounded-xl" style={{ padding: '6px 12px' }}>
         <Package style={{ width: '14px', height: '14px', color: '#5b6472' }} />
         <span className="font-medium" style={{ fontSize: '12px', color: '#1f2733' }}>Viewing: Other &amp; unassigned</span>
-        <button onClick={() => setScope('property')}
+        <button onClick={onExitOther}
           className="font-semibold hover:opacity-70 transition-opacity"
           style={{ fontSize: '12px', color: '#1e3a5f' }}>
           ← Back to {homeLabel}
@@ -403,7 +403,7 @@ const OtherBillsPeek = ({ scope, setScope, selectedHome, allProperties }) => {
   }
 
   return (
-    <button onClick={() => setScope('other')}
+    <button onClick={onEnterOther}
       className="flex items-center gap-1.5 bg-white border border-slate-200 rounded-xl font-medium hover:border-slate-300 transition-colors"
       style={{ padding: '7px 12px', fontSize: '12px', color: '#5b6472' }}>
       <Package style={{ width: '14px', height: '14px' }} />
@@ -558,7 +558,7 @@ const PastDuePendingRow = ({ bill, homes, multiHome, onConfirmed }) => {
 
 const BillPayPage = () => {
   const { currentUser } = useAuth();
-  const { selectedHome, homes, allProperties, switchHome } = useHome();
+  const { selectedHome, homes, allProperties, otherScope, switchHome, viewOther } = useHome();
   const { toast } = useToast();
 
   const [activeTab, setActiveTab] = useState('dashboard');
@@ -582,26 +582,23 @@ const BillPayPage = () => {
 
   // ── Bill-Pay-local scope ──
   // 'property' = selected home's bills · 'all' = every property · 'other' =
-  // the no-property "Other bills" bucket. Seeded from the GLOBAL context
-  // (allProperties) so switching the property selector still feels right, but
-  // owned locally so "Other bills" never leaks into the global HomeSwitcher.
-  // An explicit ?scope=other from the dashboard wins over the global default.
+  // the no-property "Other & unassigned" bucket. Seeded from GLOBAL context:
+  // the otherScope flag (set by the dropdown item or the dashboard tile) wins,
+  // then all-properties, else the selected home. Kept locally so the page can
+  // also flip scope via its own in-page peek control.
   const [scope, setScope] = useState(
-    incomingScope === 'other'
+    (incomingScope === 'other' || otherScope)
       ? 'other'
       : (allProperties && multiHome ? 'all' : 'property')
   );
 
-  // Consume the URL hint once: strip ?scope from the address bar after it's
-  // seeded the initial scope, so a later property switch isn't fighting a
-  // sticky param and the URL stays clean to share/bookmark. When the hint is
-  // 'other', also drop out of global all-properties mode (which otherwise
-  // hides the Other-scope filter UI and shows everything) so the filtered
-  // "Other & unassigned" view renders cleanly regardless of prior state.
+  // Consume the URL hint once: an incoming ?scope=other becomes the GLOBAL
+  // Other scope (so the property dropdown shows "Other & unassigned" too), then
+  // we strip the param so it doesn't pin the view or clutter the URL.
   useEffect(() => {
     if (incomingScope) {
-      if (incomingScope === 'other' && allProperties && selectedHome) {
-        switchHome(selectedHome); // turns off all-properties, keeps same home
+      if (incomingScope === 'other') {
+        viewOther(); // global flag → dropdown label + Bill Pay filter agree
       }
       const next = new URLSearchParams(searchParams);
       next.delete('scope');
@@ -618,16 +615,15 @@ const BillPayPage = () => {
   //   'status'   = flat, sectioned by Past Due / Ready to Pay / …
   const [groupBy, setGroupBy] = useState('property');
 
-  // Keep local scope in step with the global property selector: if the user
-  // flips the global All-Properties switch, mirror it; if they pick a real
-  // home, drop back to 'property'. (Doesn't override a deliberate 'other'.)
+  // Keep local scope in step with the global property selector. The global
+  // flags are the source of truth: otherScope → 'other', all-properties →
+  // 'all', a real home → 'property'. (The in-page peek control flips scope by
+  // calling the same global setters, so this effect carries those through too.)
   useEffect(() => {
-    setScope(prev => {
-      if (prev === 'other') return prev; // respect an explicit Other-bills choice
-      if (allProperties && multiHome) return 'all';
-      return 'property';
-    });
-  }, [allProperties, multiHome]);
+    if (otherScope) { setScope('other'); return; }
+    if (allProperties && multiHome) { setScope('all'); return; }
+    setScope('property');
+  }, [otherScope, allProperties, multiHome]);
 
   // Quick lookup: homeId → home name, for property tags on rows.
   const homeName = (id) => {
@@ -846,7 +842,13 @@ const BillPayPage = () => {
             </div>
             {/* Toggle row on the data tabs (not Providers/History). */}
             {(activeTab === 'dashboard' || activeTab === 'cashneeds' || activeTab === 'overview') && (
-              <OtherBillsPeek scope={scope} setScope={setScope} selectedHome={selectedHome} allProperties={allProperties} />
+              <OtherBillsPeek
+                scope={scope}
+                onEnterOther={() => viewOther()}
+                onExitOther={() => switchHome(selectedHome)}
+                selectedHome={selectedHome}
+                allProperties={allProperties}
+              />
             )}
             {/* In All Properties on My Bills: how to organize the grouped view. */}
             {activeTab === 'dashboard' && scope === 'all' && multiHome && (
