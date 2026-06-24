@@ -5,6 +5,7 @@ import { useAuth } from '@/contexts/AuthContext.jsx';
 import { useHome } from '@/contexts/HomeContext.jsx';
 import pb from '@/lib/pocketbaseClient.js';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs.jsx';
+import InsightsTab from '@/components/InsightsTab.jsx';
 import { Button } from '@/components/ui/button.jsx';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog.jsx';
 import {
@@ -243,84 +244,6 @@ const NextBillDue = ({ companies }) => {
           Pay →
         </button>
       )}
-    </div>
-  );
-};
-
-// ═══════════════════════════════════════════════════════════════════════
-// OVERVIEW — Category Breakdown + Annual Spend (lives in its own tab)
-// ═══════════════════════════════════════════════════════════════════════
-
-const CategoryBreakdown = ({ companies }) => {
-  const categories = [
-    { name: 'Electric', icon: Zap, color: '#d97706', bg: '#fffbeb', keywords: ['electric', 'power', 'energy', 'utility'] },
-    { name: 'Water', icon: Droplets, color: '#0891b2', bg: '#ecfeff', keywords: ['water', 'sewer', 'waste'] },
-    { name: 'Internet', icon: Wifi, color: '#7c3aed', bg: '#f5f3ff', keywords: ['internet', 'cable', 'comcast', 'att', 'verizon', 'xfinity'] },
-    { name: 'Insurance', icon: Shield, color: '#059669', bg: '#ecfdf5', keywords: ['insurance', 'allstate', 'state farm', 'geico', 'progressive'] },
-    { name: 'Auto', icon: Car, color: '#2563eb', bg: '#eff6ff', keywords: ['auto', 'car', 'vehicle', 'loan'] },
-    { name: 'Other', icon: CreditCard, color: '#64748b', bg: '#faf8f4', keywords: [] },
-  ];
-
-  const getCategoryTotal = (cat) => {
-    return companies.filter(c => {
-      const name = c.companyName?.toLowerCase() || '';
-      if (cat.name === 'Other') {
-        return !categories.slice(0, -1).some(other => other.keywords.some(k => name.includes(k)));
-      }
-      return cat.keywords.some(k => name.includes(k));
-    }).reduce((sum, c) => sum + (parseFloat(c.amount) || 0), 0);
-  };
-
-  const total = companies.reduce((sum, c) => sum + (parseFloat(c.amount) || 0), 0);
-
-  return (
-    <div className="bg-white" style={{ borderRadius: '12px', border: '1px solid #e9e4db', padding: '20px', boxShadow: '0 1px 3px rgba(0,0,0,0.06)' }}>
-      <h3 className="font-semibold text-slate-900" style={{ fontSize: '16px', marginBottom: '16px' }}>Spending by Category</h3>
-      <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
-        {categories.map((cat, i) => {
-          const Icon = cat.icon;
-          const amount = getCategoryTotal(cat);
-          if (amount === 0) return null;
-          const pct = total > 0 ? Math.round((amount / total) * 100) : 0;
-          return (
-            <div key={i} className="flex items-center gap-3">
-              <div className="flex items-center justify-center flex-shrink-0" style={{ width: '32px', height: '32px', borderRadius: '8px', background: cat.bg }}>
-                <Icon style={{ width: '15px', height: '15px', color: cat.color }} />
-              </div>
-              <div className="flex-1">
-                <div className="flex items-center justify-between" style={{ marginBottom: '4px' }}>
-                  <p className="font-medium text-slate-700" style={{ fontSize: '13px' }}>{cat.name}</p>
-                  <p className="font-semibold text-slate-900" style={{ fontSize: '13px' }}>{dollars0(amount)} <span className="text-slate-400 font-normal">({pct}%)</span></p>
-                </div>
-                <div className="bg-slate-100 rounded-full" style={{ height: '6px' }}>
-                  <div className="rounded-full transition-all" style={{ width: `${pct}%`, height: '6px', background: cat.color }} />
-                </div>
-              </div>
-            </div>
-          );
-        })}
-      </div>
-    </div>
-  );
-};
-
-const AnnualSpendSummary = ({ companies }) => {
-  const monthly = companies.reduce((sum, c) => sum + (parseFloat(c.amount) || 0), 0);
-  const annual = monthly * 12;
-
-  return (
-    <div className="flex flex-col gap-4">
-      {[
-        { label: 'Monthly Total', value: dollars0(monthly), sub: 'Current month estimate', color: '#1e3a5f' },
-        { label: 'Annual Projection', value: `$${annual.toLocaleString()}`, sub: 'Based on current bills', color: '#059669' },
-        { label: 'Avg per Bill', value: companies.length > 0 ? dollars0(monthly / companies.length) : '$0', sub: `Across ${companies.length} providers`, color: '#7c3aed' },
-      ].map((s, i) => (
-        <div key={i} className="bg-white" style={{ borderRadius: '12px', border: '1px solid #e9e4db', padding: '16px', boxShadow: '0 1px 3px rgba(0,0,0,0.06)' }}>
-          <p className="text-slate-400 font-medium uppercase tracking-wide" style={{ fontSize: '11px', marginBottom: '6px' }}>{s.label}</p>
-          <p className="font-extrabold" style={{ fontSize: '26px', lineHeight: 1, color: s.color }}>{s.value}</p>
-          <p className="text-slate-400" style={{ fontSize: '12px', marginTop: '4px' }}>{s.sub}</p>
-        </div>
-      ))}
     </div>
   );
 };
@@ -941,7 +864,7 @@ const BillPayPage = () => {
               {[
                 { key: 'dashboard', label: 'My Bills', icon: LayoutGrid },
                 { key: 'cashneeds', label: 'Cash Needs', icon: TrendingDown },
-                { key: 'overview', label: 'Overview', icon: BarChart2 },
+                { key: 'overview', label: 'Insights', icon: BarChart2 },
                 { key: 'directory', label: 'Providers', icon: BookOpen },
                 { key: 'history', label: 'History', icon: CreditCard },
               ].map(tab => {
@@ -1151,16 +1074,7 @@ const BillPayPage = () => {
 
           {/* ── Overview Tab ── */}
           <TabsContent value="overview" className="mt-0">
-            {companies.length === 0 ? (
-              <div className="bg-white text-center text-slate-400" style={{ borderRadius: '12px', border: '1px solid #e9e4db', padding: '40px', fontSize: '14px' }}>
-                Add some bills to see your spending overview.
-              </div>
-            ) : (
-              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                <CategoryBreakdown companies={openCompanies} />
-                <AnnualSpendSummary companies={openCompanies} />
-              </div>
-            )}
+            <InsightsTab companies={propertyFiltered} />
           </TabsContent>
 
           {/* ── Directory Tab ── */}
