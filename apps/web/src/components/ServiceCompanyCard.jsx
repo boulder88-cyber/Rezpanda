@@ -35,6 +35,8 @@ const CONSUMER_MAIL_DOMAINS = [
 // ═══════════════════════════════════════════════════════════════════════
 
 const isAutopay = (c) => c.paymentType === 'Autopay (card)' || c.paymentType === 'Autopay (bank)';
+// Bill amount: two decimals, comma-grouped ($1,604.00 — never 1604).
+const money2 = (n) => `$${(parseFloat(n) || 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
 
 // ── Status color system ─────────────────────────────────────────────────
 // red    = overdue (manual, due date in the past, not paid)
@@ -466,7 +468,7 @@ const ServiceCompanyCard = ({ company, onRefresh, onPay, propertyName = null, ho
             buttons right while short ones ($41.00) didn't, breaking vertical
             alignment of Pay Bill / Mark as Paid down the list. */}
         <div className="font-bold text-slate-900 flex-shrink-0" style={{ fontSize: '15px', width: '90px', textAlign: 'right' }}>
-          {typeof company.amount === 'number' ? `$${company.amount.toFixed(2)}` : '—'}
+          {typeof company.amount === 'number' ? money2(company.amount) : '—'}
         </div>
 
         {/* Action area — two fixed slots so the primary action lines up
@@ -560,7 +562,7 @@ const ServiceCompanyCard = ({ company, onRefresh, onPay, propertyName = null, ho
             <AlertDialogDescription>
               {company.companyName} was already marked paid
               {dupePaid?.paidDate ? ` on ${fmt(dupePaid.paidDate)}` : ' earlier this month'}
-              {typeof dupePaid?.amount === 'number' ? ` ($${dupePaid.amount.toFixed(2)})` : ''}.
+              {typeof dupePaid?.amount === 'number' ? ` (${money2(dupePaid.amount)})` : ''}.
               {' '}If this is the same bill, don't pay it again. Only continue if this is a separate, different bill from {company.companyName}.
             </AlertDialogDescription>
           </AlertDialogHeader>
