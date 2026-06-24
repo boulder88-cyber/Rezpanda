@@ -804,9 +804,19 @@ const BillPayPage = () => {
       return da - db;
     });
 
+  // A card-autopay bill that's been REVIEWED but not yet CLEARED. It's left the
+  // "needs review" stage (a human checked the charge) but it's still open — the
+  // charge sits on a card statement, so its remaining action is Clear. It lives
+  // in "All Set" with the card's Clear pill, NOT back in "needs review".
+  const isReviewedCard = (c) =>
+    c.paymentType === 'Autopay (card)' && !!c.reviewedDate && !c.cleared;
+
   // Autopay bills awaiting human review (drafts on their own; review only).
+  // Excludes reviewed-but-uncleared card bills — those have already been
+  // reviewed and move to All Set, where Clear is their action. Without this
+  // exclusion a reviewed card bill bounces straight back into this section.
   const autopayToReview = openBills
-    .filter(c => isAuto(c))
+    .filter(c => isAuto(c) && !isReviewedCard(c))
     .sort((a, b) => {
       const da = a.dueDate ? new Date(a.dueDate).getTime() : Infinity;
       const db = b.dueDate ? new Date(b.dueDate).getTime() : Infinity;
@@ -815,7 +825,10 @@ const BillPayPage = () => {
 
   const paidBills = propertyFiltered
     .filter(c => {
-      if (!isPaid(c)) return false;
+      // "All Set" holds paid bills AND reviewed-but-uncleared card bills (the
+      // latter aren't status:paid by design, but they've been reviewed and
+      // their only remaining action is Clear — this is their home).
+      if (!isPaid(c) && !isReviewedCard(c)) return false;
       if (timeframeDays == null) return true;
       const closeDate = c.paidDate || c.reviewedDate;
       if (!closeDate) return true;
