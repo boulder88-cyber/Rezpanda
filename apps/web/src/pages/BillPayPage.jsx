@@ -752,8 +752,12 @@ const BillPayPage = () => {
   // ── Split bills by status ──
   // A bill is CLOSED — off the open views, into history — when it's paid OR
   // cleared. One off-switch, same rule the dashboard and Cash Needs use.
-  const isClosed = (c) => c.status === 'paid' || c.cleared;
-  const isPaid = isClosed;  // alias: existing call sites read "isPaid" but mean "closed"
+  // A bill leaves the open views ONLY when cleared. The paid flag does not
+  // close it — an autopay/card bill can be "paid" but still an open obligation
+  // until cleared. One off-switch: cleared. Same rule on the dashboard and
+  // Cash Needs, so all three tie to the same total.
+  const isClosed = (c) => !!c.cleared;
+  const isPaid = isClosed;  // alias: existing call sites say "isPaid" but mean "closed/cleared"
   const isAuto = (c) => c.paymentType === 'Autopay (card)' || c.paymentType === 'Autopay (bank)';
   // "No property" = anything not placed on a real home (placement 'other' or
   // 'unassigned'). The grouped list splits these into two sections; this just
@@ -774,7 +778,9 @@ const BillPayPage = () => {
     return placementOf(c) === 'property' && c.homeId === selectedHome.id;
   });
 
-  // Not-yet-closed bills (excludes pending_review and paid).
+  // Open bills for the action lists (excludes only pending_review, which has
+  // its own review section). A bill stays here until cleared — visible until
+  // its off-switch is flipped.
   const openBills = propertyFiltered.filter(c => !isPaid(c) && c.status !== 'pending_review');
 
   // Every OPEN bill in scope (not paid, not cleared) INCLUDING pending_review.
