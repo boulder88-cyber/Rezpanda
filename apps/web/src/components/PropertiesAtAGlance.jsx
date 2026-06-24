@@ -692,7 +692,7 @@ const PropertiesAtAGlance = ({ onEnter }) => {
             Your properties
           </h1>
           <p style={{ fontSize: '13px', color: '#95a0ae', marginTop: '4px' }}>
-            {homes.length} {homes.length === 1 ? 'property' : 'properties'} · pick one, or jump to a function across all
+            Pick one, or jump to a function across all
           </p>
         </div>
         <Link
