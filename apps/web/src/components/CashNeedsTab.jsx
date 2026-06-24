@@ -40,10 +40,13 @@ const CashNeedsTab = ({ companies = [], homes = [], homeName = () => null, scope
   const today = new Date();
   const horizon = new Date(today.getTime() + windowDays * 24 * 60 * 60 * 1000);
 
-  // Open bills only (not paid, not pending review), with a due date that
-  // falls inside the selected window. Sorted soonest-first.
+  // Open bills only (anything not paid — confirmed AND pending), with a due
+  // date inside the selected window. Sorted soonest-first. Pending bills are
+  // included so a real, dated bill can't be invisible here while it shows in
+  // My Bills (WYSIWYG / nothing-invisible). Undated bills are dropped by the
+  // date filter below and named in the undated caveat, not silently lost.
   const outflows = companies
-    .filter(c => c.status !== 'paid' && c.status !== 'pending_review')
+    .filter(c => c.status !== 'paid')
     .filter(c => {
       if (!c.dueDate) return false;
       const d = new Date(c.dueDate);
@@ -59,7 +62,7 @@ const CashNeedsTab = ({ companies = [], homes = [], homeName = () => null, scope
 
   // Overdue is its own urgent fact, independent of the window.
   const overdue = companies
-    .filter(c => c.status !== 'paid' && c.status !== 'pending_review')
+    .filter(c => c.status !== 'paid')
     .filter(c => c.dueDate && new Date(c.dueDate) < stripTime(today));
   const overdueTotal = overdue.reduce((s, c) => s + (parseFloat(c.amount) || 0), 0);
 
@@ -245,7 +248,7 @@ const CashNeedsTab = ({ companies = [], homes = [], homeName = () => null, scope
       {/* footer note */}
       {(() => {
         const undated = companies
-          .filter(c => c.status !== 'paid' && c.status !== 'pending_review')
+          .filter(c => c.status !== 'paid')
           .filter(c => !c.dueDate).length;
         return (
           <div style={{ marginTop: '4px' }}>
