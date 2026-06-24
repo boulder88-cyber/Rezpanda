@@ -38,8 +38,12 @@ const WINDOWS = [
 const isAuto = (c) => c.paymentType === 'Autopay (card)' || c.paymentType === 'Autopay (bank)';
 const isCard = (c) => c.paymentType === 'Autopay (card)';
 const isBankAuto = (c) => c.paymentType === 'Autopay (bank)';
-const money = (n) => `$${(parseFloat(n) || 0).toFixed(2)}`;
-const money0 = (n) => `$${(parseFloat(n) || 0).toFixed(0)}`;
+// This screen never pays a bill — it's a forward-looking lens — so every
+// amount shows in whole dollars. Cleaner to scan, and the rounding quietly
+// signals "estimate / planning view," not "pay exactly this." (Cents live on
+// My Bills, where real money is moved.)
+const money = (n) => `$${Math.round(parseFloat(n) || 0).toLocaleString('en-US')}`;
+const money0 = money;
 
 const CashNeedsTab = ({ companies = [], homes = [], homeName = () => null, scope = 'all', otherBillsLabel = 'Other bills' }) => {
   const [windowDays, setWindowDays] = useState(30);
@@ -263,12 +267,15 @@ const CashNeedsTab = ({ companies = [], homes = [], homeName = () => null, scope
           </div>
         )}
 
-        {/* ── COMING UP block (in-window) ── */}
-        <div className="flex items-baseline justify-between" style={{ marginBottom: '4px' }}>
-          <span className="font-semibold" style={{ fontSize: '13px', color: '#5b6472', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
+        {/* ── COMING UP block (in-window) — light green ── */}
+        <div className="flex items-center justify-between" style={{
+          background: '#f0fdf4', border: '1px solid #bbf7d0', borderRadius: '8px',
+          padding: '8px 12px', marginBottom: '4px',
+        }}>
+          <span className="font-semibold" style={{ fontSize: '13px', color: '#047857', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
             Coming up · next {windowLabel.toLowerCase()}
           </span>
-          <span className="font-bold" style={{ fontSize: '14px', color: '#1e3a5f' }}>{money(total)}</span>
+          <span className="font-bold" style={{ fontSize: '14px', color: '#047857' }}>{money(total)}</span>
         </div>
         {outflows.length === 0 ? (
           <div className="text-center" style={{ background: '#faf8f4', border: '1px solid #e9e4db', borderRadius: '10px', padding: '20px', fontSize: '14px', color: '#95a0ae', marginTop: '8px' }}>
@@ -300,10 +307,13 @@ const CashNeedsTab = ({ companies = [], homes = [], homeName = () => null, scope
           </div>
         )}
 
-        {/* running tie-out: the three blocks above sum to every unpaid dollar */}
-        <div className="flex items-center justify-between" style={{ marginTop: '16px', paddingTop: '12px', borderTop: '2px solid #e9e4db' }}>
-          <span className="font-bold" style={{ fontSize: '14px', color: '#1f2733' }}>All unpaid bills</span>
-          <span className="font-bold" style={{ fontSize: '15px', color: '#1f2733' }}>{money(allUnpaidTotal)}</span>
+        {/* running tie-out: the three blocks above sum to every unpaid dollar — light blue */}
+        <div className="flex items-center justify-between" style={{
+          background: '#eff6ff', border: '1px solid #bfdbfe', borderRadius: '8px',
+          padding: '10px 12px', marginTop: '16px',
+        }}>
+          <span className="font-bold" style={{ fontSize: '14px', color: '#1e3a5f' }}>All unpaid bills</span>
+          <span className="font-bold" style={{ fontSize: '15px', color: '#1e3a5f' }}>{money(allUnpaidTotal)}</span>
         </div>
         <p style={{ fontSize: '11px', color: '#95a0ae', marginTop: '8px' }}>
           Every unpaid bill you've added is on this list — it matches Total Due in My Bills. Nothing hides.
