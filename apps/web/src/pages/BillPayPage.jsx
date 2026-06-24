@@ -772,12 +772,22 @@ const BillPayPage = () => {
   // than standing alone in a separate Past Due section. So when grouping by
   // property we feed the group ALL ready-to-pay bills (overdue + upcoming),
   // due-date ascending, and suppress the standalone Past Due block.
+  //
+  // CRITICAL: readyToPay is confirmed-only (it derives from openBills, which
+  // excludes pending_review). A past-due bill that's still UNREVIEWED would
+  // therefore appear in by-status (via the standalone Past Due section) but
+  // vanish in by-property — because that section is suppressed here. So we fold
+  // the past-due pending bills into the grouped list too; the group's render
+  // dispatches them to the inline Review row (they can't be paid yet). They're
+  // already held out of Bills-to-Review via pastDuePendingIds, so each shows
+  // exactly once.
   const dueAsc = (a, b) => {
     const da = a.dueDate ? new Date(a.dueDate).getTime() : Infinity; // undated last
     const db = b.dueDate ? new Date(b.dueDate).getTime() : Infinity;
     return da - db;
   };
-  const groupedReadyToPay = [...readyToPay].sort(dueAsc);
+  const pastDuePending = pastDue.filter(c => c.status === 'pending_review');
+  const groupedReadyToPay = [...readyToPay, ...pastDuePending].sort(dueAsc);
   const showStandalonePastDue = !groupByProperty && pastDue.length > 0;
 
   // Friendly count of no-home bills, for the toggle/empty hints.
@@ -952,7 +962,11 @@ const BillPayPage = () => {
                       companies={groupedReadyToPay}
                       homeName={homeName}
                       renderCard={(company) => (
-                        <ServiceCompanyCard key={company.id} company={company} onRefresh={fetchCompanies} onPay={handleLogPayment} propertyName={null} homes={homes} />
+                        company.status === 'pending_review' ? (
+                          <PastDuePendingRow key={company.id} bill={company} homes={homes} multiHome={multiHome} onConfirmed={fetchCompanies} />
+                        ) : (
+                          <ServiceCompanyCard key={company.id} company={company} onRefresh={fetchCompanies} onPay={handleLogPayment} propertyName={null} homes={homes} />
+                        )
                       )}
                     />
                   </div>
