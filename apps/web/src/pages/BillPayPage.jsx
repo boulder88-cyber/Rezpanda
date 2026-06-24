@@ -542,11 +542,22 @@ const PastDuePendingRow = ({ bill, homes, multiHome, onConfirmed }) => {
           </p>
         </div>
         {!editing && (
-          <button onClick={() => setEditing(true)}
-            className="flex items-center gap-1.5 font-semibold rounded-lg flex-shrink-0"
-            style={{ border: '1px solid #1e3a5f', color: '#1e3a5f', padding: '7px 14px', fontSize: '13px', background: '#fff' }}>
-            Review
-          </button>
+          // Mirror ServiceCompanyCard's action geometry so the Review button's
+          // right edge lines up with the Pay Bill / Mark as Paid pills when
+          // confirmed and unreviewed past-due rows stack: a fixed 170px
+          // right-aligned primary slot + a reserved 72px (the card's hover
+          // edit/delete tools slot) with an 8px gap. No tools live here, but
+          // the spacer keeps the column consistent down the list.
+          <div className="flex items-center flex-shrink-0" style={{ gap: '8px' }}>
+            <div className="flex items-center" style={{ width: '170px', justifyContent: 'flex-end' }}>
+              <button onClick={() => setEditing(true)}
+                className="flex items-center gap-1.5 font-semibold rounded-lg"
+                style={{ border: '1px solid #1e3a5f', color: '#1e3a5f', padding: '7px 14px', fontSize: '13px', background: '#fff' }}>
+                Review
+              </button>
+            </div>
+            <div style={{ width: '72px' }} aria-hidden="true" />
+          </div>
         )}
       </div>
 
