@@ -139,10 +139,24 @@ const ServiceCompanyCard = ({ company, onRefresh, onPay, propertyName = null, ho
     try {
       // "Other bills" is a real destination, not a property: empty homeId,
       // placement 'other' (settled — stops the nag). A real id places it.
-      const patch = value === '__other__'
+      const choseOther = value === '__other__';
+      const patch = choseOther
         ? { homeId: '', placement: 'other' }
         : { homeId: value, placement: 'property' };
-      await pb.collection('invoices').update(company.id, patch, { $autoCancel: false });
+      const updated = await pb.collection('invoices').update(company.id, patch, { $autoCancel: false });
+      // Guard against silent schema drop: if we asked for placement 'other' but
+      // the saved record didn't take it, the `placement` field is missing or
+      // doesn't allow that value on the invoices collection. Without this check
+      // the bill would quietly fall back to "Needs placement" (empty homeId +
+      // no placement → inferred 'unassigned') and look like nothing happened.
+      if (choseOther && updated && updated.placement !== 'other') {
+        toast({
+          title: "Couldn't move to Other bills",
+          description: "The bill's placement didn't save. The 'placement' field may be missing on the invoices collection — add it as a Plain text field in the admin.",
+          variant: 'destructive',
+        });
+        return; // don't refresh into an unchanged state
+      }
       if (onRefresh) onRefresh();
     } catch {
       toast({ title: 'Could not place this bill', variant: 'destructive' });
