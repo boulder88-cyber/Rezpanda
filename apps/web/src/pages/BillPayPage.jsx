@@ -378,8 +378,8 @@ const PropertyGroupedList = ({ companies, homeName, renderCard }) => {
       {/* Other & unassigned — one section, two sub-groups. Persistent banner so
           moving a bill between "Other bills" and "Needs placement" stays in view. */}
       {hasUnplaced && (
-        <div style={{ border: '1px solid #e9e4db', borderRadius: '12px', padding: '14px', background: '#fcfbf9' }}>
-          <div className="flex items-center justify-between" style={{ marginBottom: '12px' }}>
+        <div style={{ border: '1px solid #e9e4db', borderRadius: '12px', padding: '14px 0', background: '#fcfbf9' }}>
+          <div className="flex items-center justify-between" style={{ marginBottom: '12px', padding: '0 14px' }}>
             <span className="font-semibold flex items-center gap-1.5" style={{ fontSize: '13px', textTransform: 'uppercase', letterSpacing: '0.03em', color: '#5b6472' }}>
               <Package style={{ width: '13px', height: '13px', color: '#95a0ae' }} />
               Other &amp; unassigned <span className="text-slate-400 font-normal">({otherBills.length + needsBills.length})</span>
@@ -390,7 +390,7 @@ const PropertyGroupedList = ({ companies, homeName, renderCard }) => {
           {/* Sub-group: Other bills (settled — not a property, on purpose). */}
           {otherBills.length > 0 && (
             <div style={{ marginBottom: needsBills.length > 0 ? '16px' : 0 }}>
-              <div className="flex items-center justify-between" style={{ marginBottom: '8px' }}>
+              <div className="flex items-center justify-between" style={{ marginBottom: '8px', padding: '0 14px' }}>
                 <span className="font-medium" style={{ fontSize: '12px', color: '#5b6472' }}>
                   {OTHER_BILLS_LABEL} <span className="text-slate-400">({otherBills.length})</span>
                 </span>
@@ -405,7 +405,7 @@ const PropertyGroupedList = ({ companies, homeName, renderCard }) => {
           {/* Sub-group: Needs placement (a real to-do — amber). */}
           {needsBills.length > 0 && (
             <div>
-              <div className="flex items-center justify-between" style={{ marginBottom: '8px' }}>
+              <div className="flex items-center justify-between" style={{ marginBottom: '8px', padding: '0 14px' }}>
                 <span className="font-medium" style={{ fontSize: '12px', color: '#b45309' }}>
                   {NEEDS_PLACEMENT_LABEL} <span className="opacity-70">({needsBills.length})</span>
                 </span>
