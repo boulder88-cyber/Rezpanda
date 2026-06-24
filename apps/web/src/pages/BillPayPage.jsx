@@ -480,6 +480,7 @@ const PastDuePendingRow = ({ bill, homes, multiHome, onConfirmed }) => {
     dueDate: bill.dueDate ? String(bill.dueDate).slice(0, 10) : '',
     category: bill.category || '',
     homeId: bill.homeId || (homes && homes.length === 1 ? homes[0].id : ''),
+    paymentType: bill.paymentType || 'Manual',
   });
 
   const upd = (k, v) => setDraft(d => ({ ...d, [k]: v }));
@@ -510,6 +511,7 @@ const PastDuePendingRow = ({ bill, homes, multiHome, onConfirmed }) => {
         status: 'confirmed',
       };
       if (amt !== undefined) payload.amount = amt;
+      if (draft.paymentType) payload.paymentType = draft.paymentType;
       if (realHome) { payload.homeId = realHome; payload.placement = 'property'; }
       else if (choseOther) { payload.homeId = ''; payload.placement = 'other'; }
       else if (choseUnassigned) { payload.homeId = ''; payload.placement = 'unassigned'; }
@@ -579,6 +581,14 @@ const PastDuePendingRow = ({ bill, homes, multiHome, onConfirmed }) => {
             <div>
               <label style={fieldLabel}>Category</label>
               <input type="text" value={draft.category} onChange={(e) => upd('category', e.target.value)} style={fieldInput} placeholder="e.g. Electric" />
+            </div>
+            <div>
+              <label style={fieldLabel}>How it's paid</label>
+              <select value={draft.paymentType} onChange={(e) => upd('paymentType', e.target.value)} style={fieldInput}>
+                <option value="Manual">Manual</option>
+                <option value="Autopay (bank)">Autopay (bank)</option>
+                <option value="Autopay (card)">Autopay (card)</option>
+              </select>
             </div>
             {multiHome && (
               <div className="sm:col-span-2">
