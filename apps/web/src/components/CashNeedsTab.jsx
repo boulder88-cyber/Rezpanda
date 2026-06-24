@@ -56,7 +56,7 @@ const CashNeedsTab = ({ companies = [], homes = [], homeName = () => null, scope
   // every open view (into history/review). Same predicate on the dashboard,
   // My Bills, and here — everything ties to this one set. WYSIWYG: if it's
   // open it's on this screen; if it's not, it isn't.
-  const open = companies.filter(c => c.status !== 'paid' && !c.cleared);
+  const open = companies.filter(c => !c.cleared);
   const sum = (arr) => arr.reduce((s, c) => s + (parseFloat(c.amount) || 0), 0);
 
   // Four mutually-exclusive, exhaustive date buckets over OPEN bills:
