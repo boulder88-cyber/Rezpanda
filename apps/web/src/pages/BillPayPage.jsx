@@ -31,6 +31,12 @@ import BillerConnectChecklist from '@/components/BillerConnectChecklist.jsx';
 const OTHER_BILLS_LABEL = 'Other bills';
 const NEEDS_PLACEMENT_LABEL = 'Needs placement';
 
+// Money formatters with thousands separators (1,604 — never 1604).
+// Money rule: summaries/aggregates round to whole dollars; individual bill
+// amounts keep two decimals. Both always comma-grouped.
+const dollars0 = (n) => `$${Math.round(parseFloat(n) || 0).toLocaleString('en-US')}`;
+const dollars2 = (n) => `$${(parseFloat(n) || 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+
 // placement distinguishes three states, two of which carry an empty homeId:
 //   'property'   → tied to a real home (homeId set)
 //   'other'      → deliberately not a property bill — settled, lives under
@@ -79,7 +85,7 @@ const SummaryStrip = ({ companies, allInScope }) => {
   }).length;
 
   const stats = [
-    { label: 'Total Due', value: `$${totalDue.toFixed(0)}`, color: '#1e3a5f' },
+    { label: 'Total Due', value: dollars0(totalDue), color: '#1e3a5f' },
     { label: 'Overdue', value: overdue, color: overdue > 0 ? '#dc2626' : '#059669' },
     { label: 'Due This Week', value: dueThisWeek, color: dueThisWeek > 0 ? '#f59e0b' : '#059669' },
     { label: 'Providers', value: providers, color: '#5b6472' },
@@ -123,10 +129,10 @@ const UpcomingStrip = ({ companies }) => {
           <h3 className="font-semibold text-slate-900" style={{ fontSize: '14px' }}>Leaving your accounts — next 30 days</h3>
         </div>
         <div className="text-right">
-          <span className="font-extrabold text-slate-900" style={{ fontSize: '18px' }}>${total.toFixed(2)}</span>
+          <span className="font-extrabold text-slate-900" style={{ fontSize: '18px' }}>{dollars2(total)}</span>
           {autoTotal > 0 && (
             <span className="text-slate-400" style={{ fontSize: '12px', marginLeft: '6px' }}>
-              (${autoTotal.toFixed(2)} autopay)
+              ({dollars2(autoTotal)} autopay)
             </span>
           )}
         </div>
@@ -155,7 +161,7 @@ const UpcomingStrip = ({ companies }) => {
                 <span className="text-slate-400 flex-shrink-0">{auto ? `drafts ~${d}` : `due ${d}`}</span>
               </div>
               <span className="font-semibold text-slate-900 flex-shrink-0">
-                {typeof c.amount === 'number' ? `$${c.amount.toFixed(2)}` : '—'}
+                {typeof c.amount === 'number' ? dollars2(c.amount) : '—'}
               </span>
             </div>
           );
@@ -229,7 +235,7 @@ const NextBillDue = ({ companies }) => {
         <span className="text-slate-400">Next due:</span>{' '}
         <span className="font-semibold text-slate-900">{next.companyName}</span>
         {' '}in {daysUntil} day{daysUntil !== 1 ? 's' : ''}
-        {next.amount && ` · $${parseFloat(next.amount).toFixed(2)}`}
+        {next.amount && ` · ${dollars2(next.amount)}`}
       </p>
       {next.paymentLink && (
         <button className="font-semibold text-blue-600 hover:text-blue-800 transition-colors ml-auto" style={{ fontSize: '13px' }}
@@ -284,7 +290,7 @@ const CategoryBreakdown = ({ companies }) => {
               <div className="flex-1">
                 <div className="flex items-center justify-between" style={{ marginBottom: '4px' }}>
                   <p className="font-medium text-slate-700" style={{ fontSize: '13px' }}>{cat.name}</p>
-                  <p className="font-semibold text-slate-900" style={{ fontSize: '13px' }}>${amount.toFixed(0)} <span className="text-slate-400 font-normal">({pct}%)</span></p>
+                  <p className="font-semibold text-slate-900" style={{ fontSize: '13px' }}>{dollars0(amount)} <span className="text-slate-400 font-normal">({pct}%)</span></p>
                 </div>
                 <div className="bg-slate-100 rounded-full" style={{ height: '6px' }}>
                   <div className="rounded-full transition-all" style={{ width: `${pct}%`, height: '6px', background: cat.color }} />
@@ -305,9 +311,9 @@ const AnnualSpendSummary = ({ companies }) => {
   return (
     <div className="flex flex-col gap-4">
       {[
-        { label: 'Monthly Total', value: `$${monthly.toFixed(0)}`, sub: 'Current month estimate', color: '#1e3a5f' },
+        { label: 'Monthly Total', value: dollars0(monthly), sub: 'Current month estimate', color: '#1e3a5f' },
         { label: 'Annual Projection', value: `$${annual.toLocaleString()}`, sub: 'Based on current bills', color: '#059669' },
-        { label: 'Avg per Bill', value: companies.length > 0 ? `$${(monthly / companies.length).toFixed(0)}` : '$0', sub: `Across ${companies.length} providers`, color: '#7c3aed' },
+        { label: 'Avg per Bill', value: companies.length > 0 ? dollars0(monthly / companies.length) : '$0', sub: `Across ${companies.length} providers`, color: '#7c3aed' },
       ].map((s, i) => (
         <div key={i} className="bg-white" style={{ borderRadius: '12px', border: '1px solid #e9e4db', padding: '16px', boxShadow: '0 1px 3px rgba(0,0,0,0.06)' }}>
           <p className="text-slate-400 font-medium uppercase tracking-wide" style={{ fontSize: '11px', marginBottom: '6px' }}>{s.label}</p>
@@ -366,7 +372,7 @@ const PropertyGroupedList = ({ companies, homeName, renderCard }) => {
               <span className="font-semibold flex items-center gap-1.5" style={{ fontSize: '13px', textTransform: 'uppercase', letterSpacing: '0.03em', color: '#334155' }}>
                 {homeName(key) || 'Property'} <span className="text-slate-400 font-normal">({bills.length})</span>
               </span>
-              <span className="font-bold text-slate-900" style={{ fontSize: '13px' }}>${sumOf(bills).toFixed(2)}</span>
+              <span className="font-bold text-slate-900" style={{ fontSize: '13px' }}>{dollars2(sumOf(bills))}</span>
             </div>
             <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
               {bills.map(renderCard)}
@@ -384,7 +390,7 @@ const PropertyGroupedList = ({ companies, homeName, renderCard }) => {
               <Package style={{ width: '13px', height: '13px', color: '#95a0ae' }} />
               Other &amp; unassigned <span className="text-slate-400 font-normal">({otherBills.length + needsBills.length})</span>
             </span>
-            <span className="font-bold text-slate-900" style={{ fontSize: '13px' }}>${unplacedSubtotal.toFixed(2)}</span>
+            <span className="font-bold text-slate-900" style={{ fontSize: '13px' }}>{dollars2(unplacedSubtotal)}</span>
           </div>
 
           {/* Sub-group: Other bills (settled — not a property, on purpose). */}
@@ -394,7 +400,7 @@ const PropertyGroupedList = ({ companies, homeName, renderCard }) => {
                 <span className="font-medium" style={{ fontSize: '12px', color: '#5b6472' }}>
                   {OTHER_BILLS_LABEL} <span className="text-slate-400">({otherBills.length})</span>
                 </span>
-                <span className="font-semibold text-slate-700" style={{ fontSize: '12px' }}>${sumOf(otherBills).toFixed(2)}</span>
+                <span className="font-semibold text-slate-700" style={{ fontSize: '12px' }}>{dollars2(sumOf(otherBills))}</span>
               </div>
               <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
                 {otherBills.map(renderCard)}
@@ -409,7 +415,7 @@ const PropertyGroupedList = ({ companies, homeName, renderCard }) => {
                 <span className="font-medium" style={{ fontSize: '12px', color: '#b45309' }}>
                   {NEEDS_PLACEMENT_LABEL} <span className="opacity-70">({needsBills.length})</span>
                 </span>
-                <span className="font-semibold" style={{ fontSize: '12px', color: '#b45309' }}>${sumOf(needsBills).toFixed(2)}</span>
+                <span className="font-semibold" style={{ fontSize: '12px', color: '#b45309' }}>{dollars2(sumOf(needsBills))}</span>
               </div>
               <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
                 {needsBills.map(renderCard)}
@@ -540,7 +546,7 @@ const PastDuePendingRow = ({ bill, homes, multiHome, onConfirmed }) => {
             <span className="font-medium" style={{ fontSize: '11px', color: '#b45309', background: '#fef3c7', borderRadius: '6px', padding: '1px 8px' }}>Not reviewed yet</span>
           </div>
           <p className="text-slate-500" style={{ fontSize: '12.5px', marginTop: '3px' }}>
-            {typeof bill.amount === 'number' ? `$${bill.amount.toFixed(2)}` : 'No amount'}{dueStr ? ` · Due ${dueStr}` : ''}{bill.category ? ` · ${bill.category}` : ''}
+            {typeof bill.amount === 'number' ? dollars2(bill.amount) : 'No amount'}{dueStr ? ` · Due ${dueStr}` : ''}{bill.category ? ` · ${bill.category}` : ''}
           </p>
         </div>
         {!editing && (
