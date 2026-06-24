@@ -330,7 +330,7 @@ const NEEDS_KEY = '__needs__';
 
 const PropertyGroupedList = ({ companies, homeName, renderCard }) => {
   // Bucket bills by homeId. Empty-homeId bills split by placement: settled
-  // "Other bills" vs still-unplaced "Needs placement" — two distinct sections.
+  // "Other bills" vs still-unplaced "Needs placement".
   const groups = {};
   for (const c of companies) {
     let key;
@@ -341,26 +341,32 @@ const PropertyGroupedList = ({ companies, homeName, renderCard }) => {
     if (!groups[key]) groups[key] = [];
     groups[key].push(c);
   }
-  // Order: real properties first, then Other bills, then Needs placement last.
-  const rank = (k) => (k === NEEDS_KEY ? 2 : k === OTHER_KEY ? 1 : 0);
-  const keys = Object.keys(groups).sort((a, b) => rank(a) - rank(b));
+
+  // Real properties first (any non-bucket key), each its own header + subtotal.
+  const propertyKeys = Object.keys(groups).filter(k => k !== OTHER_KEY && k !== NEEDS_KEY);
+  const otherBills = groups[OTHER_KEY] || [];
+  const needsBills = groups[NEEDS_KEY] || [];
+  // The two no-property buckets live under ONE persistent "Other & unassigned"
+  // section, so assigning a bill from Needs placement → Other moves it between
+  // two visible sub-rows in the SAME section rather than appearing to vanish.
+  const hasUnplaced = otherBills.length > 0 || needsBills.length > 0;
+  const unplacedSubtotal = [...otherBills, ...needsBills]
+    .reduce((sum, c) => sum + (parseFloat(c.amount) || 0), 0);
+
+  const sumOf = (arr) => arr.reduce((s, c) => s + (parseFloat(c.amount) || 0), 0);
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
-      {keys.map(key => {
+      {/* Real properties — one header + subtotal each. */}
+      {propertyKeys.map(key => {
         const bills = groups[key];
-        const subtotal = bills.reduce((sum, c) => sum + (parseFloat(c.amount) || 0), 0);
-        const isOther = key === OTHER_KEY;
-        const isNeeds = key === NEEDS_KEY;
-        const label = isOther ? OTHER_BILLS_LABEL : isNeeds ? NEEDS_PLACEMENT_LABEL : (homeName(key) || 'Property');
         return (
           <div key={key}>
             <div className="flex items-center justify-between" style={{ marginBottom: '8px' }}>
-              <span className="font-semibold flex items-center gap-1.5" style={{ fontSize: '13px', textTransform: 'uppercase', letterSpacing: '0.03em', color: isNeeds ? '#b45309' : isOther ? '#5b6472' : '#334155' }}>
-                {isOther && <Package style={{ width: '13px', height: '13px', color: '#95a0ae' }} />}
-                {label} <span className="text-slate-400 font-normal">({bills.length})</span>
+              <span className="font-semibold flex items-center gap-1.5" style={{ fontSize: '13px', textTransform: 'uppercase', letterSpacing: '0.03em', color: '#334155' }}>
+                {homeName(key) || 'Property'} <span className="text-slate-400 font-normal">({bills.length})</span>
               </span>
-              <span className="font-bold text-slate-900" style={{ fontSize: '13px' }}>${subtotal.toFixed(2)}</span>
+              <span className="font-bold text-slate-900" style={{ fontSize: '13px' }}>${sumOf(bills).toFixed(2)}</span>
             </div>
             <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
               {bills.map(renderCard)}
@@ -368,6 +374,50 @@ const PropertyGroupedList = ({ companies, homeName, renderCard }) => {
           </div>
         );
       })}
+
+      {/* Other & unassigned — one section, two sub-groups. Persistent banner so
+          moving a bill between "Other bills" and "Needs placement" stays in view. */}
+      {hasUnplaced && (
+        <div style={{ border: '1px solid #e9e4db', borderRadius: '12px', padding: '14px', background: '#fcfbf9' }}>
+          <div className="flex items-center justify-between" style={{ marginBottom: '12px' }}>
+            <span className="font-semibold flex items-center gap-1.5" style={{ fontSize: '13px', textTransform: 'uppercase', letterSpacing: '0.03em', color: '#5b6472' }}>
+              <Package style={{ width: '13px', height: '13px', color: '#95a0ae' }} />
+              Other &amp; unassigned <span className="text-slate-400 font-normal">({otherBills.length + needsBills.length})</span>
+            </span>
+            <span className="font-bold text-slate-900" style={{ fontSize: '13px' }}>${unplacedSubtotal.toFixed(2)}</span>
+          </div>
+
+          {/* Sub-group: Other bills (settled — not a property, on purpose). */}
+          {otherBills.length > 0 && (
+            <div style={{ marginBottom: needsBills.length > 0 ? '16px' : 0 }}>
+              <div className="flex items-center justify-between" style={{ marginBottom: '8px' }}>
+                <span className="font-medium" style={{ fontSize: '12px', color: '#5b6472' }}>
+                  {OTHER_BILLS_LABEL} <span className="text-slate-400">({otherBills.length})</span>
+                </span>
+                <span className="font-semibold text-slate-700" style={{ fontSize: '12px' }}>${sumOf(otherBills).toFixed(2)}</span>
+              </div>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                {otherBills.map(renderCard)}
+              </div>
+            </div>
+          )}
+
+          {/* Sub-group: Needs placement (a real to-do — amber). */}
+          {needsBills.length > 0 && (
+            <div>
+              <div className="flex items-center justify-between" style={{ marginBottom: '8px' }}>
+                <span className="font-medium" style={{ fontSize: '12px', color: '#b45309' }}>
+                  {NEEDS_PLACEMENT_LABEL} <span className="opacity-70">({needsBills.length})</span>
+                </span>
+                <span className="font-semibold" style={{ fontSize: '12px', color: '#b45309' }}>${sumOf(needsBills).toFixed(2)}</span>
+              </div>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                {needsBills.map(renderCard)}
+              </div>
+            </div>
+          )}
+        </div>
+      )}
     </div>
   );
 };
