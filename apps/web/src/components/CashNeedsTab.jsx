@@ -40,13 +40,22 @@ const CashNeedsTab = ({ companies = [], homes = [], homeName = () => null, scope
   const today = new Date();
   const horizon = new Date(today.getTime() + windowDays * 24 * 60 * 60 * 1000);
 
-  // Open bills only (anything not paid — confirmed AND pending), with a due
-  // date inside the selected window. Sorted soonest-first. Pending bills are
-  // included so a real, dated bill can't be invisible here while it shows in
-  // My Bills (WYSIWYG / nothing-invisible). Undated bills are dropped by the
-  // date filter below and named in the undated caveat, not silently lost.
-  const outflows = companies
-    .filter(c => c.status !== 'paid')
+  // ── Bucket EVERY unpaid bill into exactly one place, so the screen ties out ──
+  // Four mutually-exclusive, exhaustive buckets over unpaid bills:
+  //   pastDue      — due before today (shown as rows, own subtotal)
+  //   outflows     — due today..horizon, the forward window (shown as rows)
+  //   beyondWindow — due after horizon (summarized — out of the window)
+  //   undatedBills — no due date (summarized — can't be placed in time)
+  // pastDueTotal + total + beyondTotal + undatedTotal === every unpaid dollar
+  // (= allUnpaidTotal), which should equal My Bills' Total Due. Nothing hides.
+  const unpaid = companies.filter(c => c.status !== 'paid');
+  const sum = (arr) => arr.reduce((s, c) => s + (parseFloat(c.amount) || 0), 0);
+
+  const pastDue = unpaid
+    .filter(c => c.dueDate && new Date(c.dueDate) < stripTime(today))
+    .sort((a, b) => new Date(a.dueDate) - new Date(b.dueDate));
+
+  const outflows = unpaid
     .filter(c => {
       if (!c.dueDate) return false;
       const d = new Date(c.dueDate);
@@ -54,17 +63,24 @@ const CashNeedsTab = ({ companies = [], homes = [], homeName = () => null, scope
     })
     .sort((a, b) => new Date(a.dueDate) - new Date(b.dueDate));
 
-  const total = outflows.reduce((s, c) => s + (parseFloat(c.amount) || 0), 0);
-  const cardTotal = outflows.filter(isCard).reduce((s, c) => s + (parseFloat(c.amount) || 0), 0);
-  const bankAutoTotal = outflows.filter(isBankAuto).reduce((s, c) => s + (parseFloat(c.amount) || 0), 0);
-  const manualTotal = outflows.filter(c => !isAuto(c)).reduce((s, c) => s + (parseFloat(c.amount) || 0), 0);
+  const beyondWindow = unpaid.filter(c => c.dueDate && new Date(c.dueDate) > horizon);
+  const undatedBills = unpaid.filter(c => !c.dueDate);
+
+  const pastDueTotal = sum(pastDue);
+  const total = sum(outflows);                 // in-window total (the spine)
+  const beyondTotal = sum(beyondWindow);
+  const undatedTotal = sum(undatedBills);
+  const allUnpaidTotal = pastDueTotal + total + beyondTotal + undatedTotal;
+
+  // in-window cash split (past-due handled in its own section)
+  const cardTotal = sum(outflows.filter(isCard));
+  const bankAutoTotal = sum(outflows.filter(isBankAuto));
+  const manualTotal = sum(outflows.filter(c => !isAuto(c)));
   const cashNowTotal = bankAutoTotal + manualTotal; // leaves the bank this period; card is paid later
 
-  // Overdue is its own urgent fact, independent of the window.
-  const overdue = companies
-    .filter(c => c.status !== 'paid')
-    .filter(c => c.dueDate && new Date(c.dueDate) < stripTime(today));
-  const overdueTotal = overdue.reduce((s, c) => s + (parseFloat(c.amount) || 0), 0);
+  // overdue alias kept for the reassurance line (same set as pastDue)
+  const overdue = pastDue;
+  const overdueTotal = pastDueTotal;
 
   const windowLabel = (WINDOWS.find(w => w.days === windowDays) || {}).label || `${windowDays} days`;
 
@@ -77,11 +93,18 @@ const CashNeedsTab = ({ companies = [], homes = [], homeName = () => null, scope
         text: `${overdue.length} ${overdue.length === 1 ? 'bill is' : 'bills are'} overdue — ${money0(overdueTotal)} to catch up on.`,
       };
     }
-    if (outflows.length === 0) {
+    if (outflows.length === 0 && allUnpaidTotal === 0) {
       return {
         tone: 'green',
         icon: CheckCircle2,
-        text: `Nothing due in the ${windowLabel.toLowerCase()} from the bills you've added.`,
+        text: `Nothing due from the bills you've added — you're all set.`,
+      };
+    }
+    if (outflows.length === 0) {
+      return {
+        tone: 'calm',
+        icon: TrendingDown,
+        text: `Nothing in the next ${windowLabel.toLowerCase()}, but ${money0(allUnpaidTotal)} in bills sits outside this window — see below.`,
       };
     }
     return {
@@ -127,6 +150,48 @@ const CashNeedsTab = ({ companies = [], homes = [], homeName = () => null, scope
 
   const cardStyle = { background: '#fff', border: '1px solid #e9e4db', borderRadius: '12px', boxShadow: '0 1px 3px rgba(31,39,51,0.06)' };
 
+  // one row renderer shared by past-due and in-window lists
+  const renderRow = (c, { pastDue: isPast = false } = {}) => {
+    const auto = isAuto(c);
+    const card = isCard(c);
+    const d = new Date(c.dueDate).toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+    const tag = card
+      ? { text: 'Card', color: '#534ab7', bg: '#eeedfe', icon: true }
+      : auto
+      ? { text: 'Auto', color: '#059669', bg: '#ecfdf5', icon: true }
+      : { text: 'Manual', color: '#b45309', bg: '#fffbeb', icon: false };
+    return (
+      <div key={c.id} className="flex items-center justify-between" style={{ padding: '8px 0', borderBottom: '1px solid #f1ece3' }}>
+        <div className="flex items-center gap-3 min-w-0">
+          <span className="font-medium flex items-center gap-1 flex-shrink-0" style={{
+            fontSize: '10px', textTransform: 'uppercase', letterSpacing: '0.03em',
+            borderRadius: '5px', padding: '2px 7px', minWidth: '58px', justifyContent: 'center',
+            color: tag.color, background: tag.bg,
+          }}>
+            {tag.icon ? <><Repeat style={{ width: '10px', height: '10px' }} /> {tag.text}</> : tag.text}
+          </span>
+          <span className="font-medium truncate" style={{ fontSize: '14px', color: '#1f2733' }}>{c.companyName}</span>
+          {showByProperty && homeName(c.homeId) && (
+            <span style={{ fontSize: '11px', color: '#1e3a5f', background: '#eef2f8', borderRadius: '6px', padding: '1px 7px' }}>
+              {homeName(c.homeId)}
+            </span>
+          )}
+          {showByProperty && !c.homeId && (
+            <span style={{ fontSize: '11px', color: '#5b6472', background: '#f1ece3', borderRadius: '6px', padding: '1px 7px' }}>
+              {otherBillsLabel}
+            </span>
+          )}
+        </div>
+        <div className="flex items-center gap-3 flex-shrink-0">
+          <span style={{ fontSize: '12px', color: isPast ? '#dc2626' : '#95a0ae', fontWeight: isPast ? 600 : 400 }}>
+            {isPast ? `due ${d} · overdue` : card ? `~${d} (card)` : auto ? `drafts ~${d}` : `due ${d}`}
+          </span>
+          <span className="font-semibold" style={{ fontSize: '14px', color: '#1f2733', minWidth: '70px', textAlign: 'right' }}>{money(c.amount)}</span>
+        </div>
+      </div>
+    );
+  };
+
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
 
@@ -135,6 +200,25 @@ const CashNeedsTab = ({ companies = [], homes = [], homeName = () => null, scope
         <RIcon style={{ width: '20px', height: '20px', color: toneColor[reassurance.tone], flexShrink: 0 }} />
         <p className="font-semibold" style={{ fontSize: '15px', color: '#1f2733' }}>{reassurance.text}</p>
       </div>
+
+      {/* ── Past due (own section, own subtotal — always shown when present) ── */}
+      {pastDue.length > 0 && (
+        <div style={{ ...cardStyle, padding: '20px', border: '1px solid #fecaca' }}>
+          <div className="flex items-center justify-between" style={{ marginBottom: '12px' }}>
+            <h3 className="font-semibold flex items-center gap-2" style={{ fontSize: '16px', color: '#dc2626' }}>
+              <AlertCircle style={{ width: '18px', height: '18px' }} />
+              Past due
+            </h3>
+            <span className="font-bold" style={{ fontSize: '16px', color: '#dc2626' }}>{money(pastDueTotal)}</span>
+          </div>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
+            {pastDue.map(c => renderRow(c, { pastDue: true }))}
+          </div>
+          <p style={{ fontSize: '12px', color: '#5b6472', marginTop: '12px' }}>
+            These were due before today. Head to My Bills to pay or update them.
+          </p>
+        </div>
+      )}
 
       {/* ── 2. Timeline (spine) ── */}
       <div style={{ ...cardStyle, padding: '20px' }}>
@@ -173,39 +257,7 @@ const CashNeedsTab = ({ companies = [], homes = [], homeName = () => null, scope
           </div>
         ) : (
           <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
-            {outflows.map(c => {
-              const auto = isAuto(c);
-              const card = isCard(c);
-              const d = new Date(c.dueDate).toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
-              const tag = card
-                ? { text: 'Card', color: '#534ab7', bg: '#eeedfe', icon: true }
-                : auto
-                ? { text: 'Auto', color: '#059669', bg: '#ecfdf5', icon: true }
-                : { text: 'Manual', color: '#b45309', bg: '#fffbeb', icon: false };
-              return (
-                <div key={c.id} className="flex items-center justify-between" style={{ padding: '8px 0', borderBottom: '1px solid #f1ece3' }}>
-                  <div className="flex items-center gap-3 min-w-0">
-                    <span className="font-medium flex items-center gap-1 flex-shrink-0" style={{
-                      fontSize: '10px', textTransform: 'uppercase', letterSpacing: '0.03em',
-                      borderRadius: '5px', padding: '2px 7px', minWidth: '58px', justifyContent: 'center',
-                      color: tag.color, background: tag.bg,
-                    }}>
-                      {tag.icon ? <><Repeat style={{ width: '10px', height: '10px' }} /> {tag.text}</> : tag.text}
-                    </span>
-                    <span className="font-medium truncate" style={{ fontSize: '14px', color: '#1f2733' }}>{c.companyName}</span>
-                    {showByProperty && homeName(c.homeId) && (
-                      <span style={{ fontSize: '11px', color: '#1e3a5f', background: '#eef2f8', borderRadius: '6px', padding: '1px 7px' }}>
-                        {homeName(c.homeId)}
-                      </span>
-                    )}
-                  </div>
-                  <div className="flex items-center gap-3 flex-shrink-0">
-                    <span style={{ fontSize: '12px', color: '#95a0ae' }}>{card ? `~${d} (card)` : auto ? `drafts ~${d}` : `due ${d}`}</span>
-                    <span className="font-semibold" style={{ fontSize: '14px', color: '#1f2733', minWidth: '70px', textAlign: 'right' }}>{money(c.amount)}</span>
-                  </div>
-                </div>
-              );
-            })}
+            {outflows.map(c => renderRow(c))}
           </div>
         )}
       </div>
@@ -245,27 +297,48 @@ const CashNeedsTab = ({ companies = [], homes = [], homeName = () => null, scope
         </div>
       )}
 
-      {/* footer note */}
-      {(() => {
-        const undated = companies
-          .filter(c => c.status !== 'paid')
-          .filter(c => !c.dueDate).length;
-        return (
-          <div style={{ marginTop: '4px' }}>
-            {undated > 0 && (
-              <p style={{ fontSize: '12px', color: '#b45309', textAlign: 'center', marginBottom: '4px' }}>
-                {undated} {undated === 1 ? 'bill has' : 'bills have'} no due date, so {undated === 1 ? "it isn't" : "they aren't"} counted here yet. Add dates in My Bills to see the full picture.
-              </p>
-            )}
-            <p style={{ fontSize: '12px', color: '#95a0ae', textAlign: 'center' }}>
-              This view is only as complete as the bills you've added. To pay or update a bill, head to My Bills.
-            </p>
-          </div>
-        );
-      })()}
+      {/* ── Reconciliation: account for every unpaid dollar so it ties out ── */}
+      <div style={{ ...cardStyle, padding: '18px 20px' }}>
+        <h4 className="font-semibold" style={{ fontSize: '13px', color: '#1f2733', marginBottom: '12px' }}>The full picture</h4>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+          {pastDueTotal > 0 && (
+            <ReconLine label="Past due" sub={`${pastDue.length} ${pastDue.length === 1 ? 'bill' : 'bills'}`} amount={pastDueTotal} color="#dc2626" />
+          )}
+          <ReconLine label={`Due in the ${windowLabel.toLowerCase()}`} sub={`${outflows.length} ${outflows.length === 1 ? 'bill' : 'bills'}`} amount={total} color="#1e3a5f" />
+          {beyondTotal > 0 && (
+            <ReconLine label="Later — beyond this window" sub={`${beyondWindow.length} ${beyondWindow.length === 1 ? 'bill' : 'bills'}, widen the window to see`} amount={beyondTotal} color="#5b6472" />
+          )}
+          {undatedTotal > 0 && (
+            <ReconLine label="No due date yet" sub={`${undatedBills.length} ${undatedBills.length === 1 ? 'bill' : 'bills'}, add a date in My Bills`} amount={undatedTotal} color="#b45309" />
+          )}
+        </div>
+        <div className="flex items-center justify-between" style={{ marginTop: '12px', paddingTop: '12px', borderTop: '2px solid #e9e4db' }}>
+          <span className="font-bold" style={{ fontSize: '14px', color: '#1f2733' }}>All unpaid bills</span>
+          <span className="font-bold" style={{ fontSize: '15px', color: '#1f2733' }}>{money(allUnpaidTotal)}</span>
+        </div>
+        <p style={{ fontSize: '11px', color: '#95a0ae', marginTop: '10px' }}>
+          This is every unpaid bill you've added, in one place — it should match Total Due in My Bills. The timeline above shows only what falls inside the {windowLabel.toLowerCase()}; the rest is accounted for here so nothing hides.
+        </p>
+      </div>
+
+      {/* closing note */}
+      <p style={{ fontSize: '12px', color: '#95a0ae', textAlign: 'center' }}>
+        This view is only as complete as the bills you've added. To pay or update a bill, head to My Bills.
+      </p>
     </div>
   );
 };
+
+// reconciliation line: label + small sub on the left, amount on the right
+const ReconLine = ({ label, sub, amount, color }) => (
+  <div className="flex items-center justify-between">
+    <div className="min-w-0">
+      <span className="font-medium" style={{ fontSize: '13px', color: color || '#1f2733' }}>{label}</span>
+      {sub && <span style={{ fontSize: '11px', color: '#95a0ae', marginLeft: '6px' }}>{sub}</span>}
+    </div>
+    <span className="font-semibold flex-shrink-0" style={{ fontSize: '13px', color: '#1f2733' }}>{`$${(parseFloat(amount) || 0).toFixed(2)}`}</span>
+  </div>
+);
 
 // little labeled progress bar used in the breakdown
 const Bar = ({ label, sub, amount, total, color }) => {
