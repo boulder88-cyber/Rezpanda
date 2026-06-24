@@ -51,38 +51,21 @@ const CashNeedsTab = ({ companies = [], homes = [], homeName = () => null, scope
   const today = new Date();
   const horizon = new Date(today.getTime() + windowDays * 24 * 60 * 60 * 1000);
 
-  // ── "Open" means NOT CLEARED — not "not paid" ────────────────────────────
-  // For an autopay bill, status:'paid' only means "autopay is set / has run,"
-  // NOT that the money is settled. A card charge still sits on a statement; a
-  // bank draft may not have cleared. The real "still an obligation?" signal is
-  // `cleared`. So the entire screen is driven by uncleared bills: a bill is an
-  // open cash need until the user clears it, regardless of its paid flag.
-  // Clearing (on My Bills) is what finally removes it here.
-  const open = companies.filter(c => !c.cleared);
+  // ── One rule: OPEN = not paid AND not cleared ────────────────────────────
+  // An open bill is visible and counts; mark it paid or cleared and it leaves
+  // every open view (into history/review). Same predicate on the dashboard,
+  // My Bills, and here — everything ties to this one set. WYSIWYG: if it's
+  // open it's on this screen; if it's not, it isn't.
+  const open = companies.filter(c => c.status !== 'paid' && !c.cleared);
   const sum = (arr) => arr.reduce((s, c) => s + (parseFloat(c.amount) || 0), 0);
 
-  // Within open bills, separate the two timing realities:
-  //   openUnpaid    — not yet paid; its due date is a real future/overdue fact.
-  //   paidUncleared — autopay already ran (status:'paid') but not cleared; the
-  //                   money already moved or sits on a card statement. These
-  //                   must NOT show as overdue/coming-up — they're shown in the
-  //                   "Further out" group labeled "paid · autopay".
-  const openUnpaid = open.filter(c => c.status !== 'paid');
-  const paidUncleared = open
-    .filter(c => c.status === 'paid')
-    .sort((a, b) => {
-      const da = a.dueDate ? new Date(a.dueDate).getTime() : 0;
-      const db = b.dueDate ? new Date(b.dueDate).getTime() : 0;
-      return db - da;
-    });
-
-  // Four mutually-exclusive date buckets over UNPAID open bills:
+  // Four mutually-exclusive, exhaustive date buckets over OPEN bills:
   //   pastDue / outflows (in-window) / beyondWindow / undated.
-  const pastDue = openUnpaid
+  const pastDue = open
     .filter(c => c.dueDate && new Date(c.dueDate) < stripTime(today))
     .sort((a, b) => new Date(a.dueDate) - new Date(b.dueDate));
 
-  const outflows = openUnpaid
+  const outflows = open
     .filter(c => {
       if (!c.dueDate) return false;
       const d = new Date(c.dueDate);
@@ -90,23 +73,21 @@ const CashNeedsTab = ({ companies = [], homes = [], homeName = () => null, scope
     })
     .sort((a, b) => new Date(a.dueDate) - new Date(b.dueDate));
 
-  const beyondWindow = openUnpaid
+  const beyondWindow = open
     .filter(c => c.dueDate && new Date(c.dueDate) > horizon)
     .sort((a, b) => new Date(a.dueDate) - new Date(b.dueDate));
-  const undatedBills = openUnpaid.filter(c => !c.dueDate);
+  const undatedBills = open.filter(c => !c.dueDate);
 
   const pastDueTotal = sum(pastDue);
   const total = sum(outflows);                 // in-window total
   const beyondTotal = sum(beyondWindow);
   const undatedTotal = sum(undatedBills);
-  const paidUnclearedTotal = sum(paidUncleared);
-  const allUnpaidTotal = pastDueTotal + total + beyondTotal + undatedTotal + paidUnclearedTotal;
+  const allUnpaidTotal = pastDueTotal + total + beyondTotal + undatedTotal;
 
   // Everything past the selected window, swept into one catch-all so the
-  // timeline never drops a bill just because the window is short. Paid-but-
-  // uncleared autopay bills live here too (shown labeled "paid · autopay").
-  const furtherOutTotal = beyondTotal + undatedTotal + paidUnclearedTotal;
-  const furtherOutCount = beyondWindow.length + undatedBills.length + paidUncleared.length;
+  // timeline never drops a bill just because the window is short.
+  const furtherOutTotal = beyondTotal + undatedTotal;
+  const furtherOutCount = beyondWindow.length + undatedBills.length;
 
   // ── Cash split over all OPEN (uncleared) bills ───────────────────────────
   // Three lanes by how the bill is paid. An uncleared autopay-card bill is a
@@ -200,18 +181,13 @@ const CashNeedsTab = ({ companies = [], homes = [], homeName = () => null, scope
   const renderRow = (c, { pastDue: isPast = false, undated = false } = {}) => {
     const auto = isAuto(c);
     const card = isCard(c);
-    const isPaidRun = c.status === 'paid';  // autopay already ran — not overdue, just uncleared
     const d = c.dueDate ? new Date(c.dueDate).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }) : null;
     const tag = card
       ? { text: 'Card', color: '#534ab7', bg: '#eeedfe', icon: true }
       : auto
       ? { text: 'Auto', color: '#059669', bg: '#ecfdf5', icon: true }
       : { text: 'Manual', color: '#b45309', bg: '#fffbeb', icon: false };
-    // A paid autopay bill is never "overdue" or "coming up" — autopay handled
-    // it; it's just awaiting clearing. Show a neutral "paid" note in that case.
-    const when = isPaidRun
-      ? (card ? 'paid · on a card statement' : 'paid · autopay')
-      : undated
+    const when = undated
       ? 'no due date'
       : isPast
       ? `due ${d} · overdue`
@@ -220,7 +196,7 @@ const CashNeedsTab = ({ companies = [], homes = [], homeName = () => null, scope
       : auto
       ? `drafts ~${d}`
       : `due ${d}`;
-    const showRed = isPast && !isPaidRun;
+    const showRed = isPast;
     return (
       <div key={c.id} className="flex items-center justify-between" style={{ padding: '8px 0', borderBottom: '1px solid #f1ece3' }}>
         <div className="flex items-center gap-3 min-w-0">
@@ -338,7 +314,6 @@ const CashNeedsTab = ({ companies = [], homes = [], homeName = () => null, scope
             <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
               {beyondWindow.map(c => renderRow(c))}
               {undatedBills.map(c => renderRow(c, { undated: true }))}
-              {paidUncleared.map(c => renderRow(c, { undated: !c.dueDate }))}
             </div>
           </div>
         )}
@@ -352,7 +327,7 @@ const CashNeedsTab = ({ companies = [], homes = [], homeName = () => null, scope
           <span className="font-bold" style={{ fontSize: '15px', color: '#1e3a5f' }}>{money(allUnpaidTotal)}</span>
         </div>
         <p style={{ fontSize: '11px', color: '#95a0ae', marginTop: '8px' }}>
-          Every open bill you've added is on this list — autopay bills stay until you clear them. Nothing hides.
+          Every open bill you've added is on this list — it matches Total Due in My Bills. Nothing hides.
         </p>
       </div>
 
