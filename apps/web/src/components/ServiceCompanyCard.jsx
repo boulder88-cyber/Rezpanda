@@ -389,6 +389,11 @@ const ServiceCompanyCard = ({ company, onRefresh, onPay, propertyName = null, ho
                 Autopay · Reviewed{reviewedLabel ? ` ${reviewedLabel}` : ''}{dueLabel ? ` · drafts ~${dueLabel}` : ''}
               </span>
             )}
+            {needsClear && (
+              <span className="text-slate-400" style={{ fontSize: '11px', fontStyle: 'italic' }}>
+                Still on your cash needs — clear it once the amount hits your card.
+              </span>
+            )}
             {isPaid && !autopay && (
               <span className="flex items-center gap-1 font-medium" style={{ color: '#059669', fontSize: '12px' }}>
                 <CheckCircle2 style={{ width: '13px', height: '13px' }} />
@@ -476,7 +481,13 @@ const ServiceCompanyCard = ({ company, onRefresh, onPay, propertyName = null, ho
             {isPaid ? (
               <div className="flex items-center gap-2">
                 {needsClear ? (
-                  <Button size="sm" className="font-semibold" style={{ background: '#1e3a5f' }} disabled={isMarking} onClick={handleClear}>
+                  <Button
+                    size="sm"
+                    className="font-semibold"
+                    style={{ background: '#059669' }}
+                    disabled={isMarking}
+                    onClick={handleClear}
+                    title="Paid by autopay, but the charge is on a card statement you pay later. Clear it once that statement is paid.">
                     {isMarking ? 'Clearing…' : 'Clear'}
                   </Button>
                 ) : (
