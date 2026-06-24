@@ -31,16 +31,16 @@ import { Home, MapPin, ArrowRight, AlertCircle, CheckCircle2, Plus, CreditCard, 
 const NAVY = '#1e3a5f';
 const GOLD = '#c9a96e';
 
-const isPaid = (c) => c.status === 'paid';
+// A bill is CLOSED — off the open views, into history — when it's paid OR
+// cleared. One off-switch, identical to My Bills and Cash Needs. Named isPaid
+// for continuity, but it means "closed."
+const isPaid = (c) => c.status === 'paid' || c.cleared;
 const isPending = (c) => c.status === 'pending_review';
-const isOpen = (c) => !isPaid(c) && !isPending(c); // confirmed, not yet paid
-// Money rule (locked this session): a bill's dollars count from the moment it
-// exists, regardless of confirm status — only PAID bills stop counting. So
-// every due total and aging bucket sums ALL unpaid bills (confirmed AND in
-// review). Confirm status no longer changes a dollar figure; it only drives
-// the "to review" COUNT chips. This is what lets every tile reconcile to the
-// portfolio strip: a pending bill counts its dollars exactly where a confirmed
-// one would, so Σ(tiles) === strip total, always.
+const isOpen = (c) => !isPaid(c) && !isPending(c); // confirmed, not yet closed
+// Money rule: a bill's dollars count from the moment it exists, regardless of
+// confirm status — only CLOSED (paid or cleared) bills stop counting. So every
+// due total and aging bucket sums all open bills (confirmed AND in review).
+// This is what lets every tile reconcile to the portfolio strip.
 const counts = (c) => !isPaid(c);
 // Past due is a HARD FACT of the calendar, not a workflow state: any unpaid
 // bill whose due date has passed is overdue — whether or not it's been
