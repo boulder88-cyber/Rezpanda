@@ -400,7 +400,7 @@ const CashNeedsTab = ({ companies = [], homes = [], homeName = () => null, scope
 
             {pendingCard.length > 0 && (
               <div style={{ marginTop: cardTotal > 0 ? '14px' : '0' }}>
-                <p style={{ fontSize: '11px', color: '#95a0ae', marginBottom: '6px' }}>On a statement — clear once you pay the card</p>
+                <p style={{ fontSize: '11px', color: '#95a0ae', marginBottom: '6px' }}>On a statement — clear once it hits your card</p>
                 {pendingCard.map(c => (
                   <PendingStatementRow key={c.id} bill={c} />
                 ))}
