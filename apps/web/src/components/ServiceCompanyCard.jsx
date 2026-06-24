@@ -105,10 +105,12 @@ const ServiceCompanyCard = ({ company, onRefresh, onPay, propertyName = null, ho
 
   const isPaid = company.status === 'paid';
   const autopay = isAutopay(company);
-  // A paid autopay bill (bank or card) that hasn't been cleared yet is still a
-  // pending obligation in Cash Needs — bank draft to confirm, or a card
-  // statement paid later. Clearing it here settles it for good.
-  const needsClear = isPaid && autopay && !company.cleared;
+  const isCard = company.paymentType === 'Autopay (card)';
+  // A card-autopay bill is NEVER marked paid — autopay drafts to the card, but
+  // the charge sits on a statement you pay later, so the bill stays OPEN
+  // (counted everywhere) until you CLEAR it. Clear is its only close action.
+  // So a card bill shows "Clear" whenever it's not yet cleared.
+  const needsClear = isCard && !company.cleared;
 
   // Backfill: assign this bill to a property (for bills missing homeId).
   // placement legacy fallback (mirror of BillPayPage.placementOf): bills with
@@ -383,7 +385,7 @@ const ServiceCompanyCard = ({ company, onRefresh, onPay, propertyName = null, ho
               </span>
             )}
             {/* All Set labels — honest per type */}
-            {isPaid && autopay && (
+            {isPaid && autopay && !isCard && (
               <span className="flex items-center gap-1 font-medium" style={{ color: '#7c3aed', fontSize: '12px' }}>
                 <CheckCircle2 style={{ width: '13px', height: '13px' }} />
                 Autopay · Reviewed{reviewedLabel ? ` ${reviewedLabel}` : ''}{dueLabel ? ` · drafts ~${dueLabel}` : ''}
@@ -391,7 +393,7 @@ const ServiceCompanyCard = ({ company, onRefresh, onPay, propertyName = null, ho
             )}
             {needsClear && (
               <span className="text-slate-400" style={{ fontSize: '11px', fontStyle: 'italic' }}>
-                Still on your cash needs — clear it once the amount hits your card.
+                On your card — clear it once the charge hits your statement.
               </span>
             )}
             {isPaid && !autopay && (
@@ -478,21 +480,21 @@ const ServiceCompanyCard = ({ company, onRefresh, onPay, propertyName = null, ho
             the confirm pair pushed the pill left and alignment drifted. */}
         <div className="flex items-center flex-shrink-0" style={{ gap: '8px' }}>
           <div className="flex items-center" style={{ width: '170px', justifyContent: 'flex-end', gap: '8px' }}>
-            {isPaid ? (
+            {needsClear ? (
+              // Card-autopay: open until cleared. Clear is its close action —
+              // it's never "paid" because the charge sits on a card statement.
+              <Button
+                size="sm"
+                className="font-semibold"
+                style={{ background: '#059669' }}
+                disabled={isMarking}
+                onClick={handleClear}
+                title="Autopay drafts this to your card; the charge lands on a statement you pay later. Clear it once the charge hits your card.">
+                {isMarking ? 'Clearing…' : 'Clear'}
+              </Button>
+            ) : isPaid ? (
               <div className="flex items-center gap-2">
-                {needsClear ? (
-                  <Button
-                    size="sm"
-                    className="font-semibold"
-                    style={{ background: '#059669' }}
-                    disabled={isMarking}
-                    onClick={handleClear}
-                    title="Paid by autopay, but the charge lands on a card statement you pay later. Clear it once the charge hits your card.">
-                    {isMarking ? 'Clearing…' : 'Clear'}
-                  </Button>
-                ) : (
-                  <span className="font-medium" style={{ color: '#94a3b8', fontSize: '13px' }}>All set</span>
-                )}
+                <span className="font-medium" style={{ color: '#94a3b8', fontSize: '13px' }}>All set</span>
                 <button
                   onClick={handleUndoPaid}
                   disabled={isMarking}
@@ -502,7 +504,8 @@ const ServiceCompanyCard = ({ company, onRefresh, onPay, propertyName = null, ho
                 </button>
               </div>
             ) : autopay ? (
-              // Autopay: the action is to REVIEW, not pay.
+              // Bank autopay: the action is to REVIEW (then it's done — money
+              // drafts straight from the account).
               <Button size="sm" className="font-semibold" style={{ background: '#7c3aed' }} disabled={isMarking} onClick={handleMarkReviewed}>
                 {isMarking ? 'Saving…' : 'Mark Reviewed'}
               </Button>
