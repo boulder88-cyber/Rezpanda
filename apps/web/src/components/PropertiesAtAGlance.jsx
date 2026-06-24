@@ -31,10 +31,10 @@ import { Home, MapPin, ArrowRight, AlertCircle, CheckCircle2, Plus, CreditCard, 
 const NAVY = '#1e3a5f';
 const GOLD = '#c9a96e';
 
-// A bill is CLOSED — off the open views, into history — when it's paid OR
-// cleared. One off-switch, identical to My Bills and Cash Needs. Named isPaid
-// for continuity, but it means "closed."
-const isPaid = (c) => c.status === 'paid' || c.cleared;
+// A bill leaves the open totals ONLY when cleared — the paid flag does not
+// remove it (an autopay/card bill can be paid but still an open obligation).
+// Named isPaid for continuity with call sites, but it means "cleared/closed."
+const isPaid = (c) => !!c.cleared;
 const isPending = (c) => c.status === 'pending_review';
 const isOpen = (c) => !isPaid(c) && !isPending(c); // confirmed, not yet closed
 // Money rule: a bill's dollars count from the moment it exists, regardless of
