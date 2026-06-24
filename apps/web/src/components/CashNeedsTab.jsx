@@ -1,7 +1,5 @@
 import React, { useState } from 'react';
-import { Repeat, TrendingDown, AlertCircle, CheckCircle2, Check } from 'lucide-react';
-import pb from '@/lib/pocketbaseClient.js';
-import { useToast } from '@/hooks/use-toast.js';
+import { Repeat, TrendingDown, AlertCircle, CheckCircle2 } from 'lucide-react';
 
 // ═══════════════════════════════════════════════════════════════════════
 // CASH NEEDS — a forward-looking lens on bills you already have.
@@ -56,8 +54,6 @@ const sortByPaid = (a, b) => {
 };
 
 const CashNeedsTab = ({ companies = [], homes = [], homeName = () => null, scope = 'all', otherBillsLabel = 'Other bills', onRefresh = () => {} }) => {
-  const { toast } = useToast();
-  const [clearingId, setClearingId] = useState(null);
   const [windowDays, setWindowDays] = useState(30);
 
   const today = new Date();
@@ -110,6 +106,11 @@ const CashNeedsTab = ({ companies = [], homes = [], homeName = () => null, scope
   const bankAutoTotal = sum(unpaid.filter(isBankAuto));
   const manualTotal = sum(unpaid.filter(c => !isAuto(c)));
   const cashNowTotal = bankAutoTotal + manualTotal;
+  // Shared denominator for the split bars: every unpaid dollar across all three
+  // ways a bill is paid (bank + card + manual). Measuring each bar against this
+  // one total makes the widths true shares of the whole — bank and card take
+  // their slice, and "needs you to pay" reads as the remainder.
+  const splitTotal = bankAutoTotal + cardTotal + manualTotal;
 
   // ── Paid-but-not-cleared autopay bills ──────────────────────────────────
   // An autopay bill marked paid isn't necessarily a closed cash need:
@@ -131,19 +132,6 @@ const CashNeedsTab = ({ companies = [], homes = [], homeName = () => null, scope
   // Column totals now include the lingering paid-but-uncleared items.
   const bankColumnTotal = bankAutoTotal + manualTotal + pendingBankTotal;
   const cardColumnTotal = cardTotal + pendingCardTotal;
-
-  const clearBill = async (id) => {
-    setClearingId(id);
-    try {
-      await pb.collection('invoices').update(id, { cleared: true }, { $autoCancel: false });
-      toast({ title: 'Cleared', description: 'Removed from your cash needs.' });
-      onRefresh();
-    } catch (e) {
-      toast({ title: 'Could not clear', description: e?.message || 'Try again.', variant: 'destructive' });
-    } finally {
-      setClearingId(null);
-    }
-  };
 
   const windowLabel = (WINDOWS.find(w => w.days === windowDays) || {}).label || `${windowDays} days`;
 
@@ -376,15 +364,15 @@ const CashNeedsTab = ({ companies = [], homes = [], homeName = () => null, scope
           <div style={{ ...cardStyle, padding: '18px 20px' }}>
             <h4 className="font-semibold" style={{ fontSize: '13px', color: '#1f2733', marginBottom: '4px' }}>Leaves your accounts now</h4>
             <p style={{ fontSize: '11px', color: '#95a0ae', marginBottom: '14px' }}>Real cash out — bank drafts and bills you pay yourself.</p>
-            <Bar label="Drafts from bank" sub="autopay" amount={bankAutoTotal} total={cashNowTotal || 1} color="#059669" />
+            <Bar label="Drafts from bank" sub="autopay" amount={bankAutoTotal} total={splitTotal || 1} color="#059669" />
             <div style={{ height: '10px' }} />
-            <Bar label="Needs you to pay" sub="manual" amount={manualTotal} total={cashNowTotal || 1} color="#f59e0b" />
+            <Bar label="Needs you to pay" sub="manual" amount={manualTotal} total={splitTotal || 1} color="#f59e0b" />
 
             {pendingBank.length > 0 && (
               <div style={{ marginTop: '14px' }}>
                 <p style={{ fontSize: '11px', color: '#95a0ae', marginBottom: '6px' }}>Paid — clear once it's settled</p>
                 {pendingBank.map(c => (
-                  <PendingStatementRow key={c.id} bill={c} onClear={clearBill} clearing={clearingId === c.id} />
+                  <PendingStatementRow key={c.id} bill={c} />
                 ))}
               </div>
             )}
@@ -400,7 +388,7 @@ const CashNeedsTab = ({ companies = [], homes = [], homeName = () => null, scope
             <h4 className="font-semibold" style={{ fontSize: '13px', color: '#1f2733', marginBottom: '4px' }}>Goes on a credit card</h4>
             <p style={{ fontSize: '11px', color: '#95a0ae', marginBottom: '14px' }}>Paid later, when your card statement comes due — not cash out today.</p>
             {cardTotal > 0 ? (
-              <Bar label="Card autopay" sub="not yet drafted" amount={cardTotal} total={cardColumnTotal || 1} color="#7c5cff" />
+              <Bar label="Card autopay" sub="not yet drafted" amount={cardTotal} total={splitTotal || 1} color="#7c5cff" />
             ) : (
               pendingCard.length === 0 && <p style={{ fontSize: '13px', color: '#95a0ae' }}>No bills set to a credit card.</p>
             )}
@@ -409,7 +397,7 @@ const CashNeedsTab = ({ companies = [], homes = [], homeName = () => null, scope
               <div style={{ marginTop: cardTotal > 0 ? '14px' : '0' }}>
                 <p style={{ fontSize: '11px', color: '#95a0ae', marginBottom: '6px' }}>On a statement — clear once you pay the card</p>
                 {pendingCard.map(c => (
-                  <PendingStatementRow key={c.id} bill={c} onClear={clearBill} clearing={clearingId === c.id} />
+                  <PendingStatementRow key={c.id} bill={c} />
                 ))}
               </div>
             )}
@@ -448,9 +436,10 @@ const CashNeedsTab = ({ companies = [], homes = [], homeName = () => null, scope
 };
 
 // little labeled progress bar used in the breakdowns
-// A paid-but-not-cleared autopay bill: shows the payee + amount with a Clear
-// button. Clearing removes it from cash needs for good (sets `cleared`).
-const PendingStatementRow = ({ bill, onClear, clearing }) => {
+// A paid-but-not-cleared autopay bill, shown for awareness only. The Clear
+// action lives on My Bills (the actionable page); here it's informational so
+// the forward-looking view still accounts for a card statement not yet paid.
+const PendingStatementRow = ({ bill }) => {
   const paid = bill.paidDate
     ? new Date(bill.paidDate).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })
     : null;
@@ -462,15 +451,7 @@ const PendingStatementRow = ({ bill, onClear, clearing }) => {
           {money(bill.amount)}{paid ? ` · paid ${paid}` : ''}
         </span>
       </div>
-      <button
-        onClick={() => onClear(bill.id)}
-        disabled={clearing}
-        className="flex items-center gap-1 font-semibold rounded-lg flex-shrink-0"
-        style={{ border: '1px solid #cbd5e1', color: '#5b6472', background: '#fff', padding: '4px 10px', fontSize: '12px', opacity: clearing ? 0.6 : 1 }}
-      >
-        <Check style={{ width: '12px', height: '12px' }} />
-        {clearing ? 'Clearing…' : 'Clear'}
-      </button>
+      <span style={{ fontSize: '11px', color: '#95a0ae', flexShrink: 0 }}>paid</span>
     </div>
   );
 };
