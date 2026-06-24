@@ -35,6 +35,8 @@ const GOLD = '#c9a96e';
 // remove it (an autopay/card bill can be paid but still an open obligation).
 // Named isPaid for continuity with call sites, but it means "cleared/closed."
 const isPaid = (c) => !!c.cleared;
+// Individual bill amount: two decimals, comma-grouped ($1,604.00 — never 1604).
+const money2 = (n) => `$${(parseFloat(n) || 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
 const isPending = (c) => c.status === 'pending_review';
 const isOpen = (c) => !isPaid(c) && !isPending(c); // confirmed, not yet closed
 // Money rule: a bill's dollars count from the moment it exists, regardless of
@@ -475,7 +477,7 @@ const PortfolioStrip = ({ stats, pastDueBills, homesById, onGoBill }) => {
                 <div className="flex-1 min-w-0">
                   <p className="font-medium truncate" style={{ fontSize: '13px', color: '#1f2733' }}>
                     {c.companyName || 'Bill'}
-                    {c.amount ? <span style={{ color: '#5b6472', fontWeight: 400 }}>{'  ·  $'}{parseFloat(c.amount).toFixed(2)}</span> : null}
+                    {c.amount ? <span style={{ color: '#5b6472', fontWeight: 400 }}>{'  ·  '}{money2(c.amount)}</span> : null}
                   </p>
                   <p className="truncate" style={{ fontSize: '11px', color: '#dc2626' }}>
                     {late === 1 ? '1 day' : `${late} days`} past due · {homeName}
@@ -526,7 +528,7 @@ const NeedsYourEye = ({ items, homesById, onGoBill }) => {
             <div className="flex-1 min-w-0">
               <p className="font-medium truncate" style={{ fontSize: '13.5px', color: '#1f2733' }}>
                 {it.companyName || 'Bill'}
-                {it.amount ? <span style={{ color: '#5b6472', fontWeight: 400 }}>{'  ·  $'}{parseFloat(it.amount).toFixed(2)}</span> : null}
+                {it.amount ? <span style={{ color: '#5b6472', fontWeight: 400 }}>{'  ·  '}{money2(it.amount)}</span> : null}
               </p>
               <p className="truncate" style={{ fontSize: '11.5px', color: '#95a0ae' }}>
                 {reason} · {homeName}
@@ -544,22 +546,22 @@ const NeedsYourEye = ({ items, homesById, onGoBill }) => {
 const FunctionBox = ({ icon: Icon, label, onClick }) => (
   <button
     onClick={onClick}
-    className="flex items-center gap-3 transition-all hover:-translate-y-0.5 hover:shadow-md group bg-white"
+    className="flex items-center gap-3 transition-all hover:-translate-y-1 hover:shadow-lg group bg-white"
     style={{
-      border: '1px solid #ddd6ca',
+      border: '1px solid #d4ccbd',
       borderRadius: '14px',
-      padding: '15px 16px',
-      boxShadow: '0 2px 6px rgba(30,58,95,0.07)',
+      padding: '16px 16px',
+      boxShadow: '0 3px 10px rgba(30,58,95,0.12)',
     }}
   >
-    <div className="flex items-center justify-center flex-shrink-0" style={{ width: '40px', height: '40px', borderRadius: '11px', background: '#e7edf6', border: '1px solid #d8e1ee' }}>
-      <Icon style={{ width: '20px', height: '20px', color: NAVY }} />
+    <div className="flex items-center justify-center flex-shrink-0" style={{ width: '42px', height: '42px', borderRadius: '11px', background: NAVY }}>
+      <Icon style={{ width: '21px', height: '21px', color: '#fff' }} />
     </div>
     <div className="text-left flex-1 min-w-0">
-      <p className="font-semibold" style={{ fontSize: '14px', color: '#1f2733' }}>{label}</p>
+      <p className="font-semibold" style={{ fontSize: '14.5px', color: '#1f2733' }}>{label}</p>
       <p style={{ fontSize: '11px', color: '#95a0ae' }}>All properties</p>
     </div>
-    <ArrowRight style={{ width: '15px', height: '15px', color: '#b7c2d2' }} className="group-hover:translate-x-1 transition-transform" />
+    <ArrowRight style={{ width: '16px', height: '16px', color: NAVY }} className="group-hover:translate-x-1 transition-transform" />
   </button>
 );
 
