@@ -1,5 +1,7 @@
 import React, { useState } from 'react';
-import { CheckCircle2, Circle, ChevronDown, ChevronRight, Mail, Copy, Check, Search } from 'lucide-react';
+import { CheckCircle2, Circle, ChevronDown, ChevronRight, Mail, Copy, Check, Search, Link2, Plus } from 'lucide-react';
+import pb from '@/lib/pocketbaseClient.js';
+import { useToast } from '@/hooks/use-toast.js';
 
 // ═══════════════════════════════════════════════════════════════════════
 // BILLER CONNECT CHECKLIST
@@ -45,22 +47,32 @@ const arrivedDirect = (bill) => {
   return !CONSUMER_DOMAINS.has(d);
 };
 
-const BillerConnectChecklist = ({ companies = [], forwardAddress = '' }) => {
+const BillerConnectChecklist = ({ companies = [], forwardAddress = '', onRefresh }) => {
+  const { toast } = useToast();
   const [expanded, setExpanded] = useState(null); // biller name being shown
   const [copied, setCopied] = useState(false);
+  const [linkingName, setLinkingName] = useState(null); // biller whose pay-link editor is open
+  const [linkValue, setLinkValue] = useState('');
+  const [savingLink, setSavingLink] = useState(false);
 
   // Group bills by biller (companyName). For each, decide connected + remember
-  // the direct sender domain if we saw one (nice to show the user).
+  // the direct sender domain if we saw one (nice to show the user). Also capture
+  // the biller's pay URL and vendorId — the pay URL lives on the VENDOR (stable
+  // "how you pay this biller"), flattened onto each bill as `paymentLink` by the
+  // page load; vendorId is the relation we write a new link to.
   const billers = (() => {
     const map = {};
     for (const c of companies) {
       const name = (c.companyName || 'Unknown').trim();
-      if (!map[name]) map[name] = { name, connected: false, domain: '', count: 0 };
+      if (!map[name]) map[name] = { name, connected: false, domain: '', count: 0, payUrl: '', vendorId: '' };
       map[name].count += 1;
       if (arrivedDirect(c)) {
         map[name].connected = true;
         if (!map[name].domain) map[name].domain = domainOf(c.senderAddress);
       }
+      // First non-empty pay link wins; first vendorId seen is the write target.
+      if (!map[name].payUrl && c.paymentLink) map[name].payUrl = c.paymentLink;
+      if (!map[name].vendorId && c.vendorId) map[name].vendorId = c.vendorId;
     }
     return Object.values(map).sort((a, b) => {
       // not-yet first (they're the actionable ones), then alphabetical
@@ -72,6 +84,38 @@ const BillerConnectChecklist = ({ companies = [], forwardAddress = '' }) => {
   if (billers.length === 0) return null;
 
   const connectedCount = billers.filter(b => b.connected).length;
+
+  // Save a pay link to the biller's VENDOR — same write path the bill card uses
+  // (normalize scheme, validate, write payUrl to the vendor, refresh). The pay
+  // URL is vendor-level, so every future invoice from this biller inherits it.
+  const handleSaveLink = async (biller) => {
+    let url = linkValue.trim();
+    if (!url) { setLinkingName(null); return; }
+    if (!url.startsWith('http://') && !url.startsWith('https://')) url = 'https://' + url;
+    try {
+      new URL(url);
+    } catch {
+      toast({ title: 'That doesn\u2019t look like a valid link', variant: 'destructive' });
+      return;
+    }
+    if (!biller.vendorId) {
+      // No vendor to attach to (rare: pre-vendor-model or fail-open-unlinked bill).
+      toast({ title: 'Can\u2019t save a link for this biller yet', variant: 'destructive' });
+      return;
+    }
+    setSavingLink(true);
+    try {
+      await pb.collection('vendors').update(biller.vendorId, { payUrl: url }, { $autoCancel: false });
+      setLinkingName(null);
+      setLinkValue('');
+      toast({ title: 'Payment link added' });
+      if (onRefresh) onRefresh();
+    } catch {
+      toast({ title: 'Could not save the link', variant: 'destructive' });
+    } finally {
+      setSavingLink(false);
+    }
+  };
 
   const handleCopy = () => {
     if (!forwardAddress) return;
@@ -112,6 +156,24 @@ const BillerConnectChecklist = ({ companies = [], forwardAddress = '' }) => {
                         ? `Connected${b.domain ? ` · sends from ${b.domain}` : ''}`
                         : 'Forwarded — not connected yet'}
                     </div>
+                    {/* Pay-link status: saved (quiet confirmation) or a tappable
+                        "Add pay link" affordance. The link lives on the vendor,
+                        so it's a per-biller fact — this is its natural home. */}
+                    {b.payUrl ? (
+                      <div className="flex items-center gap-1" style={{ fontSize: '12px', color: '#5b6472', marginTop: '2px' }}>
+                        <Link2 style={{ width: '12px', height: '12px', flexShrink: 0 }} />
+                        Pay link saved
+                      </div>
+                    ) : (
+                      <button
+                        onClick={() => { setLinkingName(linkingName === b.name ? null : b.name); setLinkValue(''); }}
+                        className="flex items-center gap-1 transition-colors"
+                        style={{ fontSize: '12px', color: '#1e3a5f', background: 'transparent', border: 'none', padding: 0, marginTop: '2px', cursor: 'pointer', fontWeight: 500 }}
+                      >
+                        <Plus style={{ width: '12px', height: '12px', flexShrink: 0 }} />
+                        Add pay link
+                      </button>
+                    )}
                   </div>
                 </div>
                 {!b.connected && (
@@ -123,6 +185,44 @@ const BillerConnectChecklist = ({ companies = [], forwardAddress = '' }) => {
                 )}
               </div>
 
+              {/* Inline pay-link editor — paste a URL, save to the vendor. Reuses
+                  the same write path as the bill card (normalize, validate, write
+                  payUrl to the vendor). Shows a web-search helper like the card. */}
+              {linkingName === b.name && (
+                <div style={{ padding: '14px', borderTop: '1px solid #e9e4db', background: '#faf8f4' }}>
+                  <div className="flex items-center gap-2" style={{ marginBottom: '8px' }}>
+                    <input
+                      type="text"
+                      value={linkValue}
+                      onChange={(e) => setLinkValue(e.target.value)}
+                      onKeyDown={(e) => { if (e.key === 'Enter') handleSaveLink(b); if (e.key === 'Escape') { setLinkingName(null); setLinkValue(''); } }}
+                      placeholder={`Paste ${b.name}'s payment URL`}
+                      autoFocus
+                      className="flex-1"
+                      style={{ fontSize: '13px', padding: '8px 10px', border: '1px solid #e9e4db', borderRadius: '8px', background: '#fff', color: '#1f2733', outline: 'none', minWidth: 0 }}
+                    />
+                    <button onClick={() => handleSaveLink(b)} disabled={savingLink}
+                      className="rounded-lg font-semibold text-white flex-shrink-0"
+                      style={{ fontSize: '12px', padding: '8px 12px', background: '#1e3a5f' }}>
+                      {savingLink ? '…' : 'Save'}
+                    </button>
+                    <button onClick={() => { setLinkingName(null); setLinkValue(''); }}
+                      className="flex-shrink-0" style={{ fontSize: '12px', padding: '8px 6px', color: '#95a0ae', background: 'transparent', border: 'none', cursor: 'pointer' }}>
+                      Cancel
+                    </button>
+                  </div>
+                  <a
+                    href={`https://www.google.com/search?q=${encodeURIComponent(`${b.name} pay bill online`.trim())}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="flex items-center gap-1 hover:underline"
+                    style={{ fontSize: '11px', color: '#5b6472', width: 'fit-content' }}
+                  >
+                    <Search style={{ width: '11px', height: '11px' }} />
+                    Search the web for it
+                  </a>
+                </div>
+              )}
               {/* connect steps */}
               {!b.connected && isOpen && (
                 <div style={{ padding: '14px', borderTop: '1px solid #e9e4db', background: '#faf8f4' }}>
