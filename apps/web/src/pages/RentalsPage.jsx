@@ -3,6 +3,7 @@ import { Helmet } from 'react-helmet';
 import { Link } from 'react-router-dom';
 import { useHome } from '@/contexts/HomeContext.jsx';
 import LeasePanel from '@/components/LeasePanel.jsx';
+import RentIncomePanel from '@/components/RentIncomePanel.jsx';
 import { Building2, Home, Plus, KeyRound } from 'lucide-react';
 
 // ═══════════════════════════════════════════════════════════════════════
@@ -134,13 +135,12 @@ const RentalsPage = () => {
                 {/* The per-property lens. LeasePanel handles its own load/empty/edit. */}
                 <div style={{ padding: '20px' }}>
                   <LeasePanel home={home} />
+                  <RentIncomePanel home={home} />
 
-                  {/* Placeholder rail for the slices that fill this card next:
-                      rent received vs expected, expenses, P&L. Kept as a quiet
-                      honest note so the card doesn't look broken before they land. */}
+                  {/* The tax-ready P&L for this property is the next slice. */}
                   <p style={{ marginTop: '16px', fontSize: '12px', color: INK_FAINT,
                     lineHeight: 1.5, paddingTop: '14px', borderTop: `1px solid ${BORDER}` }}>
-                    Income tracking and the tax-ready P&amp;L for this property are coming next.
+                    The tax-ready profit &amp; loss summary for this property is coming next.
                   </p>
                 </div>
               </div>
