@@ -1122,7 +1122,7 @@ const BillPayPage = () => {
                 <PaymentHistoryTab refreshTrigger={historyRefreshTrigger} />
               </div>
             ) : (
-              <CoverageView companies={propertyFiltered} />
+              <CoverageView companies={propertyFiltered} homeNameById={homeName} />
             )}
           </TabsContent>
         </Tabs>
