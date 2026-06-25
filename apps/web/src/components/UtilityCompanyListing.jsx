@@ -1,36 +1,58 @@
 import React, { useState, useEffect, useCallback, forwardRef, useImperativeHandle, useMemo } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
 import pb from '@/lib/pocketbaseClient.js';
 import { useAuth } from '@/contexts/AuthContext.jsx';
-import { Input } from '@/components/ui/input.jsx';
-import { Badge } from '@/components/ui/badge.jsx';
-import { Button } from '@/components/ui/button.jsx';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog.jsx';
-import { 
-  Search, Zap, Flame, Droplet, Wifi, Phone, Trash2, 
-  Building2, Bug, Shield, ExternalLink, AlertCircle, 
-  Loader2, Info, Plus, ArrowLeft
+import {
+  Search, Zap, Flame, Droplet, Wifi, Phone, Trash2,
+  Building2, Bug, Shield, ExternalLink, AlertCircle,
+  Loader2, Plus, ArrowLeft, X
 } from 'lucide-react';
 
+// ═══════════════════════════════════════════════════════════════════════
+// PROVIDER DIRECTORY (formerly "utility company listing")
+//
+// A browse-and-connect catalog. Two sources, merged and de-duped by name:
+//   1. The global `utility_companies` directory (the shared national catalog).
+//   2. This user's own `vendors` (their known billers — vendors is the stable
+//      biller entity, one record per biller, so each appears once here).
+//
+// Tapping a provider offers to open its payment portal in a new tab. The "+"
+// hands the provider up to the parent (onSelectCompany) to prefill the add-bill
+// form. Both behaviours and the company-object shape are unchanged from the
+// original — this pass only brought the file onto the navy/gold design system
+// and fixed the leftover "Rezpanda" brand reference and "utility" labels.
+// ═══════════════════════════════════════════════════════════════════════
+
+// Design-system tokens (inline-style discipline — no Tailwind palette drift).
+const NAVY = '#1e3a5f';
+const INK = '#1f2733';
+const INK_SOFT = '#5b6472';
+const INK_MUTE = '#95a0ae';
+const PAGE = '#faf8f4';
+const BORDER = '#e9e4db';
+const PALE_NAVY = '#eef4fb';
+const NAVY_BORDER = '#cdddef';
+
+// Each category renders with a navy icon tile — one calm family, not a rainbow.
+// (The icon distinguishes categories; color stays on-brand.)
 const CATEGORY_CONFIG = {
-  'Electric': { icon: Zap, tileClass: 'category-tile-electric', textClass: 'text-yellow-600 dark:text-yellow-500' },
-  'Gas': { icon: Flame, tileClass: 'category-tile-gas', textClass: 'text-orange-600 dark:text-orange-500' },
-  'Water': { icon: Droplet, tileClass: 'category-tile-water', textClass: 'text-blue-600 dark:text-blue-500' },
-  'Internet/Cable': { icon: Wifi, tileClass: 'category-tile-internet', textClass: 'text-purple-600 dark:text-purple-500' },
-  'Phone': { icon: Phone, tileClass: 'category-tile-phone', textClass: 'text-pink-600 dark:text-pink-500' },
-  'Trash/Recycling': { icon: Trash2, tileClass: 'category-tile-trash', textClass: 'text-green-600 dark:text-green-500' },
-  'Pest Control': { icon: Bug, tileClass: 'category-tile-pest', textClass: 'text-amber-800 dark:text-amber-600' },
-  'Security': { icon: Shield, tileClass: 'category-tile-security', textClass: 'text-slate-600 dark:text-slate-400' },
-  'Other': { icon: Building2, tileClass: 'category-tile-other', textClass: 'text-slate-500 dark:text-slate-400' }
+  'Electric': { icon: Zap },
+  'Gas': { icon: Flame },
+  'Water': { icon: Droplet },
+  'Internet/Cable': { icon: Wifi },
+  'Phone': { icon: Phone },
+  'Trash/Recycling': { icon: Trash2 },
+  'Pest Control': { icon: Bug },
+  'Security': { icon: Shield },
+  'Other': { icon: Building2 },
 };
 
 const UtilityCompanyListing = forwardRef(({ onSelectCompany }, ref) => {
   const { currentUser } = useAuth();
-  
+
   const [allCompanies, setAllCompanies] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState(null);
-  
+
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedCategory, setSelectedCategory] = useState(null);
   const [externalCompany, setExternalCompany] = useState(null);
@@ -70,7 +92,7 @@ const UtilityCompanyListing = forwardRef(({ onSelectCompany }, ref) => {
           uniqueCompanies.push({
             id: company.id,
             name: company.name,
-            category: 'Other', // Fallback category for custom entries
+            category: 'Other', // Vendors carry no category; Other is the honest fallback
             payment_portal_url: company.payUrl,
             isCustom: true
           });
@@ -87,7 +109,7 @@ const UtilityCompanyListing = forwardRef(({ onSelectCompany }, ref) => {
 
       setAllCompanies(uniqueCompanies);
     } catch (err) {
-      console.error("Error fetching utility companies:", err);
+      console.error("Error fetching providers:", err);
       setError(err.message || "Failed to load providers. Please try again.");
     } finally {
       setIsLoading(false);
@@ -109,7 +131,7 @@ const UtilityCompanyListing = forwardRef(({ onSelectCompany }, ref) => {
   const categoryCounts = useMemo(() => {
     const counts = {};
     Object.keys(CATEGORY_CONFIG).forEach(cat => counts[cat] = 0);
-    
+
     allCompanies.forEach(company => {
       const cat = company.category || 'Other';
       if (counts[cat] !== undefined) {
@@ -118,22 +140,22 @@ const UtilityCompanyListing = forwardRef(({ onSelectCompany }, ref) => {
         counts['Other']++;
       }
     });
-    
+
     return counts;
   }, [allCompanies]);
 
   // Filter companies based on selected category and search query
   const displayedCompanies = useMemo(() => {
     return allCompanies.filter(company => {
-      const matchesCategory = selectedCategory 
+      const matchesCategory = selectedCategory
         ? (company.category === selectedCategory || (!company.category && selectedCategory === 'Other'))
         : true;
-        
-      const matchesSearch = searchQuery.trim() === '' 
-        ? true 
-        : (company.name.toLowerCase().includes(searchQuery.toLowerCase()) || 
+
+      const matchesSearch = searchQuery.trim() === ''
+        ? true
+        : (company.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
            (company.category || '').toLowerCase().includes(searchQuery.toLowerCase()));
-           
+
       return matchesCategory && matchesSearch;
     });
   }, [allCompanies, selectedCategory, searchQuery]);
@@ -151,227 +173,226 @@ const UtilityCompanyListing = forwardRef(({ onSelectCompany }, ref) => {
 
   const showCategories = !selectedCategory && !searchQuery;
 
+  // ── Shared inline styles ────────────────────────────────────────────────
+  const iconTile = (size) => ({
+    width: size, height: size, borderRadius: '12px', background: NAVY,
+    display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0,
+  });
+
   return (
-    <div className="flex flex-col h-full">
-      <div className="sticky top-0 bg-slate-50/50 dark:bg-slate-950 z-10 pb-6 space-y-4 backdrop-blur-md">
-        <div className="relative max-w-2xl mx-auto w-full">
-          <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400" />
-          <Input
+    <div style={{ display: 'flex', flexDirection: 'column', width: '100%' }}>
+      {/* Search */}
+      <div style={{ position: 'sticky', top: 0, zIndex: 10, paddingBottom: '20px' }}>
+        <div style={{ position: 'relative', maxWidth: '640px', margin: '0 auto', width: '100%' }}>
+          <Search style={{ position: 'absolute', left: '14px', top: '50%', transform: 'translateY(-50%)', width: '18px', height: '18px', color: INK_MUTE }} />
+          <input
             type="text"
             placeholder={selectedCategory ? `Search ${selectedCategory} providers...` : "Search by company name or category..."}
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            className="pl-12 py-6 text-lg rounded-2xl bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800 shadow-sm focus-visible:ring-primary focus-visible:ring-offset-0"
+            style={{
+              width: '100%', padding: '12px 14px 12px 42px', fontSize: '15px', color: INK,
+              background: '#fff', border: `1px solid ${BORDER}`, borderRadius: '8px',
+              outline: 'none', boxShadow: '0 1px 2px rgba(31,39,51,0.04)',
+            }}
           />
         </div>
       </div>
 
-      <div className="flex-1 pb-8">
+      <div style={{ flex: 1 }}>
         {isLoading ? (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(200px, 1fr))', gap: '16px' }}>
             {[1, 2, 3, 4, 5, 6, 7, 8].map((i) => (
-              <div key={i} className="h-48 bg-slate-200/50 dark:bg-slate-800/50 rounded-2xl animate-pulse"></div>
+              <div key={i} style={{ height: '128px', background: '#f1ede6', borderRadius: '12px', animation: 'pulse 1.5s ease-in-out infinite' }} />
             ))}
+            <style>{`@keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.5; } }`}</style>
           </div>
         ) : error ? (
-          <div className="flex flex-col items-center justify-center py-16 text-center bg-red-50 dark:bg-red-900/10 rounded-3xl border border-red-100 dark:border-red-900/20 max-w-2xl mx-auto">
-            <AlertCircle className="w-12 h-12 text-red-500 mb-4" />
-            <h3 className="text-xl font-bold text-red-700 dark:text-red-400 mb-2">Connection Error</h3>
-            <p className="text-red-600/80 dark:text-red-400/80 max-w-md mb-6">
-              {error}
-            </p>
-            <Button onClick={fetchCompanies} variant="outline" className="bg-white dark:bg-slate-900 rounded-xl">
-              <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-              Try Again
-            </Button>
+          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '48px 24px', textAlign: 'center', background: '#fef2f2', borderRadius: '12px', border: '1px solid #fecaca', maxWidth: '640px', margin: '0 auto' }}>
+            <AlertCircle style={{ width: '40px', height: '40px', color: '#dc2626', marginBottom: '14px' }} />
+            <h3 style={{ fontSize: '18px', fontWeight: 600, color: '#b91c1c', marginBottom: '6px' }}>Connection error</h3>
+            <p style={{ color: '#dc2626', maxWidth: '420px', marginBottom: '20px', fontSize: '14px' }}>{error}</p>
+            <button onClick={fetchCompanies}
+              style={{ display: 'inline-flex', alignItems: 'center', gap: '8px', background: '#fff', border: `1px solid ${BORDER}`, borderRadius: '8px', padding: '8px 14px', fontSize: '14px', fontWeight: 500, color: INK, cursor: 'pointer' }}>
+              <Loader2 style={{ width: '15px', height: '15px' }} />
+              Try again
+            </button>
+          </div>
+        ) : showCategories ? (
+          // ── Category grid ──
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(180px, 1fr))', gap: '16px' }}>
+            {Object.entries(CATEGORY_CONFIG).map(([category, config]) => {
+              const Icon = config.icon;
+              const count = categoryCounts[category] || 0;
+              return (
+                <button
+                  key={category}
+                  onClick={() => setSelectedCategory(category)}
+                  style={{
+                    display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
+                    padding: '28px 20px', borderRadius: '12px', background: '#fff',
+                    border: `1px solid ${BORDER}`, cursor: 'pointer', transition: 'box-shadow 0.2s, transform 0.2s',
+                    boxShadow: '0 1px 3px rgba(31,39,51,0.06)',
+                  }}
+                  onMouseEnter={(e) => { e.currentTarget.style.boxShadow = '0 6px 16px rgba(31,39,51,0.12)'; e.currentTarget.style.transform = 'translateY(-2px)'; }}
+                  onMouseLeave={(e) => { e.currentTarget.style.boxShadow = '0 1px 3px rgba(31,39,51,0.06)'; e.currentTarget.style.transform = 'translateY(0)'; }}
+                >
+                  <div style={iconTile('56px')}>
+                    <Icon style={{ width: '28px', height: '28px', color: '#fff' }} />
+                  </div>
+                  <span style={{ fontWeight: 600, fontSize: '16px', color: INK, textAlign: 'center', margin: '14px 0 10px' }}>{category}</span>
+                  <span style={{ fontSize: '12px', color: INK_MUTE }}>
+                    {count} {count === 1 ? 'provider' : 'providers'}
+                  </span>
+                </button>
+              );
+            })}
           </div>
         ) : (
-          <AnimatePresence mode="wait">
-            {showCategories ? (
-              <motion.div
-                key="categories"
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0, y: -20 }}
-                transition={{ duration: 0.3 }}
-                className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6"
-              >
-                {Object.entries(CATEGORY_CONFIG).map(([category, config], index) => {
+          // ── Company list (a category is selected, or a search is active) ──
+          <div style={{ maxWidth: '880px', margin: '0 auto' }}>
+            {selectedCategory && (
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '20px', background: '#fff', padding: '14px 16px', borderRadius: '12px', border: `1px solid ${BORDER}`, boxShadow: '0 1px 3px rgba(31,39,51,0.06)' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '14px' }}>
+                  <button
+                    onClick={() => { setSelectedCategory(null); setSearchQuery(''); }}
+                    style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', color: INK_SOFT, background: 'transparent', border: 'none', cursor: 'pointer', fontSize: '14px', fontWeight: 500, padding: '4px' }}
+                  >
+                    <ArrowLeft style={{ width: '16px', height: '16px' }} />
+                    Back
+                  </button>
+                  <div style={{ height: '24px', width: '1px', background: BORDER }} />
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                    {React.createElement(CATEGORY_CONFIG[selectedCategory]?.icon || Building2, { style: { width: '20px', height: '20px', color: NAVY } })}
+                    <h2 style={{ fontSize: '18px', fontWeight: 700, color: INK }}>{selectedCategory}</h2>
+                  </div>
+                </div>
+                <span style={{ fontSize: '13px', color: INK_MUTE, background: PAGE, border: `1px solid ${BORDER}`, borderRadius: '8px', padding: '4px 10px' }}>
+                  {displayedCompanies.length} found
+                </span>
+              </div>
+            )}
+
+            {displayedCompanies.length > 0 ? (
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(340px, 1fr))', gap: '14px' }}>
+                {displayedCompanies.map((company) => {
+                  const config = CATEGORY_CONFIG[company.category] || CATEGORY_CONFIG['Other'];
                   const Icon = config.icon;
-                  const count = categoryCounts[category] || 0;
-                  
                   return (
-                    <motion.button
-                      key={category}
-                      initial={{ opacity: 0, y: 20 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      transition={{ duration: 0.4, delay: index * 0.05 }}
-                      onClick={() => setSelectedCategory(category)}
-                      className={`flex flex-col items-center justify-center p-8 rounded-3xl hover-card-effect group relative overflow-hidden ${config.tileClass}`}
+                    <div
+                      key={company.id}
+                      style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '16px', borderRadius: '12px', border: `1px solid ${BORDER}`, background: '#fff', boxShadow: '0 1px 3px rgba(31,39,51,0.06)', transition: 'box-shadow 0.2s, border-color 0.2s' }}
+                      onMouseEnter={(e) => { e.currentTarget.style.boxShadow = '0 4px 12px rgba(31,39,51,0.10)'; e.currentTarget.style.borderColor = NAVY_BORDER; }}
+                      onMouseLeave={(e) => { e.currentTarget.style.boxShadow = '0 1px 3px rgba(31,39,51,0.06)'; e.currentTarget.style.borderColor = BORDER; }}
                     >
-                      <div className="absolute inset-0 bg-white/10 opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
-                      <Icon className="w-16 h-16 mb-5 text-white drop-shadow-md transition-transform duration-500 group-hover:scale-110 group-hover:-rotate-6" />
-                      <span className="font-bold text-2xl text-white text-center mb-3 drop-shadow-sm tracking-tight">{category}</span>
-                      <Badge variant="secondary" className="bg-white/20 text-white hover:bg-white/30 border-none backdrop-blur-md px-3 py-1 text-sm font-medium">
-                        {count} {count === 1 ? 'provider' : 'providers'}
-                      </Badge>
-                    </motion.button>
-                  );
-                })}
-              </motion.div>
-            ) : (
-              <motion.div
-                key="companies"
-                initial={{ opacity: 0, x: 20 }}
-                animate={{ opacity: 1, x: 0 }}
-                exit={{ opacity: 0, x: -20 }}
-                transition={{ duration: 0.3 }}
-                className="space-y-6 max-w-4xl mx-auto"
-              >
-                {selectedCategory && (
-                  <div className="flex items-center justify-between mb-6 bg-white dark:bg-slate-900 p-4 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm">
-                    <div className="flex items-center gap-4">
-                      <Button 
-                        variant="ghost" 
-                        onClick={() => {
-                          setSelectedCategory(null);
-                          setSearchQuery('');
-                        }} 
-                        className="rounded-xl text-slate-500 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-800"
+                      <div
+                        style={{ display: 'flex', alignItems: 'center', gap: '14px', overflow: 'hidden', flex: 1, cursor: 'pointer' }}
+                        onClick={() => setExternalCompany(company)}
                       >
-                        <ArrowLeft className="w-5 h-5 mr-2" />
-                        Back
-                      </Button>
-                      <div className="h-8 w-px bg-slate-200 dark:bg-slate-800"></div>
-                      <div className="flex items-center gap-2">
-                        {React.createElement(CATEGORY_CONFIG[selectedCategory]?.icon || Building2, {
-                          className: `w-6 h-6 ${CATEGORY_CONFIG[selectedCategory]?.textClass || 'text-slate-500'}`
-                        })}
-                        <h2 className="text-xl font-bold text-slate-900 dark:text-white">{selectedCategory}</h2>
+                        <div style={iconTile('48px')}>
+                          <Icon style={{ width: '24px', height: '24px', color: '#fff' }} />
+                        </div>
+                        <div style={{ overflow: 'hidden', flex: 1 }}>
+                          <h4 style={{ fontWeight: 600, fontSize: '15px', color: INK, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', marginBottom: '4px' }}>
+                            {company.name}
+                          </h4>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                            {!selectedCategory && (
+                              <span style={{ fontSize: '11px', fontWeight: 500, background: PAGE, color: INK_SOFT, border: `1px solid ${BORDER}`, borderRadius: '6px', padding: '2px 8px', flexShrink: 0 }}>
+                                {company.category || 'Other'}
+                              </span>
+                            )}
+                            {company.isCustom && (
+                              <span style={{ fontSize: '11px', fontWeight: 500, background: PALE_NAVY, color: NAVY, border: `1px solid ${NAVY_BORDER}`, borderRadius: '6px', padding: '2px 8px', flexShrink: 0 }}>
+                                Yours
+                              </span>
+                            )}
+                            <span style={{ display: 'inline-flex', alignItems: 'center', gap: '5px', fontSize: '13px', color: INK_MUTE, marginLeft: 'auto' }}>
+                              <ExternalLink style={{ width: '14px', height: '14px' }} />
+                              Portal
+                            </span>
+                          </div>
+                        </div>
+                      </div>
+
+                      <div style={{ flexShrink: 0, marginLeft: '14px', paddingLeft: '14px', borderLeft: `1px solid ${BORDER}` }}>
+                        <button
+                          onClick={(e) => { e.stopPropagation(); onSelectCompany(company); }}
+                          title="Add to my bills"
+                          style={{ width: '38px', height: '38px', borderRadius: '50%', background: PAGE, border: `1px solid ${BORDER}`, color: NAVY, display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', transition: 'background 0.2s, color 0.2s' }}
+                          onMouseEnter={(e) => { e.currentTarget.style.background = NAVY; e.currentTarget.style.color = '#fff'; }}
+                          onMouseLeave={(e) => { e.currentTarget.style.background = PAGE; e.currentTarget.style.color = NAVY; }}
+                        >
+                          <Plus style={{ width: '18px', height: '18px' }} />
+                        </button>
                       </div>
                     </div>
-                    <Badge variant="outline" className="text-slate-500 bg-slate-50 dark:bg-slate-800/50 px-3 py-1 text-sm">
-                      {displayedCompanies.length} found
-                    </Badge>
-                  </div>
-                )}
-
-                {displayedCompanies.length > 0 ? (
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    {displayedCompanies.map((company, index) => {
-                      const config = CATEGORY_CONFIG[company.category] || CATEGORY_CONFIG['Other'];
-                      const Icon = config.icon;
-
-                      return (
-                        <motion.div
-                          initial={{ opacity: 0, y: 10 }}
-                          animate={{ opacity: 1, y: 0 }}
-                          transition={{ duration: 0.3, delay: index * 0.05 }}
-                          key={company.id}
-                          className="flex items-center justify-between p-5 rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 hover:border-primary/50 hover:shadow-lg transition-all duration-300 group text-left"
-                        >
-                          <div 
-                            className="flex items-center gap-4 overflow-hidden flex-1 cursor-pointer"
-                            onClick={() => setExternalCompany(company)}
-                          >
-                            <div className={`w-14 h-14 rounded-xl flex items-center justify-center shrink-0 ${config.tileClass} shadow-inner`}>
-                              <Icon className="w-7 h-7 text-white" />
-                            </div>
-                            <div className="overflow-hidden flex-1">
-                              <div className="flex items-center gap-2 mb-1.5">
-                                <h4 className="font-bold text-slate-900 dark:text-white truncate group-hover:text-primary transition-colors text-lg">
-                                  {company.name}
-                                </h4>
-                              </div>
-                              
-                              <div className="flex items-center gap-2">
-                                {!selectedCategory && (
-                                  <Badge variant="secondary" className="text-xs font-medium bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 shrink-0">
-                                    {company.category || 'Other'}
-                                  </Badge>
-                                )}
-                                {company.isCustom && (
-                                  <Badge variant="outline" className="text-xs font-medium border-primary/30 text-primary shrink-0">
-                                    Custom
-                                  </Badge>
-                                )}
-                                <div className="flex items-center gap-1.5 text-sm text-slate-500 dark:text-slate-400 group-hover:text-primary transition-colors ml-auto">
-                                  <ExternalLink className="w-4 h-4" />
-                                  <span className="truncate font-medium">Portal</span>
-                                </div>
-                              </div>
-                            </div>
-                          </div>
-                          
-                          <div className="flex items-center gap-2 shrink-0 ml-4 pl-4 border-l border-slate-100 dark:border-slate-800">
-                            <Button 
-                              size="icon" 
-                              variant="ghost"
-                              className="rounded-full w-10 h-10 bg-slate-50 hover:bg-primary hover:text-white dark:bg-slate-800 dark:hover:bg-primary text-slate-700 dark:text-slate-300 transition-colors"
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                onSelectCompany(company);
-                              }}
-                              title="Add to my providers"
-                            >
-                              <Plus className="w-5 h-5" />
-                            </Button>
-                          </div>
-                        </motion.div>
-                      );
-                    })}
-                  </div>
-                ) : (
-                  <div className="flex flex-col items-center justify-center py-20 text-center bg-white dark:bg-slate-900 rounded-3xl border border-slate-200 border-dashed dark:border-slate-800 shadow-sm">
-                    <div className="w-20 h-20 bg-slate-50 dark:bg-slate-800 rounded-full flex items-center justify-center mb-6 shadow-inner">
-                      <Search className="w-10 h-10 text-slate-400" />
-                    </div>
-                    <h3 className="text-2xl font-bold text-slate-900 dark:text-white mb-2">No providers found</h3>
-                    <p className="text-slate-500 text-lg max-w-md mb-8">
-                      We couldn't find any utility companies matching your search. You can still add them manually.
-                    </p>
-                    <Button 
-                      onClick={() => onSelectCompany({ category: selectedCategory || 'Other' })} 
-                      size="lg" 
-                      className="rounded-xl shadow-md hover:shadow-lg transition-all"
-                    >
-                      <Plus className="w-5 h-5 mr-2" />
-                      Add Custom Provider
-                    </Button>
-                  </div>
-                )}
-              </motion.div>
+                  );
+                })}
+              </div>
+            ) : (
+              <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '56px 24px', textAlign: 'center', background: '#fff', borderRadius: '12px', border: `1px dashed ${BORDER}` }}>
+                <div style={{ width: '64px', height: '64px', background: PAGE, borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: '20px' }}>
+                  <Search style={{ width: '30px', height: '30px', color: INK_MUTE }} />
+                </div>
+                <h3 style={{ fontSize: '20px', fontWeight: 700, color: INK, marginBottom: '8px' }}>No providers found</h3>
+                <p style={{ color: INK_SOFT, maxWidth: '380px', marginBottom: '24px', fontSize: '14px' }}>
+                  We couldn't find a provider matching your search. You can still add it manually.
+                </p>
+                <button
+                  onClick={() => onSelectCompany({ category: selectedCategory || 'Other' })}
+                  style={{ display: 'inline-flex', alignItems: 'center', gap: '8px', background: NAVY, color: '#fff', border: 'none', borderRadius: '12px', padding: '10px 18px', fontSize: '14px', fontWeight: 600, cursor: 'pointer', boxShadow: '0 1px 3px rgba(31,39,51,0.10)' }}
+                >
+                  <Plus style={{ width: '16px', height: '16px' }} />
+                  Add custom provider
+                </button>
+              </div>
             )}
-          </AnimatePresence>
+          </div>
         )}
       </div>
 
-      <Dialog open={!!externalCompany} onOpenChange={(open) => !open && setExternalCompany(null)}>
-        <DialogContent className="sm:max-w-[425px] rounded-2xl">
-          <DialogHeader>
-            <DialogTitle className="flex items-center gap-3 text-2xl">
-              <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center">
-                <ExternalLink className="w-5 h-5 text-primary" />
+      {/* Leaving-CasaCEO confirmation */}
+      {externalCompany && (
+        <div
+          style={{ position: 'fixed', inset: 0, background: 'rgba(31,39,51,0.45)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 50, padding: '20px' }}
+          onClick={() => setExternalCompany(null)}
+        >
+          <div
+            style={{ background: '#fff', borderRadius: '16px', maxWidth: '440px', width: '100%', padding: '24px', boxShadow: '0 20px 50px rgba(31,39,51,0.25)' }}
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: '12px' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                <div style={{ width: '40px', height: '40px', borderRadius: '50%', background: PALE_NAVY, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                  <ExternalLink style={{ width: '20px', height: '20px', color: NAVY }} />
+                </div>
+                <h3 style={{ fontSize: '18px', fontWeight: 700, color: INK }}>Opening {externalCompany?.name}</h3>
               </div>
-              Connecting...
-            </DialogTitle>
-          </DialogHeader>
-          <div className="py-6">
-            <p className="text-slate-600 dark:text-slate-300 text-lg leading-relaxed">
-              You're now leaving Rezpanda and connecting directly to <strong className="text-slate-900 dark:text-white">{externalCompany?.name}</strong>. 
-              You'll be able to log in, view your bills, download history, and make payments directly on their site.
+              <button onClick={() => setExternalCompany(null)} style={{ background: 'transparent', border: 'none', cursor: 'pointer', color: INK_MUTE, padding: '4px' }}>
+                <X style={{ width: '18px', height: '18px' }} />
+              </button>
+            </div>
+            <p style={{ color: INK_SOFT, fontSize: '15px', lineHeight: 1.55, marginBottom: '24px' }}>
+              You're leaving CasaCEO to connect directly with <strong style={{ color: INK }}>{externalCompany?.name}</strong>. On their site you can log in, view your bills, download history, and make payments.
             </p>
+            <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '10px' }}>
+              <button
+                onClick={() => setExternalCompany(null)}
+                style={{ background: '#fff', border: `1px solid ${BORDER}`, color: INK_SOFT, borderRadius: '8px', padding: '9px 16px', fontSize: '14px', fontWeight: 500, cursor: 'pointer' }}
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleContinueToExternal}
+                style={{ background: NAVY, color: '#fff', border: 'none', borderRadius: '8px', padding: '9px 16px', fontSize: '14px', fontWeight: 600, cursor: 'pointer', boxShadow: '0 1px 3px rgba(31,39,51,0.10)' }}
+              >
+                Continue to portal
+              </button>
+            </div>
           </div>
-          <DialogFooter className="flex flex-col sm:flex-row gap-3 sm:gap-2">
-            <Button variant="outline" onClick={() => setExternalCompany(null)} className="w-full sm:w-auto rounded-xl">
-              Cancel
-            </Button>
-            <Button onClick={handleContinueToExternal} className="w-full sm:w-auto rounded-xl shadow-md">
-              Continue to Portal
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+        </div>
+      )}
     </div>
   );
 });
