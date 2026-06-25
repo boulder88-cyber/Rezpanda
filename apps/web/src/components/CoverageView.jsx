@@ -76,17 +76,29 @@ const agoLabel = (days) => {
   return years === 1 ? 'about a year ago' : `${years} years ago`;
 };
 
-const CoverageView = ({ companies = [] }) => {
-  const { billerRows, missingCategories, totalBillers } = useMemo(() => {
+const CoverageView = ({ companies = [], homeNameById = null }) => {
+  const { billerRows, missingCategories, totalBillers, multiProperty } = useMemo(() => {
     const today = new Date(); today.setHours(0, 0, 0, 0);
 
-    // ── Group bills by biller (companyName) ──
+    // Does this view span more than one property? If so, the same provider can
+    // serve two homes and we must NOT collapse them — two homes' streams merged
+    // into one row would invent a false rhythm and mis-flag gaps. We group by
+    // biller + home and label the property; in a single-home view the label is
+    // noise, so we suppress it.
+    const homeIds = new Set(companies.map((c) => c.homeId || '').filter(Boolean));
+    const multiProperty = homeIds.size > 1;
+
+    // ── Group bills by biller (companyName) + property (homeId) ──
+    // The key includes homeId so "Georgia Power · Home" and "Georgia Power ·
+    // Rental" are separate billers, each judged on its own cadence.
     const byBiller = {};
     for (const c of companies) {
       const name = (c.companyName || 'Unknown').trim();
-      if (!byBiller[name]) byBiller[name] = { name, bills: [], category: c.category || 'Other' };
-      byBiller[name].bills.push(c);
-      if (!byBiller[name].category && c.category) byBiller[name].category = c.category;
+      const hid = c.homeId || '';
+      const key = name + '\u0000' + hid; // NUL separator can't appear in a name
+      if (!byBiller[key]) byBiller[key] = { name, homeId: hid, bills: [], category: c.category || 'Other' };
+      byBiller[key].bills.push(c);
+      if (!byBiller[key].category && c.category) byBiller[key].category = c.category;
     }
 
     // ── LAYER 1: per-biller cadence rows ──
@@ -102,7 +114,7 @@ const CoverageView = ({ companies = [] }) => {
       // can show even without a known cadence.
       if (dates.length < 2) {
         const stale = daysSinceLast != null && daysSinceLast > 45;
-        return { name: b.name, category: b.category, count, state: 'learning', cadence: null, last, daysSinceLast, expected: null, stale };
+        return { name: b.name, homeId: b.homeId, category: b.category, count, state: 'learning', cadence: null, last, daysSinceLast, expected: null, stale };
       }
 
       const gaps = [];
@@ -111,7 +123,7 @@ const CoverageView = ({ companies = [] }) => {
 
       if (!cadence) {
         const stale = daysSinceLast != null && daysSinceLast > 45;
-        return { name: b.name, category: b.category, count, state: 'learning', cadence: null, last, daysSinceLast, expected: null, stale };
+        return { name: b.name, homeId: b.homeId, category: b.category, count, state: 'learning', cadence: null, last, daysSinceLast, expected: null, stale };
       }
 
       // Expected next bill ≈ last + cadence period. Flag only when we're past a
@@ -121,7 +133,7 @@ const CoverageView = ({ companies = [] }) => {
       const overdue = daysSinceLast > cadence.period * 1.5;
 
       return {
-        name: b.name, category: b.category, count, cadence, last, daysSinceLast, expected,
+        name: b.name, homeId: b.homeId, category: b.category, count, cadence, last, daysSinceLast, expected,
         state: overdue ? 'gap' : 'ok',
       };
     }).sort((a, z) => {
@@ -146,7 +158,7 @@ const CoverageView = ({ companies = [] }) => {
     // a biller is deleted — but it's the structural safety net.)
     const missingCategories = [...everSeen].filter((cat) => !categoriesWithBiller.has(cat));
 
-    return { billerRows, missingCategories, totalBillers: Object.keys(byBiller).length };
+    return { billerRows, missingCategories, totalBillers: Object.keys(byBiller).length, multiProperty };
   }, [companies]);
 
   const cardStyle = { background: '#fff', border: `1px solid ${BORDER}`, borderRadius: '12px', boxShadow: '0 1px 3px rgba(31,39,51,0.06)' };
@@ -200,12 +212,20 @@ const CoverageView = ({ companies = [] }) => {
             : r.state === 'learning' ? { icon: Clock, color: INK_MUTE, bg: '#fff', border: BORDER }
             : { icon: CheckCircle2, color: GREEN, bg: '#f6fcf9', border: BORDER };
           const Icon = tone.icon;
+          const propLabel = (multiProperty && r.homeId && homeNameById) ? homeNameById(r.homeId) : null;
           return (
-            <div key={r.name} className="flex items-center justify-between" style={{ padding: '12px 14px', border: `1px solid ${tone.border}`, background: tone.bg, borderRadius: '10px' }}>
+            <div key={r.name + '\u0000' + (r.homeId || '')} className="flex items-center justify-between" style={{ padding: '12px 14px', border: `1px solid ${tone.border}`, background: tone.bg, borderRadius: '10px' }}>
               <div className="flex items-center gap-3 min-w-0">
                 <Icon style={{ width: '18px', height: '18px', color: tone.color, flexShrink: 0 }} />
                 <div className="min-w-0">
-                  <div className="font-medium truncate" style={{ fontSize: '14px', color: INK }}>{r.name}</div>
+                  <div className="flex items-center gap-2 min-w-0">
+                    <span className="font-medium truncate" style={{ fontSize: '14px', color: INK }}>{r.name}</span>
+                    {propLabel && (
+                      <span style={{ fontSize: '11px', fontWeight: 500, color: NAVY, background: '#eef4fb', border: '1px solid #cdddef', borderRadius: '6px', padding: '1px 7px', flexShrink: 0, whiteSpace: 'nowrap' }}>
+                        {propLabel}
+                      </span>
+                    )}
+                  </div>
                   <div style={{ fontSize: '12px', color: INK_SOFT }}>
                     {r.state === 'gap' && r.cadence && r.expected && r.last &&
                       `Usually ${r.cadence.label} · last on ${fmtDate(r.last)} (${agoLabel(r.daysSinceLast)}) · next was expected around ${fmtDate(r.expected)}`}
