@@ -1,6 +1,6 @@
 import React from 'react';
 import { NavLink } from 'react-router-dom';
-import { Home, CreditCard, Wrench, FolderOpen, Compass, X, Building2 } from 'lucide-react';
+import { Home, CreditCard, Wrench, FolderOpen, Compass, X, Building2, KeyRound } from 'lucide-react';
 import { useHome } from '@/contexts/HomeContext.jsx';
 
 // ── Design-system tokens (navy/gold, warm) ──────────────────────────────
@@ -13,6 +13,11 @@ const PAGE = '#faf8f4';
 const BORDER = '#e9e4db';
 const ACTIVE_BG = '#f3eee4'; // warm tint behind the active item (gold-adjacent)
 
+// Base nav (the locked 4 core items). The Rentals item is added conditionally
+// inside the component — it only appears when the user has a rental property,
+// so an ordinary homeowner never sees it and the rail stays at the core 4.
+// This keeps the 5-tab discipline: Rentals is invisible-until-relevant, not a
+// permanent fifth slot.
 const NAV = [
   { path: '/dashboard', label: 'Home', icon: Home },
   { path: '/bill-pay', label: 'Bills', icon: CreditCard },
@@ -34,7 +39,22 @@ const navRow = ({ isActive }) => ({
 });
 
 const Sidebar = ({ isOpen, closeSidebar }) => {
-  const { selectedHome, allProperties, otherScope } = useHome();
+  const { selectedHome, allProperties, otherScope, homes } = useHome();
+
+  // Rentals appears only if the user owns at least one rental property.
+  // Slotted right after Bills (rentals are a money surface), before
+  // Maintenance — so the rail reads Home · Bills · Rentals · Maintenance ·
+  // Records for landlords, and the plain core 4 for everyone else.
+  const hasRental = (homes || []).some((h) => h && h.propertyType === 'rental');
+  const navItems = hasRental
+    ? [
+        NAV[0],
+        NAV[1],
+        { path: '/rentals', label: 'Rentals', icon: KeyRound },
+        NAV[2],
+        NAV[3],
+      ]
+    : NAV;
 
   // What the grounding footer says you're looking at — always honest about scope.
   const scopeLabel = allProperties ? 'All properties'
@@ -93,7 +113,7 @@ const Sidebar = ({ isOpen, closeSidebar }) => {
 
         {/* Nav */}
         <div style={{ flex: 1, overflowY: 'auto', padding: '16px 12px', display: 'flex', flexDirection: 'column', gap: '3px' }}>
-          {NAV.map(renderRow)}
+          {navItems.map(renderRow)}
 
           {/* Explore — the one quiet door to the extras, set apart. */}
           <div style={{ paddingTop: '12px', marginTop: '12px', borderTop: `1px solid ${BORDER}` }}>
