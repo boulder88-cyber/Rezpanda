@@ -31,6 +31,7 @@ import HomePage from '@/pages/HomePage.jsx';
 import PropertyManagementDashboard from '@/pages/PropertyManagementDashboard.jsx';
 import RentalPropertiesPage from '@/pages/RentalPropertiesPage.jsx';
 import RentalTaxGuidePage from '@/pages/RentalTaxGuidePage.jsx';
+import RentalsPage from '@/pages/RentalsPage.jsx';
 
 // ── Financial ───────────────────────────────────────────────────────
 import BillPayPage from '@/pages/BillPayPage.jsx';
@@ -175,8 +176,13 @@ const AppContent = () => {
           <Route path="/portfolio" element={<ProtectedRoute><Layout><PortfolioOverviewPage /></Layout></ProtectedRoute>} />
           <Route path="/properties" element={<ProtectedRoute><Layout><HomePage /></Layout></ProtectedRoute>} />
           <Route path="/manage-homes" element={<ProtectedRoute><Layout><ManageHomesPage /></Layout></ProtectedRoute>} />
-          <Route path="/property-management" element={<ProtectedRoute><Layout><PropertyManagementDashboard /></Layout></ProtectedRoute>} />
-          <Route path="/rental-properties" element={<ProtectedRoute><Layout><RentalPropertiesPage /></Layout></ProtectedRoute>} />
+          {/* ── Rentals (the live rental template) ───────────────────── */}
+          <Route path="/rentals" element={<ProtectedRoute><Layout><RentalsPage /></Layout></ProtectedRoute>} />
+          {/* Orphan rental mockups (SAMPLE_PROPERTIES, no live data) — superseded
+              by /rentals. Routes left commented per comment-first cleanup; delete
+              the pages in a later tidy-up pass. */}
+          {/* <Route path="/property-management" element={<ProtectedRoute><Layout><PropertyManagementDashboard /></Layout></ProtectedRoute>} /> */}
+          {/* <Route path="/rental-properties" element={<ProtectedRoute><Layout><RentalPropertiesPage /></Layout></ProtectedRoute>} /> */}
           <Route path="/rental-tax-guide" element={<ProtectedRoute><Layout><RentalTaxGuidePage /></Layout></ProtectedRoute>} />
 
           {/* ── Financial ──────────────────────────────────────────── */}
