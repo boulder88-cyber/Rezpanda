@@ -4,7 +4,7 @@ import { useAuth } from '@/contexts/AuthContext.jsx';
 import {
   Search, Zap, Flame, Droplet, Wifi, Phone, Trash2,
   Building2, Bug, Shield, ExternalLink, AlertCircle,
-  Loader2, Plus, ArrowLeft, X
+  Loader2, Plus, ArrowLeft, X, ChevronRight
 } from 'lucide-react';
 
 // ═══════════════════════════════════════════════════════════════════════
@@ -219,9 +219,9 @@ const UtilityCompanyListing = forwardRef(({ onSelectCompany }, ref) => {
             </button>
           </div>
         ) : showCategories ? (
-          // ── Category grid ──
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(180px, 1fr))', gap: '16px' }}>
-            {Object.entries(CATEGORY_CONFIG).map(([category, config]) => {
+          // ── Category list — compact rows, not a wall of tiles ──
+          <div style={{ maxWidth: '560px', margin: '0 auto', background: '#fff', border: `1px solid ${BORDER}`, borderRadius: '12px', overflow: 'hidden', boxShadow: '0 1px 3px rgba(31,39,51,0.06)' }}>
+            {Object.entries(CATEGORY_CONFIG).map(([category, config], i, arr) => {
               const Icon = config.icon;
               const count = categoryCounts[category] || 0;
               return (
@@ -229,21 +229,20 @@ const UtilityCompanyListing = forwardRef(({ onSelectCompany }, ref) => {
                   key={category}
                   onClick={() => setSelectedCategory(category)}
                   style={{
-                    display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
-                    padding: '28px 20px', borderRadius: '12px', background: '#fff',
-                    border: `1px solid ${BORDER}`, cursor: 'pointer', transition: 'box-shadow 0.2s, transform 0.2s',
-                    boxShadow: '0 1px 3px rgba(31,39,51,0.06)',
+                    display: 'flex', alignItems: 'center', gap: '12px', width: '100%',
+                    padding: '12px 16px', background: '#fff', border: 'none', cursor: 'pointer',
+                    borderBottom: i < arr.length - 1 ? `1px solid ${BORDER}` : 'none',
+                    textAlign: 'left', transition: 'background 0.15s',
                   }}
-                  onMouseEnter={(e) => { e.currentTarget.style.boxShadow = '0 6px 16px rgba(31,39,51,0.12)'; e.currentTarget.style.transform = 'translateY(-2px)'; }}
-                  onMouseLeave={(e) => { e.currentTarget.style.boxShadow = '0 1px 3px rgba(31,39,51,0.06)'; e.currentTarget.style.transform = 'translateY(0)'; }}
+                  onMouseEnter={(e) => { e.currentTarget.style.background = PAGE; }}
+                  onMouseLeave={(e) => { e.currentTarget.style.background = '#fff'; }}
                 >
-                  <div style={iconTile('56px')}>
-                    <Icon style={{ width: '28px', height: '28px', color: '#fff' }} />
+                  <div style={{ width: '34px', height: '34px', borderRadius: '8px', background: PALE_NAVY, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                    <Icon style={{ width: '18px', height: '18px', color: NAVY }} />
                   </div>
-                  <span style={{ fontWeight: 600, fontSize: '16px', color: INK, textAlign: 'center', margin: '14px 0 10px' }}>{category}</span>
-                  <span style={{ fontSize: '12px', color: INK_MUTE }}>
-                    {count} {count === 1 ? 'provider' : 'providers'}
-                  </span>
+                  <span style={{ fontWeight: 500, fontSize: '15px', color: INK, flex: 1 }}>{category}</span>
+                  <span style={{ fontSize: '13px', color: INK_MUTE }}>{count}</span>
+                  <ChevronRight style={{ width: '16px', height: '16px', color: INK_MUTE, flexShrink: 0 }} />
                 </button>
               );
             })}
