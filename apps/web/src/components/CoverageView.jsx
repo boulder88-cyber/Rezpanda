@@ -63,6 +63,19 @@ const median = (arr) => {
 
 const fmtDate = (d) => d.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
 
+// Human "how long ago" from a day count, for surfacing staleness at a glance.
+const agoLabel = (days) => {
+  if (days == null) return '';
+  if (days <= 0) return 'today';
+  if (days === 1) return 'yesterday';
+  if (days < 30) return `${days} days ago`;
+  const months = Math.round(days / 30);
+  if (months === 1) return 'about a month ago';
+  if (months < 12) return `${months} months ago`;
+  const years = Math.round(days / 365);
+  return years === 1 ? 'about a year ago' : `${years} years ago`;
+};
+
 const CoverageView = ({ companies = [] }) => {
   const { billerRows, missingCategories, totalBillers } = useMemo(() => {
     const today = new Date(); today.setHours(0, 0, 0, 0);
@@ -80,30 +93,35 @@ const CoverageView = ({ companies = [] }) => {
     const billerRows = Object.values(byBiller).map((b) => {
       const dates = b.bills.map(billDate).filter(Boolean).sort((a, z) => a - z);
       const count = b.bills.length;
+      const last = dates.length ? dates[dates.length - 1] : null;
+      const daysSinceLast = last ? Math.round((today - last) / DAY) : null;
 
-      // Not enough dated history to judge a rhythm yet.
+      // Not enough dated history to judge a rhythm yet. We still surface the
+      // last-received date, and if that single/sparse bill is itself old, flag
+      // it amber — "one bill, and it was a while ago" is a real silent gap we
+      // can show even without a known cadence.
       if (dates.length < 2) {
-        return { name: b.name, category: b.category, count, state: 'learning', cadence: null, last: dates[dates.length - 1] || null, expected: null };
+        const stale = daysSinceLast != null && daysSinceLast > 45;
+        return { name: b.name, category: b.category, count, state: 'learning', cadence: null, last, daysSinceLast, expected: null, stale };
       }
 
       const gaps = [];
       for (let i = 1; i < dates.length; i++) gaps.push((dates[i] - dates[i - 1]) / DAY);
       const cadence = cadenceFromGap(median(gaps));
-      const last = dates[dates.length - 1];
 
       if (!cadence) {
-        return { name: b.name, category: b.category, count, state: 'learning', cadence: null, last, expected: null };
+        const stale = daysSinceLast != null && daysSinceLast > 45;
+        return { name: b.name, category: b.category, count, state: 'learning', cadence: null, last, daysSinceLast, expected: null, stale };
       }
 
       // Expected next bill ≈ last + cadence period. Flag only when we're past a
       // generous grace window (1.5× the period) — conservative, to avoid crying
       // wolf on a biller that's just a little late.
       const expected = new Date(last.getTime() + cadence.period * DAY);
-      const daysSinceLast = (today - last) / DAY;
       const overdue = daysSinceLast > cadence.period * 1.5;
 
       return {
-        name: b.name, category: b.category, count, cadence, last, expected,
+        name: b.name, category: b.category, count, cadence, last, daysSinceLast, expected,
         state: overdue ? 'gap' : 'ok',
       };
     }).sort((a, z) => {
@@ -143,7 +161,7 @@ const CoverageView = ({ companies = [] }) => {
     );
   }
 
-  const gapCount = billerRows.filter((r) => r.state === 'gap').length + missingCategories.length;
+  const gapCount = billerRows.filter((r) => r.state === 'gap' || (r.state === 'learning' && r.stale)).length + missingCategories.length;
 
   return (
     <div style={{ ...cardStyle, padding: '20px' }}>
@@ -175,8 +193,10 @@ const CoverageView = ({ companies = [] }) => {
       {/* Layer 1: per-biller cadence rows */}
       <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
         {billerRows.map((r) => {
+          const learningStale = r.state === 'learning' && r.stale;
           const tone =
             r.state === 'gap' ? { icon: AlertTriangle, color: AMBER, bg: '#fffbeb', border: '#fde68a' }
+            : learningStale ? { icon: AlertTriangle, color: AMBER, bg: '#fffbeb', border: '#fde68a' }
             : r.state === 'learning' ? { icon: Clock, color: INK_MUTE, bg: '#fff', border: BORDER }
             : { icon: CheckCircle2, color: GREEN, bg: '#f6fcf9', border: BORDER };
           const Icon = tone.icon;
@@ -187,18 +207,21 @@ const CoverageView = ({ companies = [] }) => {
                 <div className="min-w-0">
                   <div className="font-medium truncate" style={{ fontSize: '14px', color: INK }}>{r.name}</div>
                   <div style={{ fontSize: '12px', color: INK_SOFT }}>
-                    {r.state === 'gap' && r.cadence && r.expected &&
-                      `Usually ${r.cadence.label} · expected around ${fmtDate(r.expected)}, not seen yet`}
-                    {r.state === 'learning' &&
-                      `${r.count} ${r.count === 1 ? 'bill' : 'bills'} so far · still learning the rhythm`}
+                    {r.state === 'gap' && r.cadence && r.expected && r.last &&
+                      `Usually ${r.cadence.label} · last on ${fmtDate(r.last)} (${agoLabel(r.daysSinceLast)}) · next was expected around ${fmtDate(r.expected)}`}
+                    {r.state === 'learning' && r.last &&
+                      `${r.count} ${r.count === 1 ? 'bill' : 'bills'} so far · last on ${fmtDate(r.last)} (${agoLabel(r.daysSinceLast)})${r.stale ? ' · nothing recent' : ' · still learning the rhythm'}`}
+                    {r.state === 'learning' && !r.last &&
+                      `${r.count} ${r.count === 1 ? 'bill' : 'bills'} so far · no dated bill yet`}
                     {r.state === 'ok' && r.cadence && r.last &&
-                      `${r.cadence.label.charAt(0).toUpperCase() + r.cadence.label.slice(1)} · last on ${fmtDate(r.last)}`}
+                      `${r.cadence.label.charAt(0).toUpperCase() + r.cadence.label.slice(1)} · last on ${fmtDate(r.last)} (${agoLabel(r.daysSinceLast)})`}
                   </div>
                 </div>
               </div>
-              <span style={{ fontSize: '12px', color: INK_MUTE, flexShrink: 0, marginLeft: '12px' }}>
-                {r.count} {r.count === 1 ? 'bill' : 'bills'}
-              </span>
+              <div style={{ textAlign: 'right', flexShrink: 0, marginLeft: '12px' }}>
+                <div style={{ fontSize: '12px', color: INK, fontWeight: 500 }}>{r.last ? fmtDate(r.last) : '—'}</div>
+                <div style={{ fontSize: '11px', color: INK_MUTE }}>{r.count} {r.count === 1 ? 'bill' : 'bills'}</div>
+              </div>
             </div>
           );
         })}
