@@ -135,12 +135,31 @@ async function extractBillWithClaude(apiKey, content) {
   const systemPrompt =
     'You extract structured data from utility bills, invoices, and receipts. ' +
     'Return ONLY a single JSON object, no prose, no markdown, no code fences. ' +
-    'Schema: {"companyName": string|null, "amount": number|null, "dueDate": "YYYY-MM-DD"|null, ' +
+    'Schema: {"documentType": "bill"|"marketing"|"receipt"|"notice"|"other", ' +
+    '"companyName": string|null, "amount": number|null, "dueDate": "YYYY-MM-DD"|null, ' +
     '"category": one of ' + JSON.stringify(CATEGORIES) + ', ' +
     '"amountConfidence": "high"|"medium"|"low", "amountReason": string, ' +
     '"payUrl": string|null, "phone": string|null, "address": string|null, ' +
     '"accountNumber": string|null, "invoiceNumber": string|null, "billingPeriod": string|null}. ' +
     'Rules: use null only if a field is truly not present anywhere in the document. ' +
+    // ── Document classification (the gate) ───────────────────────────────
+    // Decide FIRST what this email/document actually is. The pipeline uses this
+    // to keep marketing and noise out of the user's bill queue. Be conservative:
+    // only call something "marketing" when it is clearly promotional with no
+    // amount the customer owes. When genuinely unsure, prefer "bill" — a real
+    // bill must never be dropped; a stray non-bill in the queue is recoverable.
+    'documentType = what this document IS. ' +
+    '"bill" = an invoice, statement, or bill stating an amount the customer owes ' +
+    '(has or implies a balance/amount due and typically a due date or account). ' +
+    '"receipt" = a confirmation that a payment ALREADY happened (paid, thank-you, ' +
+    'payment confirmation, autopay-processed) — money already moved, nothing owed now. ' +
+    '"marketing" = a promotion, offer, ad, upgrade pitch, newsletter, refer-a-friend, ' +
+    'or rate advertisement. A price shown as a DEAL or PLAN PRICE (e.g. "get internet ' +
+    'for $39.99/mo") is NOT an amount owed — classify as marketing, not a bill. ' +
+    '"notice" = an account/service message with no amount owed (outage alert, policy ' +
+    'change, paperless-enrollment confirmation, password reset, login alert). ' +
+    '"other" = anything that fits none of the above. ' +
+    'If the document is genuinely a bill but also contains promo sections, it is still "bill". ' +
     // ── Vendor enrichment fields ─────────────────────────────────────────
     // These describe the BILLER (the company), not this month\'s charge. They
     // are used to build/enrich a reusable vendor record. Pull them only if the
@@ -498,6 +517,31 @@ export default async function handler(req, res) {
     parsed = await extractBillWithClaude(apiKey, content);
   } catch (err) {
     return res.status(502).json({ error: 'Claude extraction failed', detail: String(err) });
+  }
+
+  // ── Gate: keep non-bills out of the review queue ─────────────────────────
+  // Linking a biller directly means CasaCEO also receives that biller's
+  // marketing, receipts, and notices. We classify the document (documentType)
+  // and refuse to create an invoice for clear non-bills, so the queue stays
+  // trustworthy. FAIL OPEN: we only block when Haiku is confident it's a
+  // non-bill AND there is no amount owed. If any positive amount was parsed,
+  // we let it through regardless — the cost of dropping a real bill is far
+  // worse than one stray row the user can delete. A promo price reads as
+  // marketing with amount=null, so it's stopped; an actual bill always carries
+  // an amount and passes. The email is still acknowledged (200) so SendGrid
+  // doesn't retry; we simply don't write a record.
+  const NON_BILL_TYPES = new Set(['marketing', 'receipt', 'notice']);
+  const docType = typeof parsed.documentType === 'string' ? parsed.documentType.toLowerCase().trim() : '';
+  const hasAmountOwed = typeof parsed.amount === 'number' && parsed.amount > 0;
+  if (NON_BILL_TYPES.has(docType) && !hasAmountOwed) {
+    return res.status(200).json({
+      ok: true,
+      saved: false,
+      reason: 'not a bill',
+      documentType: docType,
+      companyName: parsed.companyName || null,
+      from: extracted.from || '',
+    });
   }
 
   // Write to PocketBase.
