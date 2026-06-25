@@ -1081,7 +1081,7 @@ const BillPayPage = () => {
           <TabsContent value="directory" className="mt-0">
             {/* Your billers + connection status, above the browse-the-catalog listing */}
             <BillerConnectChecklist
-              companies={companies}
+              companies={propertyFiltered}
               forwardAddress={currentUser ? `ceo+${currentUser.id}@bills.casaceo.com` : ''}
             />
             <div className="bg-white" style={{ borderRadius: '12px', border: '1px solid #e9e4db', padding: '24px', boxShadow: '0 1px 3px rgba(0,0,0,0.06)' }}>
