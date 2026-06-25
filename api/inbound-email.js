@@ -135,12 +135,14 @@ async function extractBillWithClaude(apiKey, content) {
   const systemPrompt =
     'You extract structured data from utility bills, invoices, and receipts. ' +
     'Return ONLY a single JSON object, no prose, no markdown, no code fences. ' +
-    'Schema: {"documentType": "bill"|"marketing"|"receipt"|"notice"|"other", ' +
+    'Schema: {"documentType": "bill"|"marketing"|"receipt"|"notice"|"rent_payment"|"other", ' +
     '"companyName": string|null, "amount": number|null, "dueDate": "YYYY-MM-DD"|null, ' +
     '"category": one of ' + JSON.stringify(CATEGORIES) + ', ' +
     '"amountConfidence": "high"|"medium"|"low", "amountReason": string, ' +
     '"payUrl": string|null, "phone": string|null, "address": string|null, ' +
-    '"accountNumber": string|null, "invoiceNumber": string|null, "billingPeriod": string|null}. ' +
+    '"accountNumber": string|null, "invoiceNumber": string|null, "billingPeriod": string|null, ' +
+    '"rentAmount": number|null, "rentPayer": string|null, "rentPeriod": string|null, ' +
+    '"rentConfidence": "high"|"medium"|"low"}. ' +
     'Rules: use null only if a field is truly not present anywhere in the document. ' +
     // ── Document classification (the gate) ───────────────────────────────
     // Decide FIRST what this email/document actually is. The pipeline uses this
@@ -159,6 +161,19 @@ async function extractBillWithClaude(apiKey, content) {
     '"notice" = an account/service message with no amount owed (outage alert, policy ' +
     'change, paperless-enrollment confirmation, password reset, login alert). ' +
     '"other" = anything that fits none of the above. ' +
+    // ── Rent-income classification (conservative) ─────────────────────────
+    // A rent payment is money coming IN to the landlord, the opposite of a
+    // bill. Be STRICT: only classify as "rent_payment" when the document
+    // clearly shows rent RECEIVED by the landlord — a tenant rent payment
+    // confirmation, a Zelle/Venmo/bank deposit notification that names rent or
+    // a tenant, or a property-manager owner statement disbursing rent. A bank
+    // statement line that merely COULD be rent is NOT enough; when unsure,
+    // do NOT use rent_payment — fall back to the best other type. A false rent
+    // row corrupts income totals, so a miss is safer than a wrong guess.
+    '"rent_payment" = a confirmation that RENT was paid TO the property owner ' +
+    '(tenant payment received, rent deposit notification, or an owner/landlord ' +
+    'statement showing rent collected). NOT a bill the owner pays; NOT a generic ' +
+    'bank statement; NOT a lease document. Only use when rent income is explicit. ' +
     'If the document is genuinely a bill but also contains promo sections, it is still "bill". ' +
     // ── Vendor enrichment fields ─────────────────────────────────────────
     // These describe the BILLER (the company), not this month\'s charge. They
@@ -203,6 +218,14 @@ async function extractBillWithClaude(apiKey, content) {
     "If a date range is printed (e.g. 'Feb 12 - Mar 11, 2026'), return it compactly as " +
     '"Feb 12 – Mar 11, 2026". If only a single month/cycle is shown (e.g. "March 2026"), ' +
     'return that. Prefer the SERVICE period over the statement date. null if no period appears. ' +
+    // ── Rent-income fields (only when documentType = "rent_payment") ──────
+    // Pull these ONLY if documentType is rent_payment; otherwise leave null.
+    'rentAmount = the rent amount RECEIVED by the landlord, as a plain number ' +
+    '(no symbol or commas); null if not a rent payment or not stated. ' +
+    'rentPayer = the tenant or sender who paid the rent, as printed; null if absent. ' +
+    'rentPeriod = the month/period the rent covers, as a short label (e.g. "March 2026"); null if absent. ' +
+    'rentConfidence = how sure you are this is genuinely rent received by the owner ' +
+    '("high"|"medium"|"low"). Use "high" only when rent income is unambiguous. ' +
     'Output only the JSON object.';
 
   const res = await fetch('https://api.anthropic.com/v1/messages', {
@@ -311,6 +334,75 @@ async function pbCreateBill(pbUrl, token, record) {
   if (!res.ok) {
     const body = await res.text();
     throw new Error('PocketBase create failed ' + res.status + ': ' + body.slice(0, 300));
+  }
+  return res.json();
+}
+
+// ── Rent income: lease lookup, matching, and receipt creation ──────────────
+// A forwarded rent payment names a user but not which property. The user's
+// leases carry the answer: each lease has a homeId + monthlyRent + tenantName.
+// We match the received amount (and payer name, if present) against the user's
+// active leases to attribute the receipt. If exactly one lease is a clear
+// match, we attribute it; otherwise the receipt lands unassigned for the user
+// to place in review. Never auto-confirm — rent rows feed the tax P&L, so a
+// human glance gates every one.
+
+async function pbFindLeasesForOwner(pbUrl, token, ownerId) {
+  const filter = 'ownerId = "' + ownerId + '"';
+  const url = pbUrl + '/api/collections/leases/records?perPage=100&filter=' + encodeURIComponent(filter);
+  try {
+    const res = await fetch(url, { headers: { Authorization: token } });
+    if (!res.ok) return [];
+    const data = await res.json();
+    return data && Array.isArray(data.items) ? data.items : [];
+  } catch (e) {
+    return [];
+  }
+}
+
+// Decide which lease (if any) a received rent amount belongs to. Returns the
+// matched lease or null. Matching is deliberately conservative:
+//   • amount within 2% (or $25) of a lease's monthlyRent = an amount match
+//   • if a payer name is given and matches a lease's tenant, that's a strong
+//     signal that can stand alone
+// If MORE THAN ONE lease matches on amount (two units at the same rent), we
+// return null and leave it unassigned — guessing between them would be wrong.
+function matchLeaseByRent(leases, rentAmount, rentPayer) {
+  if (!Array.isArray(leases) || leases.length === 0) return null;
+  const payerLc = (rentPayer || '').trim().toLowerCase();
+
+  // Strong path: payer name matches a tenant uniquely.
+  if (payerLc) {
+    const byTenant = leases.filter((l) => {
+      const t = (l.tenantName || '').trim().toLowerCase();
+      return t && (t === payerLc || t.includes(payerLc) || payerLc.includes(t));
+    });
+    if (byTenant.length === 1) return byTenant[0];
+  }
+
+  // Amount path: within 2% or $25 of expected monthly rent.
+  if (typeof rentAmount === 'number' && rentAmount > 0) {
+    const byAmount = leases.filter((l) => {
+      const rent = typeof l.monthlyRent === 'number' ? l.monthlyRent : parseFloat(l.monthlyRent);
+      if (!Number.isFinite(rent) || rent <= 0) return false;
+      const tol = Math.max(25, rent * 0.02);
+      return Math.abs(rent - rentAmount) <= tol;
+    });
+    if (byAmount.length === 1) return byAmount[0];
+  }
+
+  return null;
+}
+
+async function pbCreateRentReceipt(pbUrl, token, record) {
+  const res = await fetch(pbUrl + '/api/collections/rentReceipts/records', {
+    method: 'POST',
+    headers: { 'content-type': 'application/json', Authorization: token },
+    body: JSON.stringify(record),
+  });
+  if (!res.ok) {
+    const body = await res.text();
+    throw new Error('Rent receipt create failed ' + res.status + ': ' + body.slice(0, 300));
   }
   return res.json();
 }
@@ -542,6 +634,69 @@ export default async function handler(req, res) {
       companyName: parsed.companyName || null,
       from: extracted.from || '',
     });
+  }
+
+  // ── Rent income branch: route rent payments to rentReceipts ──────────────
+  // A rent payment is income (money in), not a bill (money out), so it never
+  // touches the invoices path. We require BOTH documentType = rent_payment AND
+  // a real rent amount — conservative on purpose: a misrouted bill or a
+  // mis-tagged deposit would corrupt income totals and the tax P&L, so when
+  // the rent signal isn't clear we fall through to the normal bill path
+  // instead. Rent receipts always land as pending_review (never auto-confirm);
+  // the user confirms each in review, the same gate bills get. We attribute to
+  // a property by matching the amount/payer against the user's leases; no clean
+  // match = unassigned (empty homeId), surfaced for the user to place.
+  const rentAmt = typeof parsed.rentAmount === 'number' && parsed.rentAmount > 0
+    ? parsed.rentAmount
+    : (typeof parsed.amount === 'number' && parsed.amount > 0 ? parsed.amount : null);
+  if (docType === 'rent_payment' && typeof rentAmt === 'number' && rentAmt > 0) {
+    try {
+      const token = await pbAuth(pbUrl, pbEmail, pbPassword);
+      const userOk = await pbVerifyUser(pbUrl, token, userId);
+      if (!userOk) {
+        return res.status(200).json({ ok: false, reason: 'unknown user', userId });
+      }
+
+      const leases = await pbFindLeasesForOwner(pbUrl, token, userId);
+      const matched = matchLeaseByRent(leases, rentAmt, parsed.rentPayer);
+
+      const rentConfidence =
+        parsed.rentConfidence === 'high' ||
+        parsed.rentConfidence === 'medium' ||
+        parsed.rentConfidence === 'low'
+          ? parsed.rentConfidence
+          : '';
+
+      const receipt = {
+        ownerId: userId,
+        homeId: matched ? (matched.homeId || '') : '',
+        leaseId: matched ? matched.id : '',
+        amount: rentAmt,
+        receivedDate: new Date().toISOString().slice(0, 10),
+        coversPeriod: typeof parsed.rentPeriod === 'string' ? parsed.rentPeriod.trim().slice(0, 64) : '',
+        payerName: typeof parsed.rentPayer === 'string' ? parsed.rentPayer.trim().slice(0, 120) : '',
+        method: 'email',
+        status: 'pending_review',
+        source: 'email',
+        senderAddress: extracted.from || '',
+        // Provenance, scrubbed of any account number the same way bills are.
+        parsed_raw: scrubParsed(parsed),
+        cleared: false,
+      };
+
+      const saved = await pbCreateRentReceipt(pbUrl, token, receipt);
+      return res.status(200).json({
+        ok: true,
+        saved: true,
+        kind: 'rent_receipt',
+        savedId: saved.id,
+        attributedToHome: receipt.homeId || null,
+        matchedLease: matched ? matched.id : null,
+        rentConfidence,
+      });
+    } catch (err) {
+      return res.status(500).json({ error: 'Failed to save rent receipt', detail: String(err) });
+    }
   }
 
   // Write to PocketBase.
