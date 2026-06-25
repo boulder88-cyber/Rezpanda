@@ -1,93 +1,126 @@
 import React from 'react';
 import { NavLink } from 'react-router-dom';
-import {
-  Home,
-  CreditCard,
-  Wrench,
-  FolderOpen,
-  Compass,
-  X
-} from 'lucide-react';
-import { Button } from '@/components/ui/button.jsx';
+import { Home, CreditCard, Wrench, FolderOpen, Compass, X, Building2 } from 'lucide-react';
+import { useHome } from '@/contexts/HomeContext.jsx';
+
+// ── Design-system tokens (navy/gold, warm) ──────────────────────────────
+const NAVY = '#1e3a5f';
+const GOLD = '#c9a96e';
+const INK = '#1f2733';
+const INK_SOFT = '#5b6472';
+const INK_MUTE = '#95a0ae';
+const PAGE = '#faf8f4';
+const BORDER = '#e9e4db';
+const ACTIVE_BG = '#f3eee4'; // warm tint behind the active item (gold-adjacent)
+
+const NAV = [
+  { path: '/dashboard', label: 'Home', icon: Home },
+  { path: '/bill-pay', label: 'Bills', icon: CreditCard },
+  { path: '/maintenance-management', label: 'Maintenance', icon: Wrench },
+  { path: '/documents', label: 'Records', icon: FolderOpen },
+];
+
+// A nav row. Active = warm tint + navy ink + a gold left-edge bar ("you are
+// here"), the one place a gold accent genuinely earns its keep. Rest = quiet
+// ink that warms on hover. No blue anywhere (that was the old palette).
+const navRow = ({ isActive }) => ({
+  position: 'relative',
+  display: 'flex', alignItems: 'center', gap: '12px',
+  padding: '10px 12px 10px 14px', borderRadius: '10px',
+  fontSize: '14px', fontWeight: isActive ? 600 : 500,
+  color: isActive ? NAVY : INK_SOFT,
+  background: isActive ? ACTIVE_BG : 'transparent',
+  textDecoration: 'none', transition: 'background 0.15s, color 0.15s',
+});
 
 const Sidebar = ({ isOpen, closeSidebar }) => {
-  // Mirrors the dashboard's three-tile structure so the frame agrees with the pages.
-  // Home = the dashboard (the calm landing place). Then the three primary domains.
-  const navItems = [
-    { path: '/dashboard', label: 'Home', icon: Home },
-    { path: '/bill-pay', label: 'Bills', icon: CreditCard },
-    { path: '/maintenance-management', label: 'Maintenance', icon: Wrench },
-    { path: '/documents', label: 'Records', icon: FolderOpen },
-  ];
+  const { selectedHome, allProperties, otherScope } = useHome();
+
+  // What the grounding footer says you're looking at — always honest about scope.
+  const scopeLabel = allProperties ? 'All properties'
+    : otherScope ? 'Other & unassigned'
+    : (selectedHome ? (selectedHome.name || selectedHome.address || 'Your property') : 'No property selected');
+  const scopeSub = allProperties ? 'Across every home'
+    : otherScope ? 'Bills with no home'
+    : (selectedHome && selectedHome.name && selectedHome.address ? selectedHome.address : 'Currently viewing');
+
+  const closeOnMobile = () => { if (window.innerWidth < 1024) closeSidebar(); };
+
+  const renderRow = (item) => {
+    const Icon = item.icon;
+    return (
+      <NavLink key={item.path} to={item.path} onClick={closeOnMobile} className="casaceo-navrow" style={navRow}>
+        {({ isActive }) => (
+          <>
+            {/* gold "you are here" edge bar */}
+            <span style={{ position: 'absolute', left: 0, top: '50%', transform: 'translateY(-50%)', width: '3px', height: isActive ? '20px' : '0px', background: GOLD, borderRadius: '2px', transition: 'height 0.18s' }} />
+            <Icon style={{ width: '19px', height: '19px', color: isActive ? NAVY : INK_MUTE, flexShrink: 0 }} />
+            {item.label}
+          </>
+        )}
+      </NavLink>
+    );
+  };
 
   return (
     <>
+      <style>{`
+        .casaceo-navrow:hover { background: ${PAGE} !important; color: ${INK} !important; }
+        .casaceo-navrow.active:hover { background: ${ACTIVE_BG} !important; color: ${NAVY} !important; }
+        .casaceo-explore:hover { background: ${PAGE} !important; color: ${INK_SOFT} !important; }
+      `}</style>
       {/* Mobile overlay */}
       {isOpen && (
-        <div
-          className="fixed inset-0 bg-slate-900/50 z-40 lg:hidden"
-          onClick={closeSidebar}
-        />
+        <div style={{ position: 'fixed', inset: 0, background: 'rgba(31,39,51,0.45)', zIndex: 40 }} className="lg:hidden" onClick={closeSidebar} />
       )}
-      {/* Sidebar */}
-      <aside
-        className={`fixed lg:static inset-y-0 left-0 z-50 w-64 bg-white border-r border-slate-200 transform transition-transform duration-200 ease-in-out lg:transform-none flex flex-col ${
-          isOpen ? 'translate-x-0' : '-translate-x-full'
-        }`}
-      >
-        <div className="h-16 flex items-center justify-between px-4 border-b border-slate-200 lg:hidden">
-          <div className="flex items-center gap-2">
-            <div className="w-8 h-8 bg-blue-600 rounded-lg flex items-center justify-center">
-              <Home className="w-5 h-5 text-white" />
-            </div>
-            <span className="text-xl font-bold text-slate-900">CasaCEO</span>
-          </div>
-          <Button variant="ghost" size="icon" onClick={closeSidebar}>
-            <X className="w-5 h-5" />
-          </Button>
-        </div>
-        <div className="flex-1 overflow-y-auto py-4 px-3 space-y-1">
-          {navItems.map((item) => {
-            const Icon = item.icon;
-            return (
-              <NavLink
-                key={item.path}
-                to={item.path}
-                onClick={() => {
-                  if (window.innerWidth < 1024) closeSidebar();
-                }}
-                className={({ isActive }) =>
-                  `flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors ${
-                    isActive
-                      ? 'bg-blue-50 text-blue-700'
-                      : 'text-slate-600 hover:bg-slate-100 hover:text-slate-900'
-                  }`
-                }
-              >
-                <Icon className="w-5 h-5" />
-                {item.label}
-              </NavLink>
-            );
-          })}
 
-          {/* Explore — the one quiet door to the optional extras, set apart from the primary four */}
-          <div className="pt-3 mt-3 border-t border-slate-100">
-            <NavLink
-              to="/explore"
-              onClick={() => {
-                if (window.innerWidth < 1024) closeSidebar();
-              }}
-              className={({ isActive }) =>
-                `flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors ${
-                  isActive
-                    ? 'bg-slate-100 text-slate-900'
-                    : 'text-slate-500 hover:bg-slate-100 hover:text-slate-900'
-                }`
-              }
+      <aside
+        className={`fixed lg:static inset-y-0 left-0 z-50 transform transition-transform duration-200 ease-in-out lg:transform-none ${isOpen ? 'translate-x-0' : '-translate-x-full'}`}
+        style={{ width: '256px', background: '#fff', borderRight: `1px solid ${BORDER}`, display: 'flex', flexDirection: 'column' }}
+      >
+        {/* Identity header — now on desktop too, so the rail has a self. */}
+        <div style={{ height: '64px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '0 16px', borderBottom: `1px solid ${BORDER}` }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+            <div style={{ width: '32px', height: '32px', background: NAVY, borderRadius: '9px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+              <Home style={{ width: '18px', height: '18px', color: '#fff' }} />
+            </div>
+            <span style={{ fontSize: '18px', fontWeight: 700, color: INK, letterSpacing: '-0.01em' }}>CasaCEO</span>
+          </div>
+          <button onClick={closeSidebar} className="lg:hidden" style={{ background: 'transparent', border: 'none', cursor: 'pointer', color: INK_MUTE, padding: '6px' }}>
+            <X style={{ width: '20px', height: '20px' }} />
+          </button>
+        </div>
+
+        {/* Nav */}
+        <div style={{ flex: 1, overflowY: 'auto', padding: '16px 12px', display: 'flex', flexDirection: 'column', gap: '3px' }}>
+          {NAV.map(renderRow)}
+
+          {/* Explore — the one quiet door to the extras, set apart. */}
+          <div style={{ paddingTop: '12px', marginTop: '12px', borderTop: `1px solid ${BORDER}` }}>
+            <NavLink to="/explore" onClick={closeOnMobile} className="casaceo-explore"
+              style={({ isActive }) => ({
+                display: 'flex', alignItems: 'center', gap: '12px', padding: '10px 12px', borderRadius: '10px',
+                fontSize: '14px', fontWeight: 500, textDecoration: 'none',
+                color: isActive ? INK : INK_MUTE, background: isActive ? PAGE : 'transparent', transition: 'background 0.15s, color 0.15s',
+              })}
             >
-              <Compass className="w-5 h-5" />
+              <Compass style={{ width: '19px', height: '19px', flexShrink: 0 }} />
               Explore
             </NavLink>
+          </div>
+        </div>
+
+        {/* Grounding footer — the home you're managing, so the rail feels like
+            a place that's yours, not a generic menu. Honest about scope. */}
+        <div style={{ padding: '12px', borderTop: `1px solid ${BORDER}`, background: PAGE }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '10px', padding: '8px 10px', background: '#fff', border: `1px solid ${BORDER}`, borderRadius: '10px' }}>
+            <div style={{ width: '32px', height: '32px', borderRadius: '8px', background: '#eef4fb', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+              <Building2 style={{ width: '17px', height: '17px', color: NAVY }} />
+            </div>
+            <div style={{ minWidth: 0 }}>
+              <div style={{ fontSize: '13px', fontWeight: 600, color: INK, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{scopeLabel}</div>
+              <div style={{ fontSize: '11px', color: INK_MUTE, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{scopeSub}</div>
+            </div>
           </div>
         </div>
       </aside>
