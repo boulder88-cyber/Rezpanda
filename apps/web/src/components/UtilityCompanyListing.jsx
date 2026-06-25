@@ -4,7 +4,7 @@ import { useAuth } from '@/contexts/AuthContext.jsx';
 import {
   Search, Zap, Flame, Droplet, Wifi, Phone, Trash2,
   Building2, Bug, Shield, ExternalLink, AlertCircle,
-  Loader2, Plus, ArrowLeft, X, ChevronRight
+  Loader2, Plus, ArrowLeft, X
 } from 'lucide-react';
 
 // ═══════════════════════════════════════════════════════════════════════
@@ -219,9 +219,9 @@ const UtilityCompanyListing = forwardRef(({ onSelectCompany }, ref) => {
             </button>
           </div>
         ) : showCategories ? (
-          // ── Category list — compact rows, not a wall of tiles ──
-          <div style={{ maxWidth: '560px', margin: '0 auto', background: '#fff', border: `1px solid ${BORDER}`, borderRadius: '12px', overflow: 'hidden', boxShadow: '0 1px 3px rgba(31,39,51,0.06)' }}>
-            {Object.entries(CATEGORY_CONFIG).map(([category, config], i, arr) => {
+          // ── Category grid — restrained tiles that fill the width ──
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(160px, 1fr))', gap: '12px' }}>
+            {Object.entries(CATEGORY_CONFIG).map(([category, config]) => {
               const Icon = config.icon;
               const count = categoryCounts[category] || 0;
               return (
@@ -229,20 +229,23 @@ const UtilityCompanyListing = forwardRef(({ onSelectCompany }, ref) => {
                   key={category}
                   onClick={() => setSelectedCategory(category)}
                   style={{
-                    display: 'flex', alignItems: 'center', gap: '12px', width: '100%',
-                    padding: '12px 16px', background: '#fff', border: 'none', cursor: 'pointer',
-                    borderBottom: i < arr.length - 1 ? `1px solid ${BORDER}` : 'none',
-                    textAlign: 'left', transition: 'background 0.15s',
+                    display: 'flex', flexDirection: 'column', alignItems: 'flex-start', gap: '10px',
+                    padding: '16px', borderRadius: '12px', background: '#fff',
+                    border: `1px solid ${BORDER}`, cursor: 'pointer', textAlign: 'left',
+                    transition: 'box-shadow 0.2s, border-color 0.2s', boxShadow: '0 1px 3px rgba(31,39,51,0.06)',
                   }}
-                  onMouseEnter={(e) => { e.currentTarget.style.background = PAGE; }}
-                  onMouseLeave={(e) => { e.currentTarget.style.background = '#fff'; }}
+                  onMouseEnter={(e) => { e.currentTarget.style.boxShadow = '0 4px 12px rgba(31,39,51,0.10)'; e.currentTarget.style.borderColor = NAVY_BORDER; }}
+                  onMouseLeave={(e) => { e.currentTarget.style.boxShadow = '0 1px 3px rgba(31,39,51,0.06)'; e.currentTarget.style.borderColor = BORDER; }}
                 >
-                  <div style={{ width: '34px', height: '34px', borderRadius: '8px', background: PALE_NAVY, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-                    <Icon style={{ width: '18px', height: '18px', color: NAVY }} />
+                  <div style={{ width: '38px', height: '38px', borderRadius: '8px', background: PALE_NAVY, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                    <Icon style={{ width: '20px', height: '20px', color: NAVY }} />
                   </div>
-                  <span style={{ fontWeight: 500, fontSize: '15px', color: INK, flex: 1 }}>{category}</span>
-                  <span style={{ fontSize: '13px', color: INK_MUTE }}>{count}</span>
-                  <ChevronRight style={{ width: '16px', height: '16px', color: INK_MUTE, flexShrink: 0 }} />
+                  <div>
+                    <div style={{ fontWeight: 600, fontSize: '15px', color: INK }}>{category}</div>
+                    <div style={{ fontSize: '12px', color: INK_MUTE, marginTop: '2px' }}>
+                      {count} {count === 1 ? 'provider' : 'providers'}
+                    </div>
+                  </div>
                 </button>
               );
             })}
