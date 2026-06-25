@@ -145,19 +145,19 @@ const BillerConnectChecklist = ({ companies = [], forwardAddress = '' }) => {
 
                   {/* Finder helper: a pre-filled web search to the biller's
                       login/account page, so the user doesn't have to hunt for
-                      where billing settings live. Mirrors the card's finder. */}
-                  <div className="flex flex-wrap items-center gap-x-3 gap-y-1" style={{ marginBottom: '12px', paddingLeft: '2px' }}>
-                    <a
-                      href={`https://www.google.com/search?q=${encodeURIComponent(`${b.name} login account billing settings`.trim())}`}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="flex items-center gap-1 hover:underline"
-                      style={{ fontSize: '11px', color: '#5b6472' }}
-                    >
-                      <Search style={{ width: '11px', height: '11px' }} />
-                      Find {b.name}'s site
-                    </a>
-                  </div>
+                      where billing settings live. A real button (not fine print)
+                      since this panel has room and the user asked for an
+                      affordance, not a link. */}
+                  <a
+                    href={`https://www.google.com/search?q=${encodeURIComponent(`${b.name} login account billing settings`.trim())}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="flex items-center gap-2 font-semibold transition-colors"
+                    style={{ fontSize: '14px', color: '#1e3a5f', border: '1px solid #cdddef', borderRadius: '8px', padding: '10px 14px', marginBottom: '12px', background: '#eef4fb', width: 'fit-content', textDecoration: 'none' }}
+                  >
+                    <Search style={{ width: '15px', height: '15px' }} />
+                    Find {b.name}'s login page
+                  </a>
 
                   <ol style={{ display: 'flex', flexDirection: 'column', gap: '6px', margin: 0, padding: 0, listStyle: 'none' }}>
                     {[
