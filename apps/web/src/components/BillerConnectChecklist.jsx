@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { CheckCircle2, Circle, ChevronDown, ChevronRight, Mail, Copy, Check } from 'lucide-react';
+import { CheckCircle2, Circle, ChevronDown, ChevronRight, Mail, Copy, Check, Search } from 'lucide-react';
 
 // ═══════════════════════════════════════════════════════════════════════
 // BILLER CONNECT CHECKLIST
@@ -142,6 +142,22 @@ const BillerConnectChecklist = ({ companies = [], forwardAddress = '' }) => {
                       </button>
                     </div>
                   )}
+
+                  {/* Finder helper: a pre-filled web search to the biller's
+                      login/account page, so the user doesn't have to hunt for
+                      where billing settings live. Mirrors the card's finder. */}
+                  <div className="flex flex-wrap items-center gap-x-3 gap-y-1" style={{ marginBottom: '12px', paddingLeft: '2px' }}>
+                    <a
+                      href={`https://www.google.com/search?q=${encodeURIComponent(`${b.name} login account billing settings`.trim())}`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="flex items-center gap-1 hover:underline"
+                      style={{ fontSize: '11px', color: '#5b6472' }}
+                    >
+                      <Search style={{ width: '11px', height: '11px' }} />
+                      Find {b.name}'s site
+                    </a>
+                  </div>
 
                   <ol style={{ display: 'flex', flexDirection: 'column', gap: '6px', margin: 0, padding: 0, listStyle: 'none' }}>
                     {[
