@@ -4,8 +4,9 @@ import { useAuth } from '@/contexts/AuthContext.jsx';
 import { useToast } from '@/hooks/use-toast.js';
 import {
   Calculator, TrendingUp, TrendingDown, ChevronDown, ChevronRight,
-  Pencil, Check, X
+  Pencil, Check, X, Download
 } from 'lucide-react';
+import { exportPropertyTaxYear } from '@/lib/rentalTaxExport.js';
 
 // ═══════════════════════════════════════════════════════════════════════
 // RentalPnL — the tax-ready profit & loss for ONE rental property.
@@ -243,22 +244,35 @@ const RentalPnL = ({ home }) => {
 
       {open && (
         <div style={{ padding: '18px' }}>
-          {/* Year selector */}
-          {availableYears.length > 1 && (
-            <div className="flex items-center gap-2" style={{ marginBottom: '16px' }}>
-              <span style={{ fontSize: '12px', color: INK_MUTED }}>Tax year</span>
-              <div className="flex items-center gap-1">
-                {availableYears.map((y) => (
-                  <button key={y} onClick={() => setYear(y)}
-                    style={{ padding: '4px 12px', fontSize: '13px', fontWeight: 500,
-                      color: y === year ? '#fff' : INK_MUTED, background: y === year ? NAVY : 'transparent',
-                      border: `1px solid ${y === year ? NAVY : BORDER}`, borderRadius: '999px', cursor: 'pointer' }}>
-                    {y}
-                  </button>
-                ))}
-              </div>
-            </div>
-          )}
+          {/* Year selector + export */}
+          <div className="flex items-center gap-2" style={{ marginBottom: '16px', flexWrap: 'wrap' }}>
+            {availableYears.length > 1 && (
+              <>
+                <span style={{ fontSize: '12px', color: INK_MUTED }}>Tax year</span>
+                <div className="flex items-center gap-1">
+                  {availableYears.map((y) => (
+                    <button key={y} onClick={() => setYear(y)}
+                      style={{ padding: '4px 12px', fontSize: '13px', fontWeight: 500,
+                        color: y === year ? '#fff' : INK_MUTED, background: y === year ? NAVY : 'transparent',
+                        border: `1px solid ${y === year ? NAVY : BORDER}`, borderRadius: '999px', cursor: 'pointer' }}>
+                      {y}
+                    </button>
+                  ))}
+                </div>
+              </>
+            )}
+            <button
+              onClick={() => exportPropertyTaxYear({
+                propertyName: home.name || home.address || 'Rental property',
+                receipts, expenses, year,
+              })}
+              style={{ marginLeft: 'auto', display: 'inline-flex', alignItems: 'center', gap: '6px',
+                padding: '6px 13px', fontSize: '13px', fontWeight: 500, color: NAVY,
+                background: 'transparent', border: `1px solid ${BORDER}`, borderRadius: '8px', cursor: 'pointer' }}>
+              <Download style={{ width: '14px', height: '14px' }} />
+              Export {year} for taxes
+            </button>
+          </div>
 
           {/* Income → Expenses → Net summary band */}
           <div style={{ display: 'flex', alignItems: 'center', gap: '20px', flexWrap: 'wrap',
