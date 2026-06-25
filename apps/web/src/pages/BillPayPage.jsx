@@ -19,6 +19,7 @@ import { useToast } from '@/hooks/use-toast.js';
 import AddServiceCompanyForm from '@/components/AddServiceCompanyForm.jsx';
 import ServiceCompanyCard from '@/components/ServiceCompanyCard.jsx';
 import PaymentHistoryTab from '@/components/PaymentHistoryTab.jsx';
+import CoverageView from '@/components/CoverageView.jsx';
 import UtilityCompanyListing from '@/components/UtilityCompanyListing.jsx';
 import PendingReviewSection from '@/components/PendingReviewSection.jsx';
 import AddBillButton from '@/components/AddBillButton.jsx';
@@ -567,6 +568,7 @@ const BillPayPage = () => {
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [prefillData, setPrefillData] = useState(null);
   const [historyRefreshTrigger, setHistoryRefreshTrigger] = useState(0);
+  const [historyView, setHistoryView] = useState('log'); // 'log' | 'coverage'
   const [timeframeDays, setTimeframeDays] = useState(90); // default 90; null = All
   const utilityListingRef = useRef(null);
 
@@ -1096,9 +1098,32 @@ const BillPayPage = () => {
 
           {/* ── History Tab ── */}
           <TabsContent value="history" className="mt-0">
-            <div className="bg-white" style={{ borderRadius: '12px', border: '1px solid #e9e4db', overflow: 'hidden', boxShadow: '0 1px 3px rgba(0,0,0,0.06)' }}>
-              <PaymentHistoryTab refreshTrigger={historyRefreshTrigger} />
+            {/* Sub-toggle: Payment log (what was paid) vs Coverage (what's missing). */}
+            <div className="flex items-center gap-1 bg-white border border-slate-200 rounded-xl" style={{ padding: '4px', marginBottom: '16px', width: 'fit-content' }}>
+              {[
+                { key: 'log', label: 'Payment log' },
+                { key: 'coverage', label: 'Coverage' },
+              ].map((t) => (
+                <button
+                  key={t.key}
+                  onClick={() => setHistoryView(t.key)}
+                  style={{
+                    fontSize: '13px', fontWeight: 500, padding: '6px 14px', borderRadius: '8px', border: 'none', cursor: 'pointer',
+                    background: historyView === t.key ? '#1e3a5f' : 'transparent',
+                    color: historyView === t.key ? '#fff' : '#5b6472',
+                  }}
+                >
+                  {t.label}
+                </button>
+              ))}
             </div>
+            {historyView === 'log' ? (
+              <div className="bg-white" style={{ borderRadius: '12px', border: '1px solid #e9e4db', overflow: 'hidden', boxShadow: '0 1px 3px rgba(0,0,0,0.06)' }}>
+                <PaymentHistoryTab refreshTrigger={historyRefreshTrigger} />
+              </div>
+            ) : (
+              <CoverageView companies={propertyFiltered} />
+            )}
           </TabsContent>
         </Tabs>
       </div>
