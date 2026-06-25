@@ -4,6 +4,7 @@ import { Link } from 'react-router-dom';
 import { useHome } from '@/contexts/HomeContext.jsx';
 import LeasePanel from '@/components/LeasePanel.jsx';
 import RentIncomePanel from '@/components/RentIncomePanel.jsx';
+import RentalPnL from '@/components/RentalPnL.jsx';
 import { Building2, Home, Plus, KeyRound } from 'lucide-react';
 
 // ═══════════════════════════════════════════════════════════════════════
@@ -136,12 +137,7 @@ const RentalsPage = () => {
                 <div style={{ padding: '20px' }}>
                   <LeasePanel home={home} />
                   <RentIncomePanel home={home} />
-
-                  {/* The tax-ready P&L for this property is the next slice. */}
-                  <p style={{ marginTop: '16px', fontSize: '12px', color: INK_FAINT,
-                    lineHeight: 1.5, paddingTop: '14px', borderTop: `1px solid ${BORDER}` }}>
-                    The tax-ready profit &amp; loss summary for this property is coming next.
-                  </p>
+                  <RentalPnL home={home} />
                 </div>
               </div>
             ))}
