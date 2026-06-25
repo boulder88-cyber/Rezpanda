@@ -1,11 +1,14 @@
-import React, { useMemo } from 'react';
+import React, { useMemo, useState } from 'react';
 import { Helmet } from 'react-helmet';
 import { Link } from 'react-router-dom';
+import pb from '@/lib/pocketbaseClient.js';
 import { useHome } from '@/contexts/HomeContext.jsx';
+import { useAuth } from '@/contexts/AuthContext.jsx';
 import LeasePanel from '@/components/LeasePanel.jsx';
 import RentIncomePanel from '@/components/RentIncomePanel.jsx';
 import RentalPnL from '@/components/RentalPnL.jsx';
-import { Building2, Home, Plus, KeyRound } from 'lucide-react';
+import { exportPortfolioTaxYear } from '@/lib/rentalTaxExport.js';
+import { Building2, Home, Plus, KeyRound, Download } from 'lucide-react';
 
 // ═══════════════════════════════════════════════════════════════════════
 // RentalsPage (/rentals) — the rental template's home.
@@ -35,11 +38,44 @@ const isRental = (h) => h && (h.propertyType === 'rental');
 
 const RentalsPage = () => {
   const { homes, loading } = useHome();
+  const { currentUser } = useAuth();
+  const [exporting, setExporting] = useState(false);
 
   const rentals = useMemo(
     () => (homes || []).filter(isRental),
     [homes]
   );
+
+  // Portfolio export: fetch each rental's receipts + expenses on demand, then
+  // hand off to the shared CSV builder. Done on click (not held in state) so
+  // the page stays a light list and the export always reflects current data.
+  const handlePortfolioExport = async () => {
+    if (!currentUser || rentals.length === 0) return;
+    setExporting(true);
+    try {
+      const year = new Date().getFullYear();
+      const properties = await Promise.all(rentals.map(async (h) => {
+        const [receipts, expenses] = await Promise.all([
+          pb.collection('rentReceipts').getFullList({
+            filter: `ownerId = "${currentUser.id}" && homeId = "${h.id}"`, $autoCancel: false,
+          }),
+          pb.collection('invoices').getFullList({
+            filter: `ownerId = "${currentUser.id}" && homeId = "${h.id}"`, $autoCancel: false,
+          }),
+        ]);
+        return {
+          name: h.name || h.address || 'Rental property',
+          receipts: Array.isArray(receipts) ? receipts : [],
+          expenses: Array.isArray(expenses) ? expenses : [],
+        };
+      }));
+      exportPortfolioTaxYear({ properties, year });
+    } catch (err) {
+      console.error('Portfolio export failed:', err);
+    } finally {
+      setExporting(false);
+    }
+  };
 
   return (
     <div style={{ background: PAGE, minHeight: '100%' }}>
@@ -61,6 +97,16 @@ const RentalsPage = () => {
               Your rental properties — leases, income, and what ties out at tax time.
             </p>
           </div>
+          {!loading && rentals.length > 1 && (
+            <button onClick={handlePortfolioExport} disabled={exporting}
+              style={{ marginLeft: 'auto', flexShrink: 0, display: 'inline-flex', alignItems: 'center', gap: '6px',
+                padding: '8px 14px', fontSize: '13px', fontWeight: 500, color: NAVY,
+                background: SURFACE, border: `1px solid ${BORDER}`, borderRadius: '8px',
+                cursor: exporting ? 'default' : 'pointer', opacity: exporting ? 0.6 : 1 }}>
+              <Download style={{ width: '14px', height: '14px' }} />
+              {exporting ? 'Preparing…' : `Export all for ${new Date().getFullYear()} taxes`}
+            </button>
+          )}
         </div>
 
         {/* Loading */}
