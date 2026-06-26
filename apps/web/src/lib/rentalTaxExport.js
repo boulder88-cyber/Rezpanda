@@ -5,64 +5,27 @@
 // Schedule E line with per-line subtotals, then net. One property per call;
 // a portfolio export concatenates per-property sections under one file.
 //
-// Reuses the app's existing Blob + object-URL download idiom (see
-// ExpensesPage), but with PROPER CSV escaping — a vendor name like
-// "Smith, Jones & Co" must not shift columns in a tax document. Every field is
-// quoted and embedded quotes are doubled, per RFC 4180.
+// CASH BASIS: matches the P&L view exactly — an expense is counted in the
+// year it was PAID (paidDate / clearedDate / reviewedDate for bills, the
+// user-set datePaid for manual entries); unpaid bills are excluded. Income is
+// counted when received. The shared Schedule E mapping + date logic lives in
+// lib/schedE.js, imported here, so the exported file and the on-screen numbers
+// can never diverge. ("One fact, one place.")
 //
-// This is the same Schedule E mapping the P&L view uses; kept in sync here so
-// the exported file and the on-screen numbers always agree. ("One fact, one
-// place" — the export must never diverge from what the user saw.)
+// Expenses come from TWO sources, merged: bill-pay invoices and manual
+// rentalExpenses. The CSV marks each row's source so the accountant can see
+// which lines have a bill behind them and which were entered by hand.
+//
+// Reuses the app's Blob + object-URL download idiom, with PROPER CSV escaping
+// (RFC 4180: every field quoted, embedded quotes doubled) so a vendor name
+// like "Smith, Jones & Co" never shifts columns.
 // ═══════════════════════════════════════════════════════════════════════
 
-export const SCHED_E_LINES = [
-  { key: 'advertising', line: 5, label: 'Advertising' },
-  { key: 'auto_travel', line: 6, label: 'Auto and travel' },
-  { key: 'cleaning_maintenance', line: 7, label: 'Cleaning and maintenance' },
-  { key: 'commissions', line: 8, label: 'Commissions' },
-  { key: 'insurance', line: 9, label: 'Insurance' },
-  { key: 'legal_professional', line: 10, label: 'Legal and professional fees' },
-  { key: 'management_fees', line: 11, label: 'Management fees' },
-  { key: 'mortgage_interest', line: 12, label: 'Mortgage interest' },
-  { key: 'other_interest', line: 13, label: 'Other interest' },
-  { key: 'repairs', line: 14, label: 'Repairs' },
-  { key: 'supplies', line: 15, label: 'Supplies' },
-  { key: 'taxes', line: 16, label: 'Taxes' },
-  { key: 'utilities', line: 17, label: 'Utilities' },
-  { key: 'depreciation', line: 18, label: 'Depreciation' },
-  { key: 'other', line: 19, label: 'Other' },
-];
-const LINE_BY_KEY = SCHED_E_LINES.reduce((m, l) => { m[l.key] = l; return m; }, {});
-
-const CATEGORY_TO_SCHED_E = {
-  'Electric': 'utilities',
-  'Gas': 'utilities',
-  'Water': 'utilities',
-  'Internet/Cable': 'utilities',
-  'Phone': 'utilities',
-  'Trash/Recycling': 'utilities',
-  'Pest Control': 'cleaning_maintenance',
-  'Security': 'cleaning_maintenance',
-  'Insurance': 'insurance',
-  'Auto': 'auto_travel',
-  'Subscription': 'other',
-  'Charitable': 'other',
-  'Other': 'other',
-};
-
-export const schedKeyFor = (inv) => {
-  if (inv && inv.schedECategory && LINE_BY_KEY[inv.schedECategory]) return inv.schedECategory;
-  const mapped = inv && inv.category ? CATEGORY_TO_SCHED_E[inv.category] : null;
-  return mapped || 'other';
-};
-
-const yearOf = (d) => {
-  const dt = d ? new Date(d) : null;
-  if (!dt || isNaN(dt)) return null;
-  return dt.getFullYear();
-};
-export const invoiceYear = (inv) => yearOf(inv.dueDate) ?? yearOf(inv.billingPeriod) ?? yearOf(inv.created);
-export const receiptYear = (r) => yearOf(r.receivedDate) ?? yearOf(r.created);
+import {
+  SCHED_E_LINES, LINE_BY_KEY,
+  normalizeInvoiceExpense, normalizeManualExpense,
+  receiptYear, isConfirmedReceipt,
+} from '@/lib/schedE.js';
 
 const fmtDate = (d) => {
   const dt = d ? new Date(d) : null;
@@ -78,15 +41,24 @@ const money = (n) => {
 const cell = (v) => `"${String(v == null ? '' : v).replace(/"/g, '""')}"`;
 const row = (arr) => arr.map(cell).join(',');
 
+// Merge an invoice list + manual list into normalized, cash-basis expense rows
+// for one tax year. Unpaid invoices (year null) drop out here.
+function yearExpensesFor(invoices, manual, year) {
+  return [
+    ...(invoices || []).map(normalizeInvoiceExpense),
+    ...(manual || []).map(normalizeManualExpense),
+  ].filter((e) => e.year === year);
+}
+
 // Build the CSV section for one property's tax year. Returns an array of CSV
 // line strings (no trailing newline) so a portfolio export can join sections.
-export function buildPropertySection(propertyName, receipts, expenses, year) {
-  const yearReceipts = receipts.filter((r) => r.status === 'confirmed' && receiptYear(r) === year);
-  const yearExpenses = expenses.filter((e) => invoiceYear(e) === year);
+export function buildPropertySection(propertyName, receipts, invoices, manual, year) {
+  const yearReceipts = (receipts || []).filter((r) => isConfirmedReceipt(r) && receiptYear(r) === year);
+  const yearExpenses = yearExpensesFor(invoices, manual, year);
 
   const lines = [];
   lines.push(row([`Property: ${propertyName}`]));
-  lines.push(row([`Tax year: ${year}`]));
+  lines.push(row([`Tax year: ${year} (cash basis)`]));
   lines.push('');
 
   // ── Income ──
@@ -105,28 +77,27 @@ export function buildPropertySection(propertyName, receipts, expenses, year) {
   // ── Expenses, grouped by Schedule E line ──
   const groups = {};
   yearExpenses.forEach((e) => {
-    const key = schedKeyFor(e);
-    if (!groups[key]) groups[key] = { line: LINE_BY_KEY[key], items: [], total: 0 };
-    groups[key].items.push(e);
-    groups[key].total += parseFloat(e.amount) || 0;
+    if (!groups[e.schedKey]) groups[e.schedKey] = { line: LINE_BY_KEY[e.schedKey], items: [], total: 0 };
+    groups[e.schedKey].items.push(e);
+    groups[e.schedKey].total += e.amount;
   });
   const ordered = SCHED_E_LINES.map((l) => groups[l.key] ? { ...groups[l.key], def: l } : null).filter(Boolean);
 
   lines.push(row(['EXPENSES (Schedule E)']));
-  lines.push(row(['Sch. E line', 'Category', 'Date', 'Vendor', 'Period', 'Amount']));
+  lines.push(row(['Sch. E line', 'Source', 'Date paid', 'Vendor / description', 'Period', 'Amount']));
   let totalExpenses = 0;
   ordered.forEach((g) => {
     g.items
       .slice()
-      .sort((a, b) => new Date(a.dueDate || a.created) - new Date(b.dueDate || b.created))
-      .forEach((inv) => {
+      .sort((a, b) => new Date(a.paidDate || 0) - new Date(b.paidDate || 0))
+      .forEach((e) => {
         lines.push(row([
           `${g.def.line} ${g.def.label}`,
-          inv.category || '',
-          fmtDate(inv.dueDate || inv.created),
-          inv.companyName || '',
-          inv.billingPeriod || '',
-          money(inv.amount),
+          e.source === 'manual' ? 'Manual' : 'Bill',
+          fmtDate(e.paidDate),
+          e.label || e.vendor || '',
+          e.period || '',
+          money(e.amount),
         ]));
       });
     lines.push(row([`${g.def.line} ${g.def.label}`, '', '', '', 'Line subtotal', money(g.total)]));
@@ -154,37 +125,37 @@ function triggerDownload(csvText, filename) {
 const safeName = (s) => String(s || 'property').replace(/[^a-z0-9]+/gi, '-').replace(/^-+|-+$/g, '').toLowerCase() || 'property';
 
 // Export one property's tax year.
-export function exportPropertyTaxYear({ propertyName, receipts, expenses, year }) {
+export function exportPropertyTaxYear({ propertyName, receipts, invoices, manual, year }) {
   const lines = [
     row(['CasaCEO rental tax summary']),
     row([`Generated ${new Date().toLocaleDateString('en-US')}`]),
-    row(['Working figures from tracked bills and rent — not tax advice.']),
+    row(['Cash basis — expenses counted in the year paid. Working figures, not tax advice.']),
     '',
-    ...buildPropertySection(propertyName, receipts, expenses, year),
+    ...buildPropertySection(propertyName, receipts, invoices, manual, year),
   ];
   triggerDownload(lines.join('\n'), `rental-tax-${safeName(propertyName)}-${year}.csv`);
 }
 
 // Export the whole portfolio: one file, a section per property, a portfolio
-// total at the end. `properties` is [{ name, receipts, expenses }].
+// total at the end. `properties` is [{ name, receipts, invoices, manual }].
 export function exportPortfolioTaxYear({ properties, year }) {
   const lines = [
     row(['CasaCEO rental portfolio tax summary']),
-    row([`Tax year: ${year}`]),
+    row([`Tax year: ${year} (cash basis)`]),
     row([`Generated ${new Date().toLocaleDateString('en-US')}`]),
-    row(['Working figures from tracked bills and rent — not tax advice.']),
+    row(['Cash basis — expenses counted in the year paid. Working figures, not tax advice.']),
     '',
   ];
 
   let portIncome = 0;
   let portExpense = 0;
   properties.forEach((p, i) => {
-    const yr = p.receipts.filter((r) => r.status === 'confirmed' && receiptYear(r) === year);
-    const ye = p.expenses.filter((e) => invoiceYear(e) === year);
+    const yr = (p.receipts || []).filter((r) => isConfirmedReceipt(r) && receiptYear(r) === year);
+    const ye = yearExpensesFor(p.invoices, p.manual, year);
     portIncome += yr.reduce((s, r) => s + (parseFloat(r.amount) || 0), 0);
-    portExpense += ye.reduce((s, e) => s + (parseFloat(e.amount) || 0), 0);
+    portExpense += ye.reduce((s, e) => s + e.amount, 0);
 
-    lines.push(...buildPropertySection(p.name, p.receipts, p.expenses, year));
+    lines.push(...buildPropertySection(p.name, p.receipts, p.invoices, p.manual, year));
     if (i < properties.length - 1) {
       lines.push('');
       lines.push(row(['────────────────────']));
