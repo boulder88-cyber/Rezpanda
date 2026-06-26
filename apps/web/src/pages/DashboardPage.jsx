@@ -5,6 +5,7 @@ import { useHome } from '@/contexts/HomeContext.jsx';
 import { useAuth } from '@/contexts/AuthContext.jsx';
 import pb from '@/lib/horizonsBackend.js';
 import PropertiesAtAGlance from '@/components/PropertiesAtAGlance.jsx';
+import GettingStartedCard from '@/components/GettingStartedCard.jsx';
 import { Button } from '@/components/ui/button.jsx';
 import {
   Wrench, CreditCard, FolderOpen,
@@ -413,6 +414,9 @@ const DashboardPage = () => {
         <main className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-8">
 
           <WelcomeBanner user={currentUser} selectedHome={selectedHome} />
+
+          {/* ── Getting set up — calm self-completing checklist, retires itself ── */}
+          <GettingStartedCard />
 
           {/* ── The three tiles — the whole point of the screen ── */}
           <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
