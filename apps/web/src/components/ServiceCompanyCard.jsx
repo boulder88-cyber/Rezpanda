@@ -325,7 +325,10 @@ const ServiceCompanyCard = ({ company, onRefresh, onPay, propertyName = null, ho
   const handleClear = async () => {
     setIsMarking(true);
     try {
-      await pb.collection('invoices').update(company.id, { cleared: true }, { $autoCancel: false });
+      // Stamp clearedDate too: for a card-autopay bill this is the truest
+      // cash-basis payment date (when the statement settled), used by the
+      // rental P&L. Write-once — there's no un-clear path to reset it.
+      await pb.collection('invoices').update(company.id, { cleared: true, clearedDate: new Date().toISOString() }, { $autoCancel: false });
       toast({ title: 'Cleared', description: `${company.companyName} is fully settled.` });
       if (onRefresh) onRefresh();
     } catch {
