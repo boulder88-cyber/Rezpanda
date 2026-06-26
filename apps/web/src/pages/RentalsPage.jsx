@@ -55,18 +55,24 @@ const RentalsPage = () => {
     try {
       const year = new Date().getFullYear();
       const properties = await Promise.all(rentals.map(async (h) => {
-        const [receipts, expenses] = await Promise.all([
+        const ownerHome = `ownerId = "${currentUser.id}" && homeId = "${h.id}"`;
+        const [receipts, invoices, manual] = await Promise.all([
           pb.collection('rentReceipts').getFullList({
-            filter: `ownerId = "${currentUser.id}" && homeId = "${h.id}"`, $autoCancel: false,
+            filter: ownerHome, $autoCancel: false,
           }),
           pb.collection('invoices').getFullList({
-            filter: `ownerId = "${currentUser.id}" && homeId = "${h.id}"`, $autoCancel: false,
+            filter: ownerHome, $autoCancel: false,
           }),
+          // Manual expenses collection may not exist yet — tolerate absence.
+          pb.collection('rentalExpenses').getFullList({
+            filter: ownerHome, $autoCancel: false,
+          }).catch(() => []),
         ]);
         return {
           name: h.name || h.address || 'Rental property',
           receipts: Array.isArray(receipts) ? receipts : [],
-          expenses: Array.isArray(expenses) ? expenses : [],
+          invoices: Array.isArray(invoices) ? invoices : [],
+          manual: Array.isArray(manual) ? manual : [],
         };
       }));
       exportPortfolioTaxYear({ properties, year });
