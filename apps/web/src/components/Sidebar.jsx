@@ -1,7 +1,8 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { NavLink } from 'react-router-dom';
-import { Home, CreditCard, Wrench, FolderOpen, Compass, X, Building2, KeyRound } from 'lucide-react';
+import { Home, CreditCard, Wrench, FolderOpen, Compass, X, Building2, KeyRound, HelpCircle } from 'lucide-react';
 import { useHome } from '@/contexts/HomeContext.jsx';
+import HelpPanel from '@/components/HelpPanel.jsx';
 
 // ── Design-system tokens (navy/gold, warm) ──────────────────────────────
 const NAVY = '#1e3a5f';
@@ -40,6 +41,7 @@ const navRow = ({ isActive }) => ({
 
 const Sidebar = ({ isOpen, closeSidebar }) => {
   const { selectedHome, allProperties, otherScope, homes } = useHome();
+  const [helpOpen, setHelpOpen] = useState(false);
 
   // Rentals appears only if the user owns at least one rental property.
   // Slotted right after Bills (rentals are a money surface), before
@@ -88,6 +90,7 @@ const Sidebar = ({ isOpen, closeSidebar }) => {
         .casaceo-navrow:hover { background: ${PAGE} !important; color: ${INK} !important; }
         .casaceo-navrow.active:hover { background: ${ACTIVE_BG} !important; color: ${NAVY} !important; }
         .casaceo-explore:hover { background: ${PAGE} !important; color: ${INK_SOFT} !important; }
+        .casaceo-help:hover { background: ${PAGE} !important; color: ${INK} !important; }
       `}</style>
       {/* Mobile overlay */}
       {isOpen && (
@@ -130,6 +133,25 @@ const Sidebar = ({ isOpen, closeSidebar }) => {
           </div>
         </div>
 
+        {/* How it works — the always-there reference. Quiet by design: a small
+            ? row, not a billboard. Sits just above the grounding footer. */}
+        <div style={{ padding: '8px 12px 0' }}>
+          <button
+            onClick={() => setHelpOpen(true)}
+            className="casaceo-help"
+            style={{
+              width: '100%', display: 'flex', alignItems: 'center', gap: '12px',
+              padding: '10px 12px', borderRadius: '10px', border: 'none',
+              background: 'transparent', cursor: 'pointer',
+              fontSize: '14px', fontWeight: 500, color: INK_MUTE,
+              textAlign: 'left', transition: 'background 0.15s, color 0.15s',
+            }}
+          >
+            <HelpCircle style={{ width: '19px', height: '19px', flexShrink: 0 }} />
+            How it works
+          </button>
+        </div>
+
         {/* Grounding footer — the home you're managing, so the rail feels like
             a place that's yours, not a generic menu. Honest about scope. */}
         <div style={{ padding: '12px', borderTop: `1px solid ${BORDER}`, background: PAGE }}>
@@ -144,6 +166,8 @@ const Sidebar = ({ isOpen, closeSidebar }) => {
           </div>
         </div>
       </aside>
+
+      <HelpPanel open={helpOpen} onClose={() => setHelpOpen(false)} />
     </>
   );
 };
