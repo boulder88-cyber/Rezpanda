@@ -228,7 +228,7 @@ const PropertyGlanceTile = ({ home, summary, onEnter }) => {
         <div className="flex items-center justify-center flex-shrink-0" style={{ width: '44px', height: '44px', borderRadius: '12px', background: 'rgba(255,255,255,0.10)', border: '1px solid rgba(255,255,255,0.22)' }}>
           <Home style={{ width: '22px', height: '22px', color: '#ffffff' }} />
         </div>
-        <div className="flex-1 min-w-0" style={{ minHeight: '58px' }}>
+        <div className="flex-1 min-w-0">
           <p className="font-semibold text-white truncate" style={{ fontSize: '17px' }}>
             {home.name || home.address || 'Unnamed home'}
           </p>
@@ -237,14 +237,24 @@ const PropertyGlanceTile = ({ home, summary, onEnter }) => {
               <MapPin style={{ width: '11px', height: '11px', flexShrink: 0 }} /> {home.address}
             </p>
           )}
-          {/* Caretaker context — only for a home managed on behalf of someone.
-              Gold, quiet, sits under the address so the tile reads as theirs. */}
-          {home.managedOnBehalf && (
-            <p className="flex items-center gap-1 truncate font-medium" style={{ fontSize: '11px', color: GOLD, marginTop: '3px' }}>
-              <Heart style={{ width: '10px', height: '10px', flexShrink: 0 }} />
-              {home.onBehalfOfName ? `On behalf of ${home.onBehalfOfName}` : 'Managed on your behalf'}
-            </p>
-          )}
+          {/* On-behalf line — ALWAYS occupies its row so every tile's header is
+              the same height and the dollar boxes align. Real (gold) text for a
+              caretaker home; an invisible placeholder of identical height on
+              ordinary tiles, so nothing below shifts. */}
+          <p
+            className="flex items-center gap-1 truncate font-medium"
+            style={{
+              fontSize: '11px', marginTop: '3px',
+              color: home.managedOnBehalf ? GOLD : 'transparent',
+              userSelect: 'none',
+            }}
+            aria-hidden={home.managedOnBehalf ? undefined : true}
+          >
+            <Heart style={{ width: '10px', height: '10px', flexShrink: 0, opacity: home.managedOnBehalf ? 1 : 0 }} />
+            {home.managedOnBehalf
+              ? (home.onBehalfOfName ? `On behalf of ${home.onBehalfOfName}` : 'Managed on your behalf')
+              : '\u00A0'}
+          </p>
         </div>
       </div>
 
