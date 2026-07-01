@@ -265,42 +265,6 @@ const PropertyGlanceTile = ({ home, summary, onEnter }) => {
         </div>
       )}
 
-      {/* Caretaker read — the "is this home okay" sentence, only for a
-          managed-on-behalf home. Placed BELOW the dollar box so the amount
-          aligns tile-to-tile with sibling homes. Reuses the tile's own summary
-          numbers (no new math): green when nothing needs eyes, amber when it
-          does. The caretaker LENS — surfaces the home's state, never acts. */}
-      {home.managedOnBehalf && (() => {
-        const okay = overdueCount === 0 && pendingCount === 0;
-        const whose = home.onBehalfOfName ? `${home.onBehalfOfName}’s home` : 'This home';
-        let msg;
-        if (overdueCount > 0) {
-          msg = `${overdueCount} ${overdueCount === 1 ? 'bill is' : 'bills are'} past due`;
-        } else if (pendingCount > 0) {
-          msg = `${pendingCount} ${pendingCount === 1 ? 'bill' : 'bills'} to review`;
-        } else {
-          msg = 'Bills are current — nothing needs your eye';
-        }
-        return (
-          <div
-            className="rounded-xl flex items-start gap-2"
-            style={{
-              background: okay ? 'rgba(110,231,183,0.10)' : 'rgba(245,158,11,0.14)',
-              border: `1px solid ${okay ? 'rgba(110,231,183,0.22)' : 'rgba(245,158,11,0.26)'}`,
-              padding: '10px 12px', marginBottom: '12px',
-              color: okay ? '#6ee7b7' : '#fcd34d',
-            }}
-          >
-            {okay
-              ? <CheckCircle2 style={{ width: '15px', height: '15px', flexShrink: 0, marginTop: '1px' }} />
-              : <AlertCircle style={{ width: '15px', height: '15px', flexShrink: 0, marginTop: '1px' }} />}
-            <span className="font-medium" style={{ fontSize: '12.5px', lineHeight: 1.35 }}>
-              <span className="font-semibold">{whose}:</span> {msg}
-            </span>
-          </div>
-        );
-      })()}
-
       {/* Attention chips — bill-related, grouped with the bills box above.
           This region flexes (mb-auto pushes maintenance + Open to the bottom),
           so however many chips a tile has, the maintenance pill below still
@@ -322,6 +286,43 @@ const PropertyGlanceTile = ({ home, summary, onEnter }) => {
           </span>
         )}
       </div>
+
+      {/* Caretaker read — the "is this home okay" sentence, only for a
+          managed-on-behalf home. Placed in the BOTTOM-ANCHORED group (after the
+          mb-auto flex spacer, just above maintenance) so the chips above stay
+          aligned tile-to-tile and this read never floats mid-tile. Reuses the
+          tile's own summary numbers (no new math). The caretaker LENS —
+          surfaces the home's state, never acts on it. */}
+      {home.managedOnBehalf && (() => {
+        const okay = overdueCount === 0 && pendingCount === 0;
+        const whose = home.onBehalfOfName ? `${home.onBehalfOfName}’s home` : 'This home';
+        let msg;
+        if (overdueCount > 0) {
+          msg = `${overdueCount} ${overdueCount === 1 ? 'bill is' : 'bills are'} past due`;
+        } else if (pendingCount > 0) {
+          msg = `${pendingCount} ${pendingCount === 1 ? 'bill' : 'bills'} to review`;
+        } else {
+          msg = 'Bills are current — nothing needs your eye';
+        }
+        return (
+          <div
+            className="rounded-lg flex items-start gap-2"
+            style={{
+              background: okay ? 'rgba(110,231,183,0.10)' : 'rgba(245,158,11,0.14)',
+              border: `1px solid ${okay ? 'rgba(110,231,183,0.22)' : 'rgba(245,158,11,0.26)'}`,
+              padding: '8px 12px', marginBottom: '12px',
+              color: okay ? '#6ee7b7' : '#fcd34d',
+            }}
+          >
+            {okay
+              ? <CheckCircle2 style={{ width: '15px', height: '15px', flexShrink: 0, marginTop: '1px' }} />
+              : <AlertCircle style={{ width: '15px', height: '15px', flexShrink: 0, marginTop: '1px' }} />}
+            <span className="font-medium" style={{ fontSize: '12.5px', lineHeight: 1.35 }}>
+              <span className="font-semibold">{whose}:</span> {msg}
+            </span>
+          </div>
+        );
+      })()}
 
       {/* Maintenance status — always present, same pill shape across states so
           the rows line up tile-to-tile; only the tone differs. Bottom-anchored
