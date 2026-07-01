@@ -10,7 +10,7 @@ import { Button } from '@/components/ui/button.jsx';
 import {
   Wrench, CreditCard, FolderOpen,
   Home, ChevronDown, Plus, MapPin, Check, Bell, AlertCircle,
-  TrendingUp, ArrowRight, ArrowLeft, Sparkles, Compass, LogOut, User, Settings
+  TrendingUp, ArrowRight, ArrowLeft, Sparkles, LogOut, User, Settings
 } from 'lucide-react';
 import {
   DropdownMenu,
@@ -425,17 +425,18 @@ const DashboardPage = () => {
             ))}
           </div>
 
-          {/* ── Explore — one quiet door to the optional extras ── */}
+          {/* ── Home value — the one optional 'see' surface, linked directly
+                (Explore container retired; a folder for one item is a detour). ── */}
           <Link
-            to="/explore"
+            to="/home-valuation"
             className="group flex items-center gap-4 bg-white border border-slate-100 rounded-2xl px-6 py-4 hover:shadow-md hover:border-slate-200 transition-all"
           >
-            <div className="w-11 h-11 rounded-xl flex items-center justify-center flex-shrink-0" style={{ background: '#f1f5f9' }}>
-              <Compass className="w-5 h-5 text-slate-400" />
+            <div className="w-11 h-11 rounded-xl flex items-center justify-center flex-shrink-0" style={{ background: '#eef2f8' }}>
+              <TrendingUp className="w-5 h-5" style={{ color: '#1e3a5f' }} />
             </div>
             <div className="flex-1 min-w-0">
-              <p className="font-bold text-slate-700 text-base">Explore</p>
-              <p className="text-slate-400 text-sm">Home value, spending, utilities & more — when you want to dig deeper.</p>
+              <p className="font-bold text-slate-700 text-base">Home value</p>
+              <p className="text-slate-400 text-sm">See what your home is worth today.</p>
             </div>
             <ArrowRight className="w-5 h-5 text-slate-300 group-hover:text-slate-500 group-hover:translate-x-1 transition-all flex-shrink-0" />
           </Link>
