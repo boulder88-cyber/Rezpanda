@@ -58,31 +58,39 @@ const CycleStep = ({ icon: Icon, tint, title, body, last }) => (
   </div>
 );
 
-const MaintenanceHelpPanel = () => {
-  const [open, setOpen] = useState(false);
+// Dual mode: if `open`/`onClose` props are passed, the panel is CONTROLLED
+// from outside (no trigger button rendered — e.g. the sidebar's "How it
+// works" row swaps between this and the global HelpPanel based on route).
+// If no props are passed, it manages its own state and renders its own
+// trigger button — for dropping straight into the rebuilt Maintenance page
+// header later without any wiring.
+const MaintenanceHelpPanel = ({ open: openProp, onClose }) => {
+  const isControlled = openProp !== undefined;
+  const [internalOpen, setInternalOpen] = useState(false);
+  const open = isControlled ? openProp : internalOpen;
+  const close = () => (isControlled ? onClose && onClose() : setInternalOpen(false));
 
   return (
     <>
-      {/* Trigger — quiet, matches the sidebar's "How it works" row in
-          weight (not a primary button). Drop this near the Maintenance
-          page title. */}
-      <button
-        onClick={() => setOpen(true)}
-        style={{
-          display: 'inline-flex', alignItems: 'center', gap: '6px',
-          background: C.surface, border: `1px solid ${C.border}`,
-          color: C.navy, fontSize: '13px', fontWeight: 600,
-          padding: '8px 14px', borderRadius: '10px', cursor: 'pointer',
-        }}
-      >
-        <HelpCircle size={15} />
-        How maintenance works
-      </button>
+      {!isControlled && (
+        <button
+          onClick={() => setInternalOpen(true)}
+          style={{
+            display: 'inline-flex', alignItems: 'center', gap: '6px',
+            background: C.surface, border: `1px solid ${C.border}`,
+            color: C.navy, fontSize: '13px', fontWeight: 600,
+            padding: '8px 14px', borderRadius: '10px', cursor: 'pointer',
+          }}
+        >
+          <HelpCircle size={15} />
+          How maintenance works
+        </button>
+      )}
 
       {open && (
         <>
           <div
-            onClick={() => setOpen(false)}
+            onClick={close}
             style={{ position: 'fixed', inset: 0, background: 'rgba(31,39,51,0.45)', zIndex: 60 }}
           />
           <aside
@@ -100,7 +108,7 @@ const MaintenanceHelpPanel = () => {
                 <div style={{ fontSize: '12px', color: C.ink3, marginTop: '1px' }}>A quick reference, anytime</div>
               </div>
               <button
-                onClick={() => setOpen(false)}
+                onClick={close}
                 aria-label="Close"
                 style={{ background: 'transparent', border: 'none', cursor: 'pointer', color: C.ink2, padding: '6px', borderRadius: '8px' }}
               >
