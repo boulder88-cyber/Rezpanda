@@ -118,29 +118,14 @@ const Sidebar = ({ isOpen, closeSidebar }) => {
         <div style={{ flex: 1, overflowY: 'auto', padding: '16px 12px', display: 'flex', flexDirection: 'column', gap: '3px' }}>
           {navItems.map(renderRow)}
 
-          {/* Explore — the one quiet door to the extras, set apart. */}
-          <div style={{ paddingTop: '12px', marginTop: '12px', borderTop: `1px solid ${BORDER}` }}>
-            <NavLink to="/explore" onClick={closeOnMobile} className="casaceo-explore"
-              style={({ isActive }) => ({
-                display: 'flex', alignItems: 'center', gap: '12px', padding: '10px 12px', borderRadius: '10px',
-                fontSize: '14px', fontWeight: 500, textDecoration: 'none',
-                color: isActive ? INK : INK_MUTE, background: isActive ? PAGE : 'transparent', transition: 'background 0.15s, color 0.15s',
-              })}
-            >
-              <Compass style={{ width: '19px', height: '19px', flexShrink: 0 }} />
-              Explore
-            </NavLink>
-          </div>
-        </div>
-
-        {/* How it works — the always-there reference. A defined, tappable card
-            (white surface, navy ink + icon) so it reads as a real control, not
-            inert helper text — visible without shouting. */}
-        <div style={{ padding: '10px 12px 0' }}>
+          {/* How it works — the always-there reference, placed with the primary
+              nav so it's easy to find. A defined, tappable card (white surface,
+              navy ink + icon) that reads as a real control, calm not shouting. */}
           <button
-            onClick={() => setHelpOpen(true)}
+            onClick={() => { setHelpOpen(true); closeOnMobile(); }}
             className="casaceo-help"
             style={{
+              marginTop: '6px',
               width: '100%', display: 'flex', alignItems: 'center', gap: '11px',
               padding: '11px 12px', borderRadius: '10px',
               border: `1px solid ${BORDER}`, background: '#fff', cursor: 'pointer',
@@ -154,6 +139,20 @@ const Sidebar = ({ isOpen, closeSidebar }) => {
             <span style={{ flex: 1 }}>How it works</span>
             <span style={{ fontSize: '12px', fontWeight: 500, color: INK_MUTE }}>Guide</span>
           </button>
+
+          {/* Explore — the one quiet door to the extras, set apart. */}
+          <div style={{ paddingTop: '12px', marginTop: '12px', borderTop: `1px solid ${BORDER}` }}>
+            <NavLink to="/explore" onClick={closeOnMobile} className="casaceo-explore"
+              style={({ isActive }) => ({
+                display: 'flex', alignItems: 'center', gap: '12px', padding: '10px 12px', borderRadius: '10px',
+                fontSize: '14px', fontWeight: 500, textDecoration: 'none',
+                color: isActive ? INK : INK_MUTE, background: isActive ? PAGE : 'transparent', transition: 'background 0.15s, color 0.15s',
+              })}
+            >
+              <Compass style={{ width: '19px', height: '19px', flexShrink: 0 }} />
+              Explore
+            </NavLink>
+          </div>
         </div>
 
         {/* Grounding footer — the home you're managing, so the rail feels like
