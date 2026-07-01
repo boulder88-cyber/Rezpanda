@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { NavLink } from 'react-router-dom';
-import { Home, CreditCard, Wrench, FolderOpen, Compass, X, Building2, KeyRound, HelpCircle } from 'lucide-react';
+import { Home, CreditCard, Wrench, FolderOpen, X, Building2, KeyRound, HelpCircle } from 'lucide-react';
 import { useHome } from '@/contexts/HomeContext.jsx';
 import HelpPanel from '@/components/HelpPanel.jsx';
 
@@ -89,7 +89,6 @@ const Sidebar = ({ isOpen, closeSidebar }) => {
       <style>{`
         .casaceo-navrow:hover { background: ${PAGE} !important; color: ${INK} !important; }
         .casaceo-navrow.active:hover { background: ${ACTIVE_BG} !important; color: ${NAVY} !important; }
-        .casaceo-explore:hover { background: ${PAGE} !important; color: ${INK_SOFT} !important; }
         .casaceo-help:hover { background: ${PAGE} !important; border-color: ${GOLD} !important; }
       `}</style>
       {/* Mobile overlay */}
@@ -139,20 +138,6 @@ const Sidebar = ({ isOpen, closeSidebar }) => {
             <span style={{ flex: 1 }}>How it works</span>
             <span style={{ fontSize: '12px', fontWeight: 500, color: INK_MUTE }}>Guide</span>
           </button>
-
-          {/* Explore — the one quiet door to the extras, set apart. */}
-          <div style={{ paddingTop: '12px', marginTop: '12px', borderTop: `1px solid ${BORDER}` }}>
-            <NavLink to="/explore" onClick={closeOnMobile} className="casaceo-explore"
-              style={({ isActive }) => ({
-                display: 'flex', alignItems: 'center', gap: '12px', padding: '10px 12px', borderRadius: '10px',
-                fontSize: '14px', fontWeight: 500, textDecoration: 'none',
-                color: isActive ? INK : INK_MUTE, background: isActive ? PAGE : 'transparent', transition: 'background 0.15s, color 0.15s',
-              })}
-            >
-              <Compass style={{ width: '19px', height: '19px', flexShrink: 0 }} />
-              Explore
-            </NavLink>
-          </div>
         </div>
 
         {/* Grounding footer — the home you're managing, so the rail feels like
