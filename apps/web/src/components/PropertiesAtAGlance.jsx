@@ -229,18 +229,33 @@ const PropertyGlanceTile = ({ home, summary, onEnter }) => {
           <Home style={{ width: '22px', height: '22px', color: '#ffffff' }} />
         </div>
         <div className="flex-1 min-w-0">
+          {/* Fixed three-row header so every tile is the same height and the
+              dollar boxes align: (1) name, (2) address, (3) on-behalf. Each row
+              is ALWAYS rendered — real text when present, an invisible
+              same-height placeholder when not — so a tile with a separate name
+              (which pushes address to its own line) matches a tile where the
+              address stands in as the name. */}
+
+          {/* Row 1 — name (falls back to address when no name is set). */}
           <p className="font-semibold text-white truncate" style={{ fontSize: '17px' }}>
             {home.name || home.address || 'Unnamed home'}
           </p>
-          {home.address && (
+
+          {/* Row 2 — address. Shown for real only when there's a distinct name
+              above it (otherwise the address already occupies row 1); an
+              invisible placeholder keeps the row height on those tiles. */}
+          {(home.name && home.address) ? (
             <p className="flex items-center gap-1 truncate" style={{ fontSize: '12px', color: 'rgba(255,255,255,0.55)', marginTop: '2px' }}>
               <MapPin style={{ width: '11px', height: '11px', flexShrink: 0 }} /> {home.address}
             </p>
+          ) : (
+            <p className="flex items-center gap-1 truncate" style={{ fontSize: '12px', color: 'transparent', marginTop: '2px', userSelect: 'none' }} aria-hidden="true">
+              <MapPin style={{ width: '11px', height: '11px', flexShrink: 0, opacity: 0 }} /> {'\u00A0'}
+            </p>
           )}
-          {/* On-behalf line — ALWAYS occupies its row so every tile's header is
-              the same height and the dollar boxes align. Real (gold) text for a
-              caretaker home; an invisible placeholder of identical height on
-              ordinary tiles, so nothing below shifts. */}
+
+          {/* Row 3 — on-behalf. Gold for a caretaker home, invisible placeholder
+              otherwise. */}
           <p
             className="flex items-center gap-1 truncate font-medium"
             style={{
