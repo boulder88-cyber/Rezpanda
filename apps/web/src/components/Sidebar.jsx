@@ -1,8 +1,9 @@
 import React, { useState } from 'react';
-import { NavLink } from 'react-router-dom';
+import { NavLink, useLocation } from 'react-router-dom';
 import { Home, CreditCard, Wrench, FolderOpen, X, Building2, KeyRound, HelpCircle } from 'lucide-react';
 import { useHome } from '@/contexts/HomeContext.jsx';
 import HelpPanel from '@/components/HelpPanel.jsx';
+import MaintenanceHelpPanel from '@/components/MaintenanceHelpPanel.jsx';
 
 // ── Design-system tokens (navy/gold, warm) ──────────────────────────────
 const NAVY = '#1e3a5f';
@@ -42,6 +43,12 @@ const navRow = ({ isActive }) => ({
 const Sidebar = ({ isOpen, closeSidebar }) => {
   const { selectedHome, allProperties, otherScope, homes } = useHome();
   const [helpOpen, setHelpOpen] = useState(false);
+  const location = useLocation();
+  // The single "How it works" row is context-aware: on Maintenance it opens
+  // the Maintenance-scoped panel, everywhere else it opens the global
+  // (Bill-Pay-centric) HelpPanel. One trigger, contextual content — rather
+  // than cramming Maintenance into HelpPanel's locked section ceiling.
+  const onMaintenance = location.pathname.startsWith('/maintenance');
 
   // Rentals appears only if the user owns at least one rental property.
   // Slotted right after Bills (rentals are a money surface), before
@@ -155,7 +162,9 @@ const Sidebar = ({ isOpen, closeSidebar }) => {
         </div>
       </aside>
 
-      <HelpPanel open={helpOpen} onClose={() => setHelpOpen(false)} />
+      {onMaintenance
+        ? <MaintenanceHelpPanel open={helpOpen} onClose={() => setHelpOpen(false)} />
+        : <HelpPanel open={helpOpen} onClose={() => setHelpOpen(false)} />}
     </>
   );
 };
