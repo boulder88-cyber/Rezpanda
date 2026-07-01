@@ -18,7 +18,7 @@ import ImageGalleryPage from '@/pages/ImageGalleryPage.jsx';
 
 // ── Core App ────────────────────────────────────────────────────────
 import DashboardPage from '@/pages/DashboardPage.jsx';
-import ExplorePage from '@/pages/ExplorePage.jsx';
+// import ExplorePage from '@/pages/ExplorePage.jsx'; // retired 6.30 — Explore container collapsed to single item
 import HomeProfilePage from '@/pages/HomeProfilePage.jsx';
 import ManageHomesPage from '@/pages/ManageHomesPage.jsx';
 import NotificationsCenterPage from '@/pages/NotificationsCenterPage.jsx';
@@ -166,7 +166,10 @@ const AppContent = () => {
 
           {/* ── Core (protected, no Layout wrapper) ───────────────── */}
           <Route path="/dashboard" element={<ProtectedRoute><DashboardPage /></ProtectedRoute>} />
-          <Route path="/explore" element={<ProtectedRoute><Layout><ExplorePage /></Layout></ProtectedRoute>} />
+                    {/* Explore container retired 6.30 — collapsed to a single item (Home
+              value), now linked directly from the dashboard. Route commented
+              (comment-first orphan discipline; ExplorePage.jsx stays on disk).
+          <Route path="/explore" element={<ProtectedRoute><Layout><ExplorePage /></Layout></ProtectedRoute>} /> */}
           <Route path="/home-profile" element={<ProtectedRoute><HomeProfilePage /></ProtectedRoute>} />
           <Route path="/notifications" element={<ProtectedRoute><NotificationsCenterPage /></ProtectedRoute>} />
           <Route path="/vendors" element={<ProtectedRoute><VendorDirectoryPage /></ProtectedRoute>} />
