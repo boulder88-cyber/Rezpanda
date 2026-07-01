@@ -66,6 +66,12 @@ const EMPTY = {
   bedrooms: '',
   bathrooms: '',
   squareFootage: '',
+  // Caretaker lens: a home managed on behalf of someone else ("Mom's home").
+  // A parallel flag — NOT a propertyType — so it composes with personal/
+  // vacation/rental (you can caretake a rental). Person captured as a simple
+  // name for v1; migratable into the relational people model later if needed.
+  managedOnBehalf: false,
+  onBehalfOfName: '',
 };
 
 const PropertyFormModal = ({ isOpen, onClose, onSuccess, initialData = null }) => {
@@ -92,6 +98,8 @@ const PropertyFormModal = ({ isOpen, onClose, onSuccess, initialData = null }) =
         bedrooms: initialData.bedrooms || '',
         bathrooms: initialData.bathrooms || '',
         squareFootage: initialData.squareFootage || '',
+        managedOnBehalf: initialData.managedOnBehalf || false,
+        onBehalfOfName: initialData.onBehalfOfName || '',
       });
     } else {
       setFormData(EMPTY);
@@ -166,6 +174,11 @@ const PropertyFormModal = ({ isOpen, onClose, onSuccess, initialData = null }) =
         bedrooms: formData.bedrooms ? Number(formData.bedrooms) : 0,
         bathrooms: formData.bathrooms ? Number(formData.bathrooms) : 0,
         squareFootage: formData.squareFootage ? Number(formData.squareFootage) : 0,
+        // Caretaker lens. Name only kept when the flag is on, so turning it off
+        // clears the person cleanly (no orphaned "Mom" on a home you no longer
+        // manage for her).
+        managedOnBehalf: formData.managedOnBehalf,
+        onBehalfOfName: formData.managedOnBehalf ? formData.onBehalfOfName.trim() : '',
         ownerId: currentUser.id,
       };
 
@@ -308,6 +321,44 @@ const PropertyFormModal = ({ isOpen, onClose, onSuccess, initialData = null }) =
                 ))}
               </SelectContent>
             </Select>
+          </div>
+
+          {/* ── Caretaker: managed on behalf of someone ──
+              A relationship fact, not a property kind — so it's a parallel flag
+              here, not a propertyType. Reveals a name field so the home reads as
+              "Mom's home." The caretaker lens (status readout + coverage) keys
+              off managedOnBehalf. See, don't do: it surfaces the home's state,
+              it never acts on it. */}
+          <div className="space-y-2 rounded-xl p-3" style={{ background: '#faf8f4', border: '1px solid #e9e4db' }}>
+            <label className="flex items-start gap-3 cursor-pointer">
+              <input
+                type="checkbox"
+                checked={formData.managedOnBehalf}
+                onChange={(e) => handleSelectChange('managedOnBehalf', e.target.checked)}
+                style={{ marginTop: '3px', width: '16px', height: '16px', accentColor: '#1e3a5f', flexShrink: 0 }}
+              />
+              <span>
+                <span className="font-medium" style={{ color: '#1f2733', fontSize: '14px' }}>
+                  I manage this home on behalf of someone
+                </span>
+                <span className="block" style={{ color: '#5b6472', fontSize: '12.5px', marginTop: '2px' }}>
+                  For a home you look after for a parent or family member. You’ll get a plain “is this home okay” read on it — bills current, nothing overdue. CasaCEO only shows you the picture; it never pays or acts for you.
+                </span>
+              </span>
+            </label>
+
+            {formData.managedOnBehalf && (
+              <div className="space-y-2" style={{ paddingLeft: '28px', paddingTop: '4px' }}>
+                <Label htmlFor="onBehalfOfName">Whose home is it? <span className="text-slate-400 font-normal">(optional)</span></Label>
+                <Input
+                  id="onBehalfOfName"
+                  name="onBehalfOfName"
+                  value={formData.onBehalfOfName}
+                  onChange={handleChange}
+                  placeholder="e.g. Mom, Dad, Aunt Carol"
+                />
+              </div>
+            )}
           </div>
 
           <div className="grid grid-cols-3 gap-4">
