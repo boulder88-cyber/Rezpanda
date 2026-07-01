@@ -12,7 +12,7 @@ import {
   Plus, CreditCard, LayoutGrid, Search, BookOpen,
   AlertCircle, CheckCircle2, Clock, DollarSign, Zap,
   Bell, ChevronRight, Download, BarChart2,
-  Droplets, Wifi, Car, Shield, TrendingDown, Repeat, Package
+  Droplets, Wifi, Car, Shield, TrendingDown, Repeat, Package, Heart
 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast.js';
 
@@ -32,6 +32,7 @@ import BillerConnectChecklist from '@/components/BillerConnectChecklist.jsx';
 // the global HomeSwitcher, which stays purely about properties.
 const OTHER_BILLS_LABEL = 'Other bills';
 const NEEDS_PLACEMENT_LABEL = 'Needs placement';
+const GOLD = '#c9a96e';
 
 // Money formatters with thousands separators (1,604 — never 1604).
 // Money rule: summaries/aggregates round to whole dollars; individual bill
@@ -840,7 +841,26 @@ const BillPayPage = () => {
               <CreditCard style={{ width: '22px', height: '22px', color: '#2563eb' }} />
             </div>
             <div>
-              <h1 className="font-semibold text-slate-900" style={{ fontSize: '24px', lineHeight: '1.2' }}>Bill Pay</h1>
+              <div className="flex items-center gap-2">
+                <h1 className="font-semibold text-slate-900" style={{ fontSize: '24px', lineHeight: '1.2' }}>Bill Pay</h1>
+                {/* Caretaker identification — quiet gold tag, header only, not a
+                    status read (that lives on the dashboard). Property scope
+                    only: no single "on behalf" home to name in All-properties
+                    or Other & unassigned. */}
+                {scope === 'property' && selectedHome?.managedOnBehalf && (
+                  <span
+                    className="flex items-center gap-1 font-medium"
+                    style={{
+                      fontSize: '11px', color: GOLD, background: 'rgba(201,169,110,0.12)',
+                      border: '1px solid rgba(201,169,110,0.3)', borderRadius: '999px',
+                      padding: '3px 9px', flexShrink: 0,
+                    }}
+                  >
+                    <Heart style={{ width: '10px', height: '10px', flexShrink: 0 }} />
+                    {selectedHome.onBehalfOfName ? `On behalf of ${selectedHome.onBehalfOfName}` : 'Managed on your behalf'}
+                  </span>
+                )}
+              </div>
               <p className="text-slate-400" style={{ fontSize: '13px', marginTop: '2px' }}>
                 {scope === 'other'
                   ? `${OTHER_BILLS_LABEL} · `
