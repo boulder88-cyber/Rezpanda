@@ -228,7 +228,7 @@ const PropertyGlanceTile = ({ home, summary, onEnter }) => {
         <div className="flex items-center justify-center flex-shrink-0" style={{ width: '44px', height: '44px', borderRadius: '12px', background: 'rgba(255,255,255,0.10)', border: '1px solid rgba(255,255,255,0.22)' }}>
           <Home style={{ width: '22px', height: '22px', color: '#ffffff' }} />
         </div>
-        <div className="flex-1 min-w-0">
+        <div className="flex-1 min-w-0" style={{ minHeight: '58px' }}>
           <p className="font-semibold text-white truncate" style={{ fontSize: '17px' }}>
             {home.name || home.address || 'Unnamed home'}
           </p>
@@ -248,10 +248,28 @@ const PropertyGlanceTile = ({ home, summary, onEnter }) => {
         </div>
       </div>
 
+      {/* The glance — bills */}
+      {allClear ? (
+        <div className="rounded-xl flex items-center gap-2" style={{ background: 'rgba(110,231,183,0.10)', border: '1px solid rgba(110,231,183,0.22)', padding: '12px 14px', marginBottom: '12px', color: '#6ee7b7' }}>
+          <CheckCircle2 style={{ width: '16px', height: '16px', flexShrink: 0 }} />
+          <span className="font-medium" style={{ fontSize: '14px' }}>No bills to pay</span>
+        </div>
+      ) : (
+        <div className="rounded-xl" style={{ background: 'rgba(255,255,255,0.07)', padding: '12px 14px', marginBottom: '12px', border: '1px solid rgba(255,255,255,0.10)' }}>
+          <p className="font-extrabold text-white" style={{ fontSize: '26px', lineHeight: 1 }}>
+            ${Math.round(dueTotal).toLocaleString()}
+          </p>
+          <p style={{ fontSize: '12px', color: 'rgba(255,255,255,0.6)', marginTop: '4px' }}>
+            {openCount} {openCount === 1 ? 'bill' : 'bills'} owed
+          </p>
+        </div>
+      )}
+
       {/* Caretaker read — the "is this home okay" sentence, only for a
-          managed-on-behalf home. Reuses the tile's own summary numbers (no new
-          math): green when nothing needs eyes, amber when it does. This is the
-          caretaker LENS — it surfaces the home's state, it never acts on it. */}
+          managed-on-behalf home. Placed BELOW the dollar box so the amount
+          aligns tile-to-tile with sibling homes. Reuses the tile's own summary
+          numbers (no new math): green when nothing needs eyes, amber when it
+          does. The caretaker LENS — surfaces the home's state, never acts. */}
       {home.managedOnBehalf && (() => {
         const okay = overdueCount === 0 && pendingCount === 0;
         const whose = home.onBehalfOfName ? `${home.onBehalfOfName}’s home` : 'This home';
@@ -282,23 +300,6 @@ const PropertyGlanceTile = ({ home, summary, onEnter }) => {
           </div>
         );
       })()}
-
-      {/* The glance — bills */}
-      {allClear ? (
-        <div className="rounded-xl flex items-center gap-2" style={{ background: 'rgba(110,231,183,0.10)', border: '1px solid rgba(110,231,183,0.22)', padding: '12px 14px', marginBottom: '12px', color: '#6ee7b7' }}>
-          <CheckCircle2 style={{ width: '16px', height: '16px', flexShrink: 0 }} />
-          <span className="font-medium" style={{ fontSize: '14px' }}>No bills to pay</span>
-        </div>
-      ) : (
-        <div className="rounded-xl" style={{ background: 'rgba(255,255,255,0.07)', padding: '12px 14px', marginBottom: '12px', border: '1px solid rgba(255,255,255,0.10)' }}>
-          <p className="font-extrabold text-white" style={{ fontSize: '26px', lineHeight: 1 }}>
-            ${Math.round(dueTotal).toLocaleString()}
-          </p>
-          <p style={{ fontSize: '12px', color: 'rgba(255,255,255,0.6)', marginTop: '4px' }}>
-            {openCount} {openCount === 1 ? 'bill' : 'bills'} owed
-          </p>
-        </div>
-      )}
 
       {/* Attention chips — bill-related, grouped with the bills box above.
           This region flexes (mb-auto pushes maintenance + Open to the bottom),
