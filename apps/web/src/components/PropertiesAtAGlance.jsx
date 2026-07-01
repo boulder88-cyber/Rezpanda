@@ -407,6 +407,11 @@ const UnplacedGlanceTile = ({ summary, onEnter }) => {
           <p className="truncate" style={{ fontSize: '12px', color: 'rgba(255,255,255,0.55)', marginTop: '2px' }}>
             Bills not tied to a property
           </p>
+          {/* Invisible third row — matches the property tiles' on-behalf row so
+              this tile's header is the same height and its dollar box aligns. */}
+          <p className="flex items-center gap-1 truncate font-medium" style={{ fontSize: '11px', marginTop: '3px', color: 'transparent', userSelect: 'none' }} aria-hidden="true">
+            <Heart style={{ width: '10px', height: '10px', flexShrink: 0, opacity: 0 }} /> {'\u00A0'}
+          </p>
         </div>
       </div>
 
