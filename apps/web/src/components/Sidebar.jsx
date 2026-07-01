@@ -90,7 +90,7 @@ const Sidebar = ({ isOpen, closeSidebar }) => {
         .casaceo-navrow:hover { background: ${PAGE} !important; color: ${INK} !important; }
         .casaceo-navrow.active:hover { background: ${ACTIVE_BG} !important; color: ${NAVY} !important; }
         .casaceo-explore:hover { background: ${PAGE} !important; color: ${INK_SOFT} !important; }
-        .casaceo-help:hover { background: ${PAGE} !important; color: ${INK} !important; }
+        .casaceo-help:hover { background: ${PAGE} !important; border-color: ${GOLD} !important; }
       `}</style>
       {/* Mobile overlay */}
       {isOpen && (
@@ -133,22 +133,26 @@ const Sidebar = ({ isOpen, closeSidebar }) => {
           </div>
         </div>
 
-        {/* How it works — the always-there reference. Quiet by design: a small
-            ? row, not a billboard. Sits just above the grounding footer. */}
-        <div style={{ padding: '8px 12px 0' }}>
+        {/* How it works — the always-there reference. A defined, tappable card
+            (white surface, navy ink + icon) so it reads as a real control, not
+            inert helper text — visible without shouting. */}
+        <div style={{ padding: '10px 12px 0' }}>
           <button
             onClick={() => setHelpOpen(true)}
             className="casaceo-help"
             style={{
-              width: '100%', display: 'flex', alignItems: 'center', gap: '12px',
-              padding: '10px 12px', borderRadius: '10px', border: 'none',
-              background: 'transparent', cursor: 'pointer',
-              fontSize: '14px', fontWeight: 500, color: INK_MUTE,
-              textAlign: 'left', transition: 'background 0.15s, color 0.15s',
+              width: '100%', display: 'flex', alignItems: 'center', gap: '11px',
+              padding: '11px 12px', borderRadius: '10px',
+              border: `1px solid ${BORDER}`, background: '#fff', cursor: 'pointer',
+              fontSize: '14px', fontWeight: 600, color: INK,
+              textAlign: 'left', transition: 'background 0.15s, border-color 0.15s',
             }}
           >
-            <HelpCircle style={{ width: '19px', height: '19px', flexShrink: 0 }} />
-            How it works
+            <span style={{ width: '28px', height: '28px', borderRadius: '8px', background: '#eef4fb', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+              <HelpCircle style={{ width: '17px', height: '17px', color: NAVY }} />
+            </span>
+            <span style={{ flex: 1 }}>How it works</span>
+            <span style={{ fontSize: '12px', fontWeight: 500, color: INK_MUTE }}>Guide</span>
           </button>
         </div>
 
