@@ -10,7 +10,7 @@ import { Button } from '@/components/ui/button.jsx';
 import {
   Wrench, CreditCard, FolderOpen,
   Home, ChevronDown, Plus, MapPin, Check, Bell, AlertCircle,
-  TrendingUp, ArrowRight, ArrowLeft, Sparkles, LogOut, User, Settings
+  TrendingUp, ArrowRight, ArrowLeft, Sparkles, LogOut, User, Settings, CheckCircle2
 } from 'lucide-react';
 import {
   DropdownMenu,
@@ -289,6 +289,84 @@ const QuickAlerts = ({ selectedHome }) => {
   );
 };
 
+// ─── Caretaker read (single-home / selected-property view) ────────────
+// The caretaker lens for the standard dashboard. PropertiesAtAGlance carries
+// the read on its tiles, but that only renders for multi-home users on the
+// overview — so a single-home caretaker (or one drilled into a property) needs
+// the read here too. Shows only for a home managed on behalf of someone.
+// Fetches that home's real open bills and voices the same "is this home okay"
+// status: green when nothing needs eyes, amber when it does. See, don't do.
+const CaretakerBanner = ({ selectedHome }) => {
+  const [state, setState] = useState({ loading: true, overdue: 0, pending: 0 });
+
+  useEffect(() => {
+    let active = true;
+    const run = async () => {
+      if (!selectedHome?.id || !selectedHome?.managedOnBehalf) return;
+      try {
+        const bills = await pb.collection('invoices').getFullList({
+          filter: `homeId="${selectedHome.id}"`,
+          $autoCancel: false,
+        });
+        if (!active) return;
+        const now = new Date(); now.setHours(0, 0, 0, 0);
+        // Open = not cleared (the locked predicate). Overdue = unpaid past due,
+        // status-agnostic. Pending = still in review.
+        const open = bills.filter((b) => !b.cleared);
+        const overdue = open.filter((b) => {
+          if (!b.dueDate) return false;
+          const d = new Date(b.dueDate); d.setHours(0, 0, 0, 0);
+          return d < now;
+        }).length;
+        const pending = open.filter((b) => b.status === 'pending_review').length;
+        setState({ loading: false, overdue, pending });
+      } catch {
+        if (active) setState({ loading: false, overdue: 0, pending: 0 });
+      }
+    };
+    run();
+    return () => { active = false; };
+  }, [selectedHome?.id, selectedHome?.managedOnBehalf]);
+
+  if (!selectedHome?.managedOnBehalf) return null;
+
+  const whose = selectedHome.onBehalfOfName ? `${selectedHome.onBehalfOfName}’s home` : 'This home';
+  const okay = !state.loading && state.overdue === 0 && state.pending === 0;
+
+  let msg;
+  if (state.loading) msg = 'Checking on things…';
+  else if (state.overdue > 0) msg = `${state.overdue} ${state.overdue === 1 ? 'bill is' : 'bills are'} past due`;
+  else if (state.pending > 0) msg = `${state.pending} ${state.pending === 1 ? 'bill' : 'bills'} to review`;
+  else msg = 'Bills are current — nothing needs your eye';
+
+  return (
+    <div
+      className="rounded-2xl flex items-start gap-3 p-4 shadow-sm"
+      style={{
+        background: okay ? '#ecfdf5' : '#fffbeb',
+        border: `1px solid ${okay ? '#a7f3d0' : '#fde68a'}`,
+      }}
+    >
+      <div
+        className="w-9 h-9 rounded-xl flex items-center justify-center flex-shrink-0"
+        style={{ background: okay ? '#059669' : '#f59e0b' }}
+      >
+        {okay
+          ? <CheckCircle2 className="w-5 h-5 text-white" />
+          : <AlertCircle className="w-5 h-5 text-white" />}
+      </div>
+      <div className="min-w-0">
+        <p className="font-semibold" style={{ fontSize: '13px', color: '#c9a96e' }}>
+          {selectedHome.onBehalfOfName ? `On behalf of ${selectedHome.onBehalfOfName}` : 'Managed on your behalf'}
+        </p>
+        <p className="font-medium" style={{ fontSize: '14px', color: '#1f2733', marginTop: '1px' }}>
+          <span className="font-semibold">{whose}:</span> {msg}
+        </p>
+      </div>
+    </div>
+  );
+};
+
 // ─── Welcome Banner ───────────────────────────────────────────────────
 const WelcomeBanner = ({ user, selectedHome }) => {
   const hour = new Date().getHours();
@@ -414,6 +492,9 @@ const DashboardPage = () => {
         <main className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-8">
 
           <WelcomeBanner user={currentUser} selectedHome={selectedHome} />
+
+          {/* Caretaker read — only for a home managed on behalf of someone. */}
+          <CaretakerBanner selectedHome={selectedHome} />
 
           {/* ── Getting set up — calm self-completing checklist, retires itself ── */}
           <GettingStartedCard />
