@@ -1,7 +1,8 @@
 import React, { useState } from 'react';
 import { useAuth } from '@/contexts/AuthContext.jsx';
 import pb from '@/lib/horizonsBackend.js';
-import { X, Mail, ClipboardCheck, Plus, Copy, Check, Eye, EyeOff, ShieldCheck } from 'lucide-react';
+import { X, Mail, ClipboardCheck, Plus, Copy, Check, Eye, EyeOff, ShieldCheck,
+  Inbox, CheckCircle2, Wallet, Landmark, CreditCard, Circle } from 'lucide-react';
 
 // ─── Help panel ────────────────────────────────────────────────────────
 // The always-there reference, opened from the quiet "How it works" row in
@@ -26,6 +27,9 @@ const C = {
   ink2: '#5b6472',
   ink3: '#95a0ae',
   green: '#059669',
+  amber: '#f59e0b',
+  amberTint: '#fdf6e9',
+  purple: '#7c5cbf',
 };
 
 const FORWARD_DOMAIN = 'bills.casaceo.com';
@@ -36,6 +40,42 @@ const SectionTitle = ({ children }) => (
   <h3 style={{ fontSize: '12px', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.05em', color: C.ink3, margin: '0 0 12px' }}>
     {children}
   </h3>
+);
+
+// One stage in the bill's life. Icon disc + title + plain body. The connector
+// line between stages is drawn by the parent so the column reads as a path.
+const CycleStep = ({ icon: Icon, tint, title, body, last }) => (
+  <div style={{ display: 'flex', gap: '12px' }}>
+    {/* rail: disc + connecting line */}
+    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', flexShrink: 0 }}>
+      <div style={{ width: '32px', height: '32px', borderRadius: '50%', background: tint || C.bg, border: `1px solid ${C.border}`, display: 'flex', alignItems: 'center', justifyContent: 'center', color: C.navy }}>
+        <Icon size={16} />
+      </div>
+      {!last && <div style={{ width: '2px', flex: 1, minHeight: '14px', background: C.border, margin: '2px 0' }} />}
+    </div>
+    <div style={{ paddingBottom: last ? 0 : '16px', minWidth: 0 }}>
+      <div style={{ fontSize: '14px', fontWeight: 600, color: C.ink }}>{title}</div>
+      <div style={{ fontSize: '13px', color: C.ink2, marginTop: '2px', lineHeight: 1.45 }}>{body}</div>
+    </div>
+  </div>
+);
+
+// One way a bill gets paid + how it closes. The accent bar echoes the app's
+// left-bar status language (green bank / purple card / navy manual).
+const PayType = ({ icon: Icon, accent, title, closes, body }) => (
+  <div style={{ display: 'flex', gap: '0', marginBottom: '10px', background: C.bg, border: `1px solid ${C.border}`, borderRadius: '10px', overflow: 'hidden' }}>
+    <div style={{ width: '4px', background: accent, flexShrink: 0 }} />
+    <div style={{ padding: '12px 14px' }}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+        <Icon size={15} style={{ color: accent, flexShrink: 0 }} />
+        <span style={{ fontSize: '14px', fontWeight: 600, color: C.ink }}>{title}</span>
+      </div>
+      <div style={{ fontSize: '13px', color: C.ink2, marginTop: '5px', lineHeight: 1.45 }}>{body}</div>
+      <div style={{ fontSize: '12px', fontWeight: 600, color: accent, marginTop: '6px' }}>
+        Closes when: {closes}
+      </div>
+    </div>
+  </div>
 );
 
 const HelpPanel = ({ open, onClose }) => {
@@ -197,7 +237,94 @@ const HelpPanel = ({ open, onClose }) => {
 
           <div style={{ height: '1px', background: C.border, margin: '24px 0' }} />
 
-          {/* 3 — What CasaCEO does / doesn't do */}
+          {/* 3 — The full cycle of a bill */}
+          <SectionTitle>The full cycle of a bill</SectionTitle>
+          <p style={{ fontSize: '13px', color: C.ink2, lineHeight: 1.5, margin: '0 0 16px' }}>
+            Every bill follows the same path — from the moment it arrives to the
+            moment it’s fully closed. You’re in control at each step.
+          </p>
+          <div style={{ marginBottom: '4px' }}>
+            <CycleStep
+              icon={Inbox}
+              title="1 · It arrives"
+              body="You forward or upload a bill. CasaCEO reads the amount, due date, and biller, and drops it into “Bills to review.”"
+            />
+            <CycleStep
+              icon={ClipboardCheck}
+              title="2 · You review it"
+              body="You check what we read — fix anything, set which home it belongs to — then confirm. Nothing counts until you say so."
+            />
+            <CycleStep
+              icon={CheckCircle2}
+              tint="#e8f3ee"
+              title="3 · It’s open and counting"
+              body="Now it’s a real obligation. It shows up on your dashboard, in My Bills, and in Cash Needs — so what you owe is always in front of you."
+            />
+            <CycleStep
+              icon={Wallet}
+              title="4 · You pay it your way"
+              body="Manual, bank autopay, or a card on autopay — you pay however you already do. CasaCEO never pays for you."
+            />
+            <CycleStep
+              icon={Circle}
+              tint="#f0eef7"
+              title="5 · You close it out"
+              body="Mark it paid, reviewed, or cleared — and it leaves your open list. That’s the loop closed."
+              last
+            />
+          </div>
+
+          <div style={{ height: '1px', background: C.border, margin: '24px 0' }} />
+
+          {/* 4 — How bills get paid (the three close paths) */}
+          <SectionTitle>How bills get paid</SectionTitle>
+          <p style={{ fontSize: '13px', color: C.ink2, lineHeight: 1.5, margin: '0 0 14px' }}>
+            A bill closes in the way it’s actually paid. You tell CasaCEO which,
+            and it tracks each one honestly.
+          </p>
+
+          <PayType
+            icon={Wallet}
+            accent={C.navy}
+            title="You pay it yourself"
+            body="You pay the biller directly — from your bank’s site, a check, however you like. When it’s done, you mark it Paid."
+            closes="you mark it Paid"
+          />
+          <PayType
+            icon={Landmark}
+            accent={C.green}
+            title="Bank autopay"
+            body="Your bank drafts it automatically. There’s nothing to do — you just mark it Reviewed so you know you’ve seen it."
+            closes="you mark it Reviewed"
+          />
+          <PayType
+            icon={CreditCard}
+            accent={C.purple}
+            title="Card autopay"
+            body="It’s charged to a credit card automatically. You mark it Cleared once you’ve paid that card statement."
+            closes="you mark it Cleared"
+          />
+
+          {/* The key idea — why a card bill stays open. This is the one
+              non-obvious thing about the app; explaining it plainly is what
+              makes a still-showing card bill read as honest, not broken. */}
+          <div style={{ marginTop: '4px', padding: '14px 16px', background: C.amberTint, border: `1px solid #f2e2c0`, borderRadius: '10px' }}>
+            <div style={{ fontSize: '13px', fontWeight: 700, color: '#8a6d1f', marginBottom: '5px' }}>
+              Why a card bill still shows after it’s “paid”
+            </div>
+            <p style={{ fontSize: '13px', color: C.ink2, lineHeight: 1.5, margin: 0 }}>
+              When autopay charges your credit card, the money hasn’t really left
+              your accounts yet — it’s now sitting on a card statement you’ll pay
+              later. So CasaCEO keeps a card bill <strong style={{ fontWeight: 600, color: C.ink }}>open</strong> and
+              counted until you <strong style={{ fontWeight: 600, color: C.ink }}>Clear</strong> it.
+              Paid isn’t the same as gone — clearing is what truly closes the loop,
+              so the money you still owe is never hidden from you.
+            </p>
+          </div>
+
+          <div style={{ height: '1px', background: C.border, margin: '24px 0' }} />
+
+          {/* 5 — What CasaCEO does / doesn't do */}
           <SectionTitle>What CasaCEO does — and doesn’t</SectionTitle>
 
           <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
@@ -222,6 +349,18 @@ const HelpPanel = ({ open, onClose }) => {
                 <span style={{ color: C.ink2 }}>Bills become tidy records — amount, date, biller. The original email or PDF isn’t kept.</span>
               </div>
             </div>
+          </div>
+
+          {/* The objective — the one-line "why," so the whole cycle has a point. */}
+          <div style={{ marginTop: '22px', padding: '16px 18px', background: C.navy, borderRadius: '12px' }}>
+            <div style={{ fontSize: '13px', fontWeight: 700, color: '#fff', marginBottom: '6px' }}>
+              The whole point
+            </div>
+            <p style={{ fontSize: '13px', color: 'rgba(255,255,255,0.86)', lineHeight: 1.55, margin: 0 }}>
+              One honest, always-reconciling picture of what your home costs and
+              what you still owe. You see the full cycle of every bill — and you
+              keep every decision. That’s it. A calm place that’s yours.
+            </p>
           </div>
 
           <div style={{ height: '24px' }} />
