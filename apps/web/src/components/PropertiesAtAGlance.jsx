@@ -3,7 +3,7 @@ import { useHome } from '@/contexts/HomeContext.jsx';
 import { useAuth } from '@/contexts/AuthContext.jsx';
 import { useNavigate, Link } from 'react-router-dom';
 import pb from '@/lib/horizonsBackend.js';
-import { Home, MapPin, ArrowRight, AlertCircle, CheckCircle2, Plus, CreditCard, Wrench, FolderOpen, Inbox, Building } from 'lucide-react';
+import { Home, MapPin, ArrowRight, AlertCircle, CheckCircle2, Plus, CreditCard, Wrench, FolderOpen, Inbox, Building, Heart } from 'lucide-react';
 
 // ═══════════════════════════════════════════════════════════════════════
 // PROPERTIES AT A GLANCE  (warm off-white field · navy tiles)
@@ -237,8 +237,51 @@ const PropertyGlanceTile = ({ home, summary, onEnter }) => {
               <MapPin style={{ width: '11px', height: '11px', flexShrink: 0 }} /> {home.address}
             </p>
           )}
+          {/* Caretaker context — only for a home managed on behalf of someone.
+              Gold, quiet, sits under the address so the tile reads as theirs. */}
+          {home.managedOnBehalf && (
+            <p className="flex items-center gap-1 truncate font-medium" style={{ fontSize: '11px', color: GOLD, marginTop: '3px' }}>
+              <Heart style={{ width: '10px', height: '10px', flexShrink: 0 }} />
+              {home.onBehalfOfName ? `On behalf of ${home.onBehalfOfName}` : 'Managed on your behalf'}
+            </p>
+          )}
         </div>
       </div>
+
+      {/* Caretaker read — the "is this home okay" sentence, only for a
+          managed-on-behalf home. Reuses the tile's own summary numbers (no new
+          math): green when nothing needs eyes, amber when it does. This is the
+          caretaker LENS — it surfaces the home's state, it never acts on it. */}
+      {home.managedOnBehalf && (() => {
+        const okay = overdueCount === 0 && pendingCount === 0;
+        const whose = home.onBehalfOfName ? `${home.onBehalfOfName}’s home` : 'This home';
+        let msg;
+        if (overdueCount > 0) {
+          msg = `${overdueCount} ${overdueCount === 1 ? 'bill is' : 'bills are'} past due`;
+        } else if (pendingCount > 0) {
+          msg = `${pendingCount} ${pendingCount === 1 ? 'bill' : 'bills'} to review`;
+        } else {
+          msg = 'Bills are current — nothing needs your eye';
+        }
+        return (
+          <div
+            className="rounded-xl flex items-start gap-2"
+            style={{
+              background: okay ? 'rgba(110,231,183,0.10)' : 'rgba(245,158,11,0.14)',
+              border: `1px solid ${okay ? 'rgba(110,231,183,0.22)' : 'rgba(245,158,11,0.26)'}`,
+              padding: '10px 12px', marginBottom: '12px',
+              color: okay ? '#6ee7b7' : '#fcd34d',
+            }}
+          >
+            {okay
+              ? <CheckCircle2 style={{ width: '15px', height: '15px', flexShrink: 0, marginTop: '1px' }} />
+              : <AlertCircle style={{ width: '15px', height: '15px', flexShrink: 0, marginTop: '1px' }} />}
+            <span className="font-medium" style={{ fontSize: '12.5px', lineHeight: 1.35 }}>
+              <span className="font-semibold">{whose}:</span> {msg}
+            </span>
+          </div>
+        );
+      })()}
 
       {/* The glance — bills */}
       {allClear ? (
