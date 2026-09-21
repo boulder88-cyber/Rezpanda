@@ -1,17 +1,30 @@
 /// <reference path="../pb_data/types.d.ts" />
-
-// Handle password reset email via Resend API
+ 
+// Handle password reset email via Resend API.
+//
+// The Resend API key is NOT stored in this file. It is read from the
+// RESEND_API_KEY environment variable (set it in Railway > your PocketBase
+// service > Variables). The previous version had the key hardcoded here, which
+// put it in git history — that key must be revoked in Resend.
 onRecordRequestPasswordResetRequest((e) => {
   const email = e.record.get("email");
   const token = e.record.get("passwordResetToken");
   const resetUrl = `https://casaceo.com/password-confirm?token=${token}`;
-
+ 
+  const resendKey = $os.getenv("RESEND_API_KEY");
+  if (!resendKey) {
+    // Fail loudly in the logs, but never block the password-reset request itself.
+    console.error("RESEND_API_KEY is not set — password reset email NOT sent to: " + email);
+    e.next();
+    return;
+  }
+ 
   try {
     const res = $http.send({
       url: "https://api.resend.com/emails",
       method: "POST",
       headers: {
-        "Authorization": "Bearer re_Qkd8QD57_5uViZPDJph5TiFQP52UW6eSw",
+        "Authorization": "Bearer " + resendKey,
         "Content-Type": "application/json"
       },
       body: JSON.stringify({
@@ -35,6 +48,6 @@ onRecordRequestPasswordResetRequest((e) => {
   } catch (err) {
     console.error("Failed to send reset email: " + err);
   }
-
+ 
   e.next();
 }, "users");
