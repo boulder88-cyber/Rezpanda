@@ -248,6 +248,13 @@ const HomeTile = ({ tile }) => {
 };
 
 // ─── Quick Alerts ─────────────────────────────────────────────────────
+// ⚠ NOT RENDERED (9.20 ladybug cleanup). This component is ENTIRELY MOCK DATA —
+// the three alerts below are hardcoded and were shown to every user, including
+// brand-new ones ("Electric bill due in 3 days", "HVAC service overdue"). For a
+// caretaker asking "is this home okay," invented urgent alerts are worse than
+// nothing. Left in place (comment-first) so a REAL-data version can replace the
+// mock list later. Do not re-render it until it reads the user's actual bills,
+// maintenance tasks and documents.
 const QuickAlerts = ({ selectedHome }) => {
   const [alerts, setAlerts] = useState([]);
 
@@ -506,25 +513,30 @@ const DashboardPage = () => {
             ))}
           </div>
 
-          {/* ── Home value — the one optional 'see' surface, linked directly
-                (Explore container retired; a folder for one item is a detour). ── */}
-          <Link
-            to="/home-valuation"
-            className="group flex items-center gap-4 bg-white border border-slate-100 rounded-2xl px-6 py-4 hover:shadow-md hover:border-slate-200 transition-all"
-          >
-            <div className="w-11 h-11 rounded-xl flex items-center justify-center flex-shrink-0" style={{ background: '#eef2f8' }}>
-              <TrendingUp className="w-5 h-5" style={{ color: '#1e3a5f' }} />
-            </div>
-            <div className="flex-1 min-w-0">
-              <p className="font-bold text-slate-700 text-base">Home value</p>
-              <p className="text-slate-400 text-sm">See what your home is worth today.</p>
-            </div>
-            <ArrowRight className="w-5 h-5 text-slate-300 group-hover:text-slate-500 group-hover:translate-x-1 transition-all flex-shrink-0" />
-          </Link>
+          {/* ── Home value link — COMMENTED OUT (9.20 ladybug cleanup) ──
+              The /home-valuation page is ~690 lines of hardcoded sample data
+              ("123 Oakwood Lane", a fake Lake House); it does not read the user's
+              real homes. Linking a new user to a fake valuation is a trust problem.
+              Restore this link only after the page is wired to the real homes
+              collection. Original block:
 
-          {/* ── Supporting context: alerts + quick actions ── */}
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            <QuickAlerts selectedHome={selectedHome} />
+              <Link to="/home-valuation" className="group flex items-center gap-4 bg-white border border-slate-100 rounded-2xl px-6 py-4 hover:shadow-md hover:border-slate-200 transition-all">
+                <div className="w-11 h-11 rounded-xl flex items-center justify-center flex-shrink-0" style={{ background: '#eef2f8' }}>
+                  <TrendingUp className="w-5 h-5" style={{ color: '#1e3a5f' }} />
+                </div>
+                <div className="flex-1 min-w-0">
+                  <p className="font-bold text-slate-700 text-base">Home value</p>
+                  <p className="text-slate-400 text-sm">See what your home is worth today.</p>
+                </div>
+                <ArrowRight className="w-5 h-5 text-slate-300 group-hover:text-slate-500 group-hover:translate-x-1 transition-all flex-shrink-0" />
+              </Link>
+          */}
+
+          {/* ── Supporting context: quick actions ──
+              (QuickAlerts removed from this row 9.20 — it was mock data. The grid
+              is now a single column so Quick actions doesn't sit alone in half a row.) */}
+          <div className="grid grid-cols-1 gap-6">
+            {/* <QuickAlerts selectedHome={selectedHome} />  — MOCK DATA, not rendered. See component note above. */}
 
             <div className="bg-white rounded-2xl border border-slate-100 p-5 shadow-sm">
               <h2 className="font-bold text-slate-900 text-base mb-4 flex items-center gap-2">
