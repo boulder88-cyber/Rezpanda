@@ -3,21 +3,31 @@
 // Handle password reset email via Resend API.
 //
 // The Resend API key is NOT stored in this file. It is read from the
-// RESEND_API_KEY environment variable (set it in Railway > your PocketBase
-// service > Variables). The previous version had the key hardcoded here, which
-// put it in git history — that key must be revoked in Resend.
+// RESEND_API_KEY environment variable (Railway > PocketBase service > Variables).
+//
+// Note: $http.send does NOT throw when the server answers with an error status
+// (401, 403, 422...). It just returns the response. So we check res.statusCode
+// ourselves and log what Resend said — otherwise a rejected email looks "sent".
 onRecordRequestPasswordResetRequest((e) => {
   const email = e.record.get("email");
   const token = e.record.get("passwordResetToken");
   const resetUrl = `https://casaceo.com/password-confirm?token=${token}`;
  
-  const resendKey = $os.getenv("RESEND_API_KEY");
+  // Trim whitespace/newlines and stray quotes that sometimes ride along when a
+  // key is pasted into an environment-variable box.
+  const resendKey = ($os.getenv("RESEND_API_KEY") || "")
+    .trim()
+    .replace(/^["']+|["']+$/g, "");
+ 
   if (!resendKey) {
     // Fail loudly in the logs, but never block the password-reset request itself.
     console.error("RESEND_API_KEY is not set — password reset email NOT sent to: " + email);
     e.next();
     return;
   }
+ 
+  // Length only (never the key itself) — helps spot a truncated or padded value.
+  console.log("Password reset: RESEND_API_KEY present, length=" + resendKey.length);
  
   try {
     const res = $http.send({
@@ -44,10 +54,17 @@ onRecordRequestPasswordResetRequest((e) => {
         `
       })
     });
-    console.log("Password reset email sent to: " + email);
+ 
+    if (res.statusCode >= 200 && res.statusCode < 300) {
+      console.log("Password reset email accepted by Resend for: " + email + " (status " + res.statusCode + ")");
+    } else {
+      console.error("Resend REJECTED the reset email for " + email +
+        " — status " + res.statusCode + " — body: " + res.raw);
+    }
   } catch (err) {
     console.error("Failed to send reset email: " + err);
   }
  
   e.next();
 }, "users");
+ 
