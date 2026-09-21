@@ -62,6 +62,13 @@ const catIcon = (name) => {
   return c ? c.icon : Wrench;
 };
 
+// ⚠ NOT SHOWN TO USERS (9.20 ladybug cleanup). This list is hardcoded — a mix of
+// invented names ("Johnson & Miller HVAC", "AtlantaRoof Pro") and real national
+// brands — and was presented as "Trusted vendors by category" with no basis.
+// Neither the "Recommended vendors" card nor the "Suggested for…" chips in the
+// task modal read it any more. Kept (comment-first) in case a real, sourced
+// vendor list replaces it later. The user's OWN vendors (from their maintenance
+// tasks) are still shown — that's real data.
 const RECOMMENDED_VENDORS = {
   'HVAC': ['Johnson & Miller HVAC', 'Comfort Pros', 'Climate Care'],
   'Plumbing': ['Roto-Rooter', 'Benjamin Franklin Plumbing', 'Mr. Rooter'],
@@ -222,7 +229,9 @@ const TaskModal = ({ task, onSave, onClose }) => {
     };
   });
 
-  const suggestedVendors = RECOMMENDED_VENDORS[form.systemType] || [];
+  // 9.20: the hardcoded RECOMMENDED_VENDORS list is no longer suggested to users
+  // (see note at the constant). Empty array keeps the chip block below inert.
+  const suggestedVendors = [];  // was: RECOMMENDED_VENDORS[form.systemType] || []
   const suggestedItems = COMMON_ITEMS[form.systemType] || [];
 
   return (
@@ -1271,38 +1280,46 @@ const MaintenanceManagementPage = () => {
               </div>
             </div>
 
-            <div style={{ background: SURFACE, borderRadius: '12px', border: `1px solid ${BORDER}`, overflow: 'hidden' }}>
-              <div style={{ borderBottom: `1px solid ${PAGE}`, display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '20px 24px' }}>
-                <div>
-                  <h2 style={{ fontSize: '18px', fontWeight: 600, color: INK }}>Recommended vendors</h2>
-                  <p style={{ fontSize: '14px', color: INK_MUTE, marginTop: '4px' }}>Trusted vendors by category.</p>
-                </div>
-                <Link to="/vendors" style={{ display: 'inline-flex', alignItems: 'center', gap: '4px', fontWeight: 600, color: NAVY, fontSize: '13px', textDecoration: 'none' }}>
-                  Full directory <ArrowRight style={{ width: '13px', height: '13px' }} />
-                </Link>
-              </div>
-              <div style={{ padding: '24px' }}>
-                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(220px, 1fr))', gap: '14px' }}>
-                  {Object.entries(RECOMMENDED_VENDORS).map(([category, vendors]) => {
-                    const Icon = catIcon(category);
-                    return (
-                      <div key={category} style={{ borderRadius: '10px', border: `1px solid ${BORDER}`, background: PAGE, padding: '14px' }}>
-                        <p style={{ fontSize: '13px', fontWeight: 600, color: INK, display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '8px' }}>
-                          <Icon style={{ width: '14px', height: '14px', color: NAVY }} /> {category}
-                        </p>
-                        <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-                          {vendors.map((v) => (
-                            <p key={v} style={{ fontSize: '12px', color: INK_SOFT, display: 'flex', alignItems: 'center', gap: '6px' }}>
-                              <Star style={{ width: '11px', height: '11px', color: GOLD }} /> {v}
+            {/* ── "Recommended vendors" card — COMMENTED OUT (9.20 ladybug cleanup) ──
+                It rendered the hardcoded RECOMMENDED_VENDORS list as "Trusted vendors
+                by category" — invented names mixed with real brands, no basis for the
+                word "trusted". Restore only with a real, sourced list. The "Your
+                vendors" card above (the user's own vendors) is unchanged.
+                Original card:
+
+                <div style={{ background: SURFACE, borderRadius: '12px', border: `1px solid ${BORDER}`, overflow: 'hidden' }}>
+                  <div style={{ borderBottom: `1px solid ${PAGE}`, display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '20px 24px' }}>
+                    <div>
+                      <h2 style={{ fontSize: '18px', fontWeight: 600, color: INK }}>Recommended vendors</h2>
+                      <p style={{ fontSize: '14px', color: INK_MUTE, marginTop: '4px' }}>Trusted vendors by category.</p>
+                    </div>
+                    <Link to="/vendors" style={{ display: 'inline-flex', alignItems: 'center', gap: '4px', fontWeight: 600, color: NAVY, fontSize: '13px', textDecoration: 'none' }}>
+                      Full directory <ArrowRight style={{ width: '13px', height: '13px' }} />
+                    </Link>
+                  </div>
+                  <div style={{ padding: '24px' }}>
+                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(220px, 1fr))', gap: '14px' }}>
+                      {Object.entries(RECOMMENDED_VENDORS).map(([category, vendors]) => {
+                        const Icon = catIcon(category);
+                        return (
+                          <div key={category} style={{ borderRadius: '10px', border: `1px solid ${BORDER}`, background: PAGE, padding: '14px' }}>
+                            <p style={{ fontSize: '13px', fontWeight: 600, color: INK, display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '8px' }}>
+                              <Icon style={{ width: '14px', height: '14px', color: NAVY }} /> {category}
                             </p>
-                          ))}
-                        </div>
-                      </div>
-                    );
-                  })}
+                            <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                              {vendors.map((v) => (
+                                <p key={v} style={{ fontSize: '12px', color: INK_SOFT, display: 'flex', alignItems: 'center', gap: '6px' }}>
+                                  <Star style={{ width: '11px', height: '11px', color: GOLD }} /> {v}
+                                </p>
+                              ))}
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </div>
                 </div>
-              </div>
-            </div>
+            */}
           </div>
         )}
       </div>
