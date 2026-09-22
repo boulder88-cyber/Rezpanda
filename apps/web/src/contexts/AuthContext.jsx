@@ -26,9 +26,21 @@ export const AuthProvider = ({ children }) => {
     }
     setInitialLoading(false);
 
+    // PocketBase's authStore can fire onChange repeatedly with an unchanged
+    // model (observed 70+ times on a single page load). Using the functional
+    // update form lets us compare against the latest state (not a stale
+    // closure) and bail out — returning the same object reference — when
+    // nothing actually changed, so React skips the re-render instead of
+    // thrashing every consumer of currentUser (this was the cause of the
+    // flickering header).
     const unsubscribe = pb.authStore.onChange((token, model) => {
-      console.log('AuthContext: Auth store changed. New model:', model?.email || 'null');
-      setCurrentUser(model);
+      setCurrentUser((prev) => {
+        if (prev?.id === model?.id) {
+          return prev;
+        }
+        console.log('AuthContext: Auth store changed. New model:', model?.email || 'null');
+        return model;
+      });
     });
 
     return () => {
