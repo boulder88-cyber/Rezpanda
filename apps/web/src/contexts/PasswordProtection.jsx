@@ -7,6 +7,10 @@ export const usePasswordAuth = () => useContext(PasswordProtectionContext);
 const GATE_PASSWORD = 'casaceo2024';
 const STORAGE_KEY = 'casaceoAuth';
 
+// Gate disabled site-wide (Sept 2026) — see decisions-and-principles.md.
+// To re-enable, flip GATE_DISABLED back to false.
+const GATE_DISABLED = true;
+
 export const PasswordProtectionProvider = ({ children }) => {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [isPasswordProtected, setIsPasswordProtected] = useState(true);
@@ -22,7 +26,7 @@ export const PasswordProtectionProvider = ({ children }) => {
       hostname.endsWith('.replit.app') ||
       hostname.endsWith('.repl.co');
 
-    if (isDevEnvironment) {
+    if (isDevEnvironment || GATE_DISABLED) {
       setIsPasswordProtected(false);
       setIsAuthenticated(true);
       setIsChecking(false);
@@ -31,7 +35,7 @@ export const PasswordProtectionProvider = ({ children }) => {
 
     // Production — always protected
     setIsPasswordProtected(true);
-    
+
     try {
       const storedAuth = sessionStorage.getItem(STORAGE_KEY);
       setIsAuthenticated(storedAuth === 'true');
@@ -39,7 +43,7 @@ export const PasswordProtectionProvider = ({ children }) => {
       // sessionStorage blocked (private mode) — not authenticated
       setIsAuthenticated(false);
     }
-    
+
     setIsChecking(false);
   }, []);
 
@@ -66,12 +70,12 @@ export const PasswordProtectionProvider = ({ children }) => {
   // Show nothing while checking to prevent flash
   if (isChecking) {
     return (
-      <div style={{ 
-        minHeight: '100vh', 
-        background: '#1e3a5f', 
-        display: 'flex', 
-        alignItems: 'center', 
-        justifyContent: 'center' 
+      <div style={{
+        minHeight: '100vh',
+        background: '#1e3a5f',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center'
       }}>
         <div style={{ color: '#c9a96e', fontFamily: 'sans-serif', fontSize: '18px' }}>
           Loading CasaCEO...
