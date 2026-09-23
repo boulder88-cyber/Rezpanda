@@ -670,7 +670,13 @@ const BillPayPage = () => {
     try {
       await pb.collection('payment_history').create({
         companyName: company.companyName, datePaid: new Date().toISOString(),
-        amount: company.amount || null, accountUsed: selectedHome?.name || 'Default Account', ownerId: currentUser.id
+        amount: company.amount || null, accountUsed: selectedHome?.name || 'Default Account', ownerId: currentUser.id,
+        // Tie the payment record to the same property as the bill it was
+        // paid from, so Payment Log can be scoped per property instead of
+        // every payment showing under every property (Tier 1 fix, 9.22).
+        // REQUIRES a `homeId` field on the payment_history collection in
+        // PocketBase — see the History tab fix for the schema note.
+        homeId: company.homeId || ''
       }, { $autoCancel: false });
       setHistoryRefreshTrigger(prev => prev + 1);
     } catch {
@@ -1153,7 +1159,12 @@ const BillPayPage = () => {
             </div>
             {historyView === 'log' ? (
               <div className="bg-white" style={{ borderRadius: '12px', border: '1px solid #e9e4db', overflow: 'hidden', boxShadow: '0 1px 3px rgba(0,0,0,0.06)' }}>
-                <PaymentHistoryTab refreshTrigger={historyRefreshTrigger} />
+                <PaymentHistoryTab
+                  refreshTrigger={historyRefreshTrigger}
+                  scope={scope}
+                  selectedHomeId={selectedHome?.id}
+                  homeName={homeName}
+                />
               </div>
             ) : (
               <CoverageView companies={propertyFiltered} homeNameById={homeName} />
