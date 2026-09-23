@@ -1,6 +1,5 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import pb from '@/lib/pocketbaseClient.js';
-import { useAuth } from '@/contexts/AuthContext.jsx';
 import { useHome } from '@/contexts/HomeContext.jsx';
 import { useToast } from '@/hooks/use-toast.js';
 
@@ -23,6 +22,15 @@ const isPastDueDate = (dueDate) => {
 // Shows bills captured by email ingestion that are awaiting user confirmation
 // (status === "pending_review").
 //
+// FIX (9.22): this used to run its OWN unscoped fetch — every pending_review
+// invoice for the account, regardless of property — which is why the same
+// unassigned bill showed up identically under every single property's Bills
+// to Review. It now takes its list as a `bills` prop, already filtered by
+// BillPayPage's `propertyFiltered` (the same scope logic every other section
+// on that page uses: this property / all properties / other & unassigned).
+// A bill with no home lives in "Other & unassigned" or "All properties" now,
+// same as every other unplaced bill — not falsely under every property.
+//
 // Two paths per bill:
 //   • Confirm        → flips status to "confirmed" as-is (good parses)
 //   • Review         → expands the row inline into editable fields pre-filled
@@ -36,44 +44,24 @@ const isPastDueDate = (dueDate) => {
 // Bills left untouched simply remain here for "review later".
 // ═══════════════════════════════════════════════════════════════════════
 
-const PendingReviewSection = ({ onConfirmed, excludeIds }) => {
-  const { currentUser } = useAuth();
-  const { homes, selectedHome } = useHome();
+const PendingReviewSection = ({ bills, onConfirmed }) => {
+  const { homes } = useHome();
   const { toast } = useToast();
-  const [pending, setPending] = useState([]);
-  const [loading, setLoading] = useState(true);
   const [confirmingId, setConfirmingId] = useState(null);
+
+  // Bills we've just acted on, hidden immediately so the row disappears
+  // without waiting on the parent's refetch (onConfirmed) to come back.
+  const [hiddenIds, setHiddenIds] = useState(() => new Set());
 
   // Which row is currently expanded for editing, plus its working draft.
   const [editingId, setEditingId] = useState(null);
   const [draft, setDraft] = useState({ companyName: '', amount: '', dueDate: '', category: '', homeId: '', paymentType: 'Manual', billingPeriod: '', invoiceNumber: '' });
 
-  const fetchPending = async () => {
-    if (!currentUser) return;
-    try {
-      setLoading(true);
-      const records = await pb.collection('invoices').getFullList({
-        filter: `ownerId = "${currentUser.id}" && status = "pending_review"`,
-        sort: '-created',
-        expand: 'vendorId',
-        $autoCancel: false,
-      });
-      // Flatten vendor payUrl onto each bill as paymentLink (pay URL lives on
-      // the vendor now); the review panel's vendor-site link reads this field.
-      const flattened = records.map((r) => {
-        const vendor = r.expand && r.expand.vendorId ? r.expand.vendorId : null;
-        return { ...r, paymentLink: vendor ? (vendor.payUrl || '') : '' };
-      });
-      setPending(flattened);
-    } catch {
-      // silent: if it fails, just show nothing rather than break the page
-      setPending([]);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  useEffect(() => { fetchPending(); }, [currentUser]);
+  // Is there a real property choice to make? With a single home there's
+  // nothing to choose, so we attach silently and never gate. The gate only
+  // earns its keep when the user actually has more than one property.
+  const multiHome = (homes || []).length > 1;
+  const singleHomeId = (homes || []).length === 1 ? homes[0].id : '';
 
   // Open the inline editor for a bill, pre-filling fields with parsed values.
   const startReview = (bill) => {
@@ -106,12 +94,6 @@ const PendingReviewSection = ({ onConfirmed, excludeIds }) => {
     setDraft(prev => ({ ...prev, [field]: value }));
   };
 
-  // Is there a real property choice to make? With a single home there's
-  // nothing to choose, so we attach silently and never gate. The gate only
-  // earns its keep when the user actually has more than one property.
-  const multiHome = (homes || []).length > 1;
-  const singleHomeId = (homes || []).length === 1 ? homes[0].id : '';
-
   // Confirm-as-is: trust the parse, just flip status. (Good parses.)
   const handleConfirm = async (bill) => {
     // Decide which property this bill belongs to.
@@ -137,7 +119,7 @@ const PendingReviewSection = ({ onConfirmed, excludeIds }) => {
       if (homeIdToUse && homeIdToUse !== bill.homeId) payload.homeId = homeIdToUse;
       await pb.collection('invoices').update(bill.id, payload, { $autoCancel: false });
       toast({ title: '✅ Bill confirmed', description: `${bill.companyName} added to your bills.` });
-      setPending(prev => prev.filter(b => b.id !== bill.id));
+      setHiddenIds(prev => new Set(prev).add(bill.id));
       if (onConfirmed) onConfirmed();
     } catch {
       toast({ title: 'Could not confirm bill', variant: 'destructive' });
@@ -156,7 +138,7 @@ const PendingReviewSection = ({ onConfirmed, excludeIds }) => {
     try {
       await pb.collection('invoices').delete(bill.id, { $autoCancel: false });
       toast({ title: 'Bill removed.', description: `${bill.companyName || 'Bill'} deleted.` });
-      setPending(prev => prev.filter(b => b.id !== bill.id));
+      setHiddenIds(prev => new Set(prev).add(bill.id));
     } catch {
       toast({ title: 'Could not delete bill', variant: 'destructive' });
     } finally {
@@ -234,7 +216,7 @@ const PendingReviewSection = ({ onConfirmed, excludeIds }) => {
 
       await pb.collection('invoices').update(bill.id, payload, { $autoCancel: false });
       toast({ title: '✅ Bill confirmed', description: `${trimmedName} added to your bills.` });
-      setPending(prev => prev.filter(b => b.id !== bill.id));
+      setHiddenIds(prev => new Set(prev).add(bill.id));
       cancelReview();
       if (onConfirmed) onConfirmed();
     } catch {
@@ -244,15 +226,9 @@ const PendingReviewSection = ({ onConfirmed, excludeIds }) => {
     }
   };
 
-  // While loading the very first time, show nothing (avoids a flash).
-  if (loading) return null;
-
-  // Bills the parent is already showing elsewhere (past-due bills surface in
-  // the Past Due section, which takes precedence) are excluded here so each
-  // bill appears exactly once.
-  const visiblePending = excludeIds
-    ? pending.filter(b => !excludeIds.has(b.id))
-    : pending;
+  // Bills to actually render: whatever the parent scoped for us, minus
+  // anything we've just acted on locally.
+  const visiblePending = (bills || []).filter(b => !hiddenIds.has(b.id));
 
   // No pending bills to show here → render nothing at all.
   if (visiblePending.length === 0) return null;
