@@ -9,6 +9,11 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { useToast } from '@/hooks/use-toast.js';
 import { Loader2, Building2, Info } from 'lucide-react';
 
+// Kept in sync with the AI bill-extraction category list (api/inbound-email.js)
+// so a bill the AI categorizes and a bill added by hand share the same
+// taxonomy — e.g. a lawn-care bill the AI tags "Landscaping" still shows
+// correctly here if the bill is later opened for editing, instead of coming
+// up blank because the category isn't one of this form's options.
 const CATEGORIES = [
   'Electric',
   'Gas',
@@ -16,7 +21,10 @@ const CATEGORIES = [
   'Internet/Cable',
   'Phone',
   'Trash/Recycling',
+  'Landscaping',
   'Pest Control',
+  'Insurance',
+  'Auto',
   'Security',
   'Other'
 ];
