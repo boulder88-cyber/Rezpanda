@@ -125,6 +125,16 @@ const Sparkline = ({ series, color }) => {
 // ── Headline: total monthly outflow over the last 13 months ──
 // The story the tab opens with — is the cost of running this home drifting?
 // One navy area/line, month ticks, latest month + MoM delta called out.
+//
+// FIX (9.22): the headline used to always read the CURRENT calendar month's
+// total, full stop. Bills rarely land due-dated in the exact month someone
+// opens the app — most months are legitimately $0 even when real, recent
+// spend is sitting one or two months back — so the headline showed "$0"
+// while the category cards below summed to a real, nonzero total right
+// underneath it. That read as broken, not just quiet. The headline now walks
+// back to the most recent month that actually has tracked spend (a true,
+// all-zero window still shows an honest $0), and the highlighted point on
+// the chart moves to match it, so the big number and the dot always agree.
 const OutflowLine = ({ series }) => {
   const w = 720, h = 150;
   const padL = 8, padR = 8, padT = 14, padB = 26;
@@ -143,8 +153,13 @@ const OutflowLine = ({ series }) => {
   const linePath = `M ${pts.join(' L ')}`;
   const areaPath = `M ${x(0)},${h - padB} L ${pts.join(' L ')} L ${x(n - 1)},${h - padB} Z`;
 
-  const last = series[n - 1];
-  const prev = series[n - 2] || { total: 0 };
+  // Walk back from "now" to the most recent month with real tracked spend.
+  // Only when the ENTIRE window is empty does this land on a genuine $0.
+  let lastIdx = n - 1;
+  while (lastIdx > 0 && series[lastIdx].total === 0) lastIdx--;
+  const isCurrentMonth = lastIdx === n - 1;
+  const last = series[lastIdx];
+  const prev = series[lastIdx - 1] || { total: 0 };
   const delta = last.total - prev.total;
   const deltaPct = prev.total > 0 ? Math.round((delta / prev.total) * 100) : null;
 
@@ -161,6 +176,7 @@ const OutflowLine = ({ series }) => {
           <p className="font-bold" style={{ fontSize: '22px', color: NAVY, lineHeight: 1 }}>{money0(last.total)}</p>
           <p style={{ fontSize: '11px', color: INK_LIGHT, marginTop: '2px' }}>
             {monthLabel(last.key)}
+            {!isCurrentMonth && <span> · latest activity</span>}
             {deltaPct != null && (
               <span style={{ color: delta > 0 ? '#dc2626' : delta < 0 ? '#059669' : INK_LIGHT, marginLeft: '6px', fontWeight: 600 }}>
                 {delta > 0 ? '▲' : delta < 0 ? '▼' : ''} {Math.abs(deltaPct)}% vs prev
@@ -179,8 +195,8 @@ const OutflowLine = ({ series }) => {
           <path d={linePath} fill="none" stroke={NAVY} strokeWidth="2"
             strokeLinejoin="round" strokeLinecap="round" vectorEffect="non-scaling-stroke" />
           {series.map((s, i) => (
-            <circle key={i} cx={x(i)} cy={y(s.total)} r={i === n - 1 ? 3.5 : 2}
-              fill={i === n - 1 ? NAVY : '#fff'} stroke={NAVY} strokeWidth="1.25" vectorEffect="non-scaling-stroke" />
+            <circle key={i} cx={x(i)} cy={y(s.total)} r={i === lastIdx ? 3.5 : 2}
+              fill={i === lastIdx ? NAVY : '#fff'} stroke={NAVY} strokeWidth="1.25" vectorEffect="non-scaling-stroke" />
           ))}
           {series.map((s, i) => (i % tickEvery === 0 || i === n - 1) ? (
             <text key={`t${i}`} x={x(i)} y={h - 8} textAnchor="middle"
