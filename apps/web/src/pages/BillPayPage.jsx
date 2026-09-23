@@ -824,6 +824,17 @@ const BillPayPage = () => {
   // Friendly count of no-home bills, for the toggle/empty hints.
   const otherCount = companies.filter(c => hasNoHome(c) && !isPaid(c) && c.status !== 'pending_review').length;
 
+  // Bills to Review, scoped the SAME way as everything else on this page —
+  // derived from propertyFiltered (already respects the current scope /
+  // selectedHome), not a separate unscoped fetch. This is the fix for the bug
+  // where an unassigned pending bill showed up identically under every
+  // property's Bills to Review instead of only where it actually belongs
+  // ("Other & unassigned" or "All properties" until placed). Past-due pending
+  // bills are excluded here — they live in the Past Due section instead.
+  const scopedPending = propertyFiltered.filter(
+    c => c.status === 'pending_review' && !pastDuePendingIds.has(c.id)
+  );
+
   return (
     <div className="min-h-screen bg-slate-50 pb-20">
       <Helmet><title>Bill Pay — CasaCEO</title></Helmet>
@@ -1048,8 +1059,11 @@ const BillPayPage = () => {
                   </>
                 )}
 
-                {/* ── 4. BILLS TO CONFIRM (email-ingested) ── */}
-                <PendingReviewSection onConfirmed={fetchCompanies} excludeIds={pastDuePendingIds} />
+                {/* ── 4. BILLS TO CONFIRM (email-ingested) ──
+                    Scoped the same way as every other section on this page:
+                    derived from propertyFiltered (already respects the current
+                    scope/selectedHome), not a separate unscoped fetch. */}
+                <PendingReviewSection bills={scopedPending} onConfirmed={fetchCompanies} />
 
                 {/* ── 5. ALL SET — paid (manual) + reviewed (autopay) ── */}
                 <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3" style={{ marginBottom: '12px' }}>
