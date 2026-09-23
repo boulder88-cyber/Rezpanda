@@ -899,7 +899,11 @@ const BillPayPage = () => {
 
           {/* Tab Bar + local scope toggle */}
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3" style={{ marginBottom: '24px' }}>
-            <div className="flex gap-1 bg-white border border-slate-200 rounded-2xl w-fit shadow-sm" style={{ padding: '6px' }}>
+            {/* flex-wrap (not a fixed w-fit row) so all 5 tabs stay reachable on a
+                narrow phone screen — they drop to a second line instead of
+                overflowing off the right edge where Providers/History become
+                invisible unless you know to scroll. */}
+            <div className="flex flex-wrap gap-1 bg-white border border-slate-200 rounded-2xl shadow-sm max-w-full" style={{ padding: '6px' }}>
               {[
                 { key: 'dashboard', label: 'My Bills', icon: LayoutGrid },
                 { key: 'cashneeds', label: 'Cash Needs', icon: TrendingDown },
