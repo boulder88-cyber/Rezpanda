@@ -633,8 +633,16 @@ const SummaryStats = ({ tasks, onFilter }) => {
     return d >= 0 && d <= 30;
   }).length;
   const upToDate = tasks.filter((t) => t.nextServiceDate && new Date(t.nextServiceDate) > today).length;
+  const notScheduled = tasks.filter((t) => !t.nextServiceDate).length;
   const total = tasks.length;
-  const health = total > 0 ? Math.round((upToDate / total) * 100) : 0;
+
+  // Health measures how the SCHEDULED tasks are doing — a task with no next
+  // service date yet isn't overdue, it just hasn't been scheduled, so it
+  // shouldn't drag the percentage toward 0. Only tasks with a real date
+  // count toward the math; unscheduled ones are called out in the caption
+  // below instead of silently deflating the number.
+  const trackable = overdue + upToDate;
+  const health = trackable > 0 ? Math.round((upToDate / trackable) * 100) : null;
 
   const cards = [
     { label: 'Overdue', value: overdue, icon: AlertTriangle, accent: RED, tint: RED_TINT, filter: 'Overdue' },
@@ -671,12 +679,18 @@ const SummaryStats = ({ tasks, onFilter }) => {
         <div style={{ background: SURFACE, borderRadius: '12px', padding: '16px', border: `1px solid ${BORDER}`, boxShadow: '0 1px 3px rgba(31,39,51,0.05)' }}>
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '8px' }}>
             <p style={{ fontSize: '13px', fontWeight: 600, color: INK_SOFT }}>Maintenance health</p>
-            <p style={{ fontSize: '13px', fontWeight: 700, color: INK }}>{health}% up to date</p>
+            <p style={{ fontSize: '13px', fontWeight: 700, color: INK }}>
+              {health === null ? 'No schedule set yet' : `${health}% up to date`}
+            </p>
           </div>
           <div style={{ background: '#eef0f2', borderRadius: '999px', overflow: 'hidden', height: '8px' }}>
-            <div style={{ height: '100%', borderRadius: '999px', width: `${health}%`, transition: 'width .7s', background: health >= 80 ? GREEN : health >= 50 ? AMBER : RED }} />
+            <div style={{ height: '100%', borderRadius: '999px', width: `${health === null ? 0 : health}%`, transition: 'width .7s', background: health === null ? GREY : health >= 80 ? GREEN : health >= 50 ? AMBER : RED }} />
           </div>
-          <p style={{ fontSize: '12px', color: INK_MUTE, marginTop: '6px' }}>{upToDate} of {total} up to date · {overdue} overdue</p>
+          <p style={{ fontSize: '12px', color: INK_MUTE, marginTop: '6px' }}>
+            {trackable > 0
+              ? `${upToDate} of ${trackable} scheduled tasks up to date · ${overdue} overdue${notScheduled > 0 ? ` · ${notScheduled} not yet scheduled` : ''}`
+              : `${notScheduled} task${notScheduled === 1 ? '' : 's'} tracked, none with a next service date yet`}
+          </p>
         </div>
       )}
     </div>
