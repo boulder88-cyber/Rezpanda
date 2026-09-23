@@ -32,7 +32,15 @@
 import { simpleParser } from 'mailparser';
 import Busboy from 'busboy';
 
-const CATEGORIES = ['Electric', 'Water', 'Internet', 'Insurance', 'Auto', 'Other'];
+// Kept in sync with the manual "Add bill" form's category list
+// (apps/web/src/components/AddServiceCompanyForm.jsx) so a bill the AI
+// extracts and a bill a person adds by hand draw from the same taxonomy —
+// otherwise a category the AI picks (e.g. "Landscaping") can't be
+// re-selected if the person later edits the bill by hand, and a bill type
+// with no matching option (e.g. a lawn-care or pest-control invoice) gets
+// forced into "Other" even when the real category already exists elsewhere
+// in the app (it's one of the Maintenance categories, just missing here).
+const CATEGORIES = ['Electric', 'Gas', 'Water', 'Internet/Cable', 'Phone', 'Trash/Recycling', 'Landscaping', 'Pest Control', 'Insurance', 'Auto', 'Security', 'Other'];
 
 // Vercel: disable the default body parser so we can read the raw multipart stream.
 export const config = {
