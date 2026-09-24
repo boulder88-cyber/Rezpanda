@@ -392,7 +392,9 @@ const WelcomeBanner = ({ user, selectedHome }) => {
               {selectedHome ? selectedHome.name : 'Welcome to CasaCEO'}
             </h1>
             <p className="text-blue-200 text-sm">
-              {selectedHome?.address || 'Add a property to start running your home like an asset'}
+              {selectedHome
+                ? (selectedHome.address || 'Address not added yet')
+                : 'Add a property to start running your home like an asset'}
             </p>
           </div>
           <div className="text-right">
