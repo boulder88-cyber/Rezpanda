@@ -303,7 +303,7 @@ const PropertyFormModal = ({ isOpen, onClose, onSuccess, initialData = null }) =
                 maxLength={5}
                 value={formData.zip}
                 onChange={handleChange}
-                placeholder="31522"
+                placeholder="e.g. 12345"
               />
             </div>
           </div>
