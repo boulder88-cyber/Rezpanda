@@ -202,9 +202,10 @@ const HelpPanel = ({ open, onClose }) => {
           {/* 2 — Forwarding bills */}
           <SectionTitle>Forwarding bills</SectionTitle>
           <p style={{ fontSize: '13px', color: C.ink2, lineHeight: 1.5, margin: '0 0 12px' }}>
-            Every home gets a private email address. Forward a bill to it — from your
-            inbox, or set it as your billing email at the provider — and CasaCEO reads
-            it and drops it into “Bills to review.”
+            Your account gets one private email address, shared across every home you
+            manage. Forward a bill to it — from your inbox, or set it as your billing
+            email at the provider — and CasaCEO reads it and drops it into “Bills to
+            review,” where you can confirm which property it belongs to.
           </p>
 
           <p style={{ fontSize: '11px', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.04em', color: C.ink2, margin: '0 0 6px' }}>
