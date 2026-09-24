@@ -230,7 +230,7 @@ const PropertyForm = ({ onSuccess, onCancel, initialData = null }) => {
             maxLength={5}
             value={formData.zip}
             onChange={handleChange}
-            placeholder="31522"
+            placeholder="e.g. 12345"
             className="text-slate-900"
           />
         </div>
