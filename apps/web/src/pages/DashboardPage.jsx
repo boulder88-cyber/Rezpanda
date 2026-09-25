@@ -7,6 +7,7 @@ import pb from '@/lib/horizonsBackend.js';
 import PropertiesAtAGlance from '@/components/PropertiesAtAGlance.jsx';
 import GettingStartedCard from '@/components/GettingStartedCard.jsx';
 import HomeInsightsCard from '@/components/HomeInsightsCard.jsx';
+import { getTodaysAffirmation } from '@/lib/affirmations.js';
 import { Button } from '@/components/ui/button.jsx';
 import {
   Wrench, CreditCard, FolderOpen,
@@ -396,6 +397,9 @@ const WelcomeBanner = ({ user, selectedHome }) => {
               {selectedHome
                 ? (selectedHome.address || 'Address not added yet')
                 : 'Add a property to start running your home like an asset'}
+            </p>
+            <p className="text-sm mt-3 italic" style={{ color: '#c9a96e' }}>
+              “{getTodaysAffirmation()}”
             </p>
           </div>
           <div className="text-right">
