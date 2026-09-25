@@ -2,24 +2,23 @@ import React, { useState } from 'react';
 import { Zap, Droplets, Droplet, Plug, BellRing, Waves, RotateCcw, Flame, ChevronDown } from 'lucide-react';
 
 // ═══════════════════════════════════════════════════════════════════════
-// QUICK GUIDES — low-key stick-figure how-tos for the handful of things
-// worth knowing before you need them. Lives on the "Home care" tab, above
-// the seasonal schedule.
+// QUICK GUIDES — low-key, slightly goofy stick-figure how-tos for the
+// handful of things worth knowing before you need them. Lives on the
+// "Home care" tab, above the seasonal schedule.
 //
-// Tone: laid back, not alarmist. These are common "something's wrong and I
-// need to act in the next few minutes" moments a homeowner hits — the goal
-// is calm, correct, and quick to scan, not a full home-repair course. Every
-// guide ends with a plain "when to stop and call someone" line, because
-// that's the part people actually need reassurance about. The gas guide in
-// particular does ONE job — get the gas off and get help — and explicitly
-// stops short of anything involving relighting a flame, which is a job for
-// the gas company, not a homeowner.
+// Tone: light humor, not a full comedy routine. Funnier copy plus a small
+// "ta-da" bounce/sparkle once the fix lands — still reads as trustworthy
+// how-to content, not a meme account. The gas guide is the one deliberate
+// exception: real safety stakes (smell gas → get everyone out → get help),
+// so it stays calm and straight-faced, no jokes, no victory bounce, and it
+// explicitly stops short of anything involving relighting a flame — that
+// part is the gas company's job, not a homeowner's.
 //
 // Built as plain inline SVG + CSS @keyframes, matching this codebase's real
 // convention — framer-motion is listed in package.json but isn't actually
-// used anywhere in apps/web/src, so it isn't introduced here. Motion is
-// slow and looping ("low key"), and every animation freezes on a clear pose
-// under prefers-reduced-motion.
+// used anywhere in apps/web/src, so it isn't introduced here. Motion stays
+// slow and looping, and every animation freezes on a clear pose under
+// prefers-reduced-motion.
 //
 // Design tokens match MaintenanceHelpPanel.jsx / MaintenanceManagementPage.jsx
 // exactly, so this reads as the same product, not a bolted-on widget.
@@ -35,9 +34,7 @@ const BORDER = '#e9e4db';
 const NAVY_TINT = '#eef2f7';
 
 // ─── Shared keyframes, scoped by class name so animations never collide
-// with each other or anything else on the page. Grouped by the kind of
-// motion so new guides can reuse whichever fits (a press, a quarter-turn,
-// a pulse, a slow bob) instead of every guide inventing its own. ─────────
+// with each other or anything else on the page. ──────────────────────────
 const GuideStyles = () => (
   <style>{`
     /* a lever/button being pushed and released */
@@ -93,6 +90,21 @@ const GuideStyles = () => (
       0%, 100% { opacity: 0.6; transform: scale(0.92); }
       50%      { opacity: 0.1; transform: scale(1.08); }
     }
+    /* the little "ta-da" — a small hop and wobble once the fix lands. Not
+       used on the gas guide, on purpose. */
+    @keyframes qgVictoryBounce {
+      0%, 65%   { transform: translate(0, 0) rotate(0deg); }
+      74%       { transform: translate(0, -8px) rotate(-6deg); }
+      82%       { transform: translate(0, 2px) rotate(4deg); }
+      90%       { transform: translate(0, -2px) rotate(-2deg); }
+      100%      { transform: translate(0, 0) rotate(0deg); }
+    }
+    /* a small sparkle that pops in right as the fix lands */
+    @keyframes qgSparkle {
+      0%, 62%   { opacity: 0; transform: scale(0.4) rotate(0deg); }
+      74%       { opacity: 1; transform: scale(1.15) rotate(15deg); }
+      88%, 100% { opacity: 0; transform: scale(0.7) rotate(15deg); }
+    }
 
     .qg-breaker-lever { animation: qgBreakerLever 4.5s ease-in-out infinite; }
     .qg-breaker-hand  { animation: qgBreakerHand 4.5s ease-in-out infinite; }
@@ -110,12 +122,15 @@ const GuideStyles = () => (
     .qg-detector-led  { animation: qgPulse 1.6s ease-in-out infinite; }
     .qg-detector-wave { animation: qgWaveExpand 2.4s ease-in-out infinite; transform-origin: 150px 20px; }
     .qg-detector-wave2 { animation: qgWaveExpand 2.4s ease-in-out infinite 0.4s; transform-origin: 150px 20px; }
+    .qg-victory       { animation: qgVictoryBounce 4.5s ease-in-out infinite; }
+    .qg-sparkle       { animation: qgSparkle 4.5s ease-in-out infinite; }
 
     @media (prefers-reduced-motion: reduce) {
       .qg-breaker-lever, .qg-breaker-hand, .qg-valve-wheel, .qg-shutoff-valve,
       .qg-gas-valve, .qg-outlet-button, .qg-outlet-hand, .qg-outlet-led,
       .qg-disposal-button, .qg-disposal-hand, .qg-plunger-cup, .qg-plunger-hand,
-      .qg-detector-hand, .qg-detector-led, .qg-detector-wave, .qg-detector-wave2 {
+      .qg-detector-hand, .qg-detector-led, .qg-detector-wave, .qg-detector-wave2,
+      .qg-victory, .qg-sparkle {
         animation: none;
       }
     }
@@ -136,12 +151,31 @@ const StickFigure = ({ x = 0, y = 0 }) => (
   </g>
 );
 
+// A little 4-ray sparkle, for the moment a fix lands. Wrapped in an outer,
+// statically-positioned <g> so the CSS scale/opacity animation on the inner
+// <g> has a clean local origin — SVG elements don't reliably combine an
+// attribute `transform` and an animated CSS `transform` on the SAME node,
+// so position and animation are always split across a parent/child pair
+// throughout this file.
+const Sparkle = ({ x, y }) => (
+  <g transform={`translate(${x}, ${y})`}>
+    <g className="qg-sparkle">
+      <line x1="0" y1="-8" x2="0" y2="8" stroke={GOLD} strokeWidth="2" strokeLinecap="round" />
+      <line x1="-8" y1="0" x2="8" y2="0" stroke={GOLD} strokeWidth="2" strokeLinecap="round" />
+      <line x1="-5.5" y1="-5.5" x2="5.5" y2="5.5" stroke={GOLD} strokeWidth="1.5" strokeLinecap="round" />
+      <line x1="-5.5" y1="5.5" x2="5.5" y2="-5.5" stroke={GOLD} strokeWidth="1.5" strokeLinecap="round" />
+    </g>
+  </g>
+);
+
 const BreakerAnimation = () => (
-  <svg viewBox="0 0 220 150" width="100%" height="150" role="img" aria-label="A stick figure firmly resetting a tripped breaker switch">
-    <StickFigure x={55} y={48} />
-    <g className="qg-breaker-hand">
-      <line x1="55" y1="70" x2="118" y2="66" stroke={INK} strokeWidth="3" strokeLinecap="round" />
-      <circle cx="118" cy="66" r="5" fill={GOLD} />
+  <svg viewBox="0 0 220 150" width="100%" height="150" role="img" aria-label="A stick figure triumphantly resetting a tripped breaker switch">
+    <g className="qg-victory" style={{ transformOrigin: '55px 90px' }}>
+      <StickFigure x={55} y={48} />
+      <g className="qg-breaker-hand">
+        <line x1="55" y1="70" x2="118" y2="66" stroke={INK} strokeWidth="3" strokeLinecap="round" />
+        <circle cx="118" cy="66" r="5" fill={GOLD} />
+      </g>
     </g>
 
     <rect x="110" y="20" width="90" height="115" rx="8" fill={SURFACE} stroke={BORDER} strokeWidth="2" />
@@ -156,13 +190,16 @@ const BreakerAnimation = () => (
 
     <rect x="152" y="46" width="8" height="40" rx="4" fill={BORDER} />
     <rect x="153" y="48" width="6" height="16" rx="3" fill={GOLD} className="qg-breaker-lever" />
+    <Sparkle x={175} y={40} />
   </svg>
 );
 
 const ValveAnimation = () => (
-  <svg viewBox="0 0 220 150" width="100%" height="150" role="img" aria-label="A stick figure turning the main water shutoff valve clockwise">
-    <StickFigure x={65} y={52} />
-    <line x1="65" y1="72" x2="122" y2="88" stroke={INK} strokeWidth="3" strokeLinecap="round" />
+  <svg viewBox="0 0 220 150" width="100%" height="150" role="img" aria-label="A stick figure proudly turning the main water shutoff valve clockwise">
+    <g className="qg-victory" style={{ transformOrigin: '65px 95px' }}>
+      <StickFigure x={65} y={52} />
+      <line x1="65" y1="72" x2="122" y2="88" stroke={INK} strokeWidth="3" strokeLinecap="round" />
+    </g>
 
     <rect x="140" y="106" width="20" height="34" fill={INK_MUTE} rx="2" />
 
@@ -172,15 +209,18 @@ const ValveAnimation = () => (
       <line x1="124" y1="92" x2="176" y2="92" stroke={NAVY} strokeWidth="4" />
       <circle cx="150" cy="92" r="6" fill={GOLD} />
     </g>
+    <Sparkle x={183} y={70} />
   </svg>
 );
 
 const OutletAnimation = () => (
-  <svg viewBox="0 0 220 150" width="100%" height="150" role="img" aria-label="A stick figure pressing the reset button on a GFCI outlet">
-    <StickFigure x={55} y={50} />
-    <g className="qg-outlet-hand">
-      <line x1="55" y1="72" x2="115" y2="92" stroke={INK} strokeWidth="3" strokeLinecap="round" />
-      <circle cx="115" cy="92" r="5" fill={GOLD} />
+  <svg viewBox="0 0 220 150" width="100%" height="150" role="img" aria-label="A stick figure pressing the reset button on a GFCI outlet, delighted when it works">
+    <g className="qg-victory" style={{ transformOrigin: '55px 92px' }}>
+      <StickFigure x={55} y={50} />
+      <g className="qg-outlet-hand">
+        <line x1="55" y1="72" x2="115" y2="92" stroke={INK} strokeWidth="3" strokeLinecap="round" />
+        <circle cx="115" cy="92" r="5" fill={GOLD} />
+      </g>
     </g>
 
     <rect x="120" y="45" width="55" height="85" rx="6" fill={SURFACE} stroke={BORDER} strokeWidth="2" />
@@ -194,35 +234,40 @@ const OutletAnimation = () => (
     <rect x="147" y="95" width="16" height="11" rx="2" fill={GOLD} className="qg-outlet-button" />
     {/* indicator light — dim until reset, then steady */}
     <circle cx="155" cy="118" r="3" fill={GOLD} className="qg-outlet-led" />
+    <Sparkle x={185} y="108" />
   </svg>
 );
 
 const DetectorAnimation = () => (
-  <svg viewBox="0 0 220 150" width="100%" height="150" role="img" aria-label="A stick figure reaching up to swap the battery in a smoke detector">
+  <svg viewBox="0 0 220 150" width="100%" height="150" role="img" aria-label="A stick figure reaching up, mildly exasperated, to swap the battery in a chirping smoke detector">
     <ellipse cx="150" cy="20" rx="30" ry="9" fill={SURFACE} stroke={BORDER} strokeWidth="2" />
     <path d="M 128 8 Q 150 -10 172 8" stroke={GOLD} strokeWidth="2" fill="none" className="qg-detector-wave" />
     <path d="M 118 12 Q 150 -20 182 12" stroke={GOLD} strokeWidth="2" fill="none" className="qg-detector-wave2" />
     <circle cx="150" cy="20" r="4" fill={GOLD} className="qg-detector-led" />
 
-    <g transform="translate(100, 100)">
-      <circle cx="0" cy="0" r="10" fill={SURFACE} stroke={INK} strokeWidth="3" />
-      <line x1="0" y1="10" x2="0" y2="45" stroke={INK} strokeWidth="3" strokeLinecap="round" />
-      <line x1="0" y1="45" x2="-13" y2="78" stroke={INK} strokeWidth="3" strokeLinecap="round" />
-      <line x1="0" y1="45" x2="11" y2="80" stroke={INK} strokeWidth="3" strokeLinecap="round" />
-      <line x1="0" y1="18" x2="-15" y2="32" stroke={INK} strokeWidth="3" strokeLinecap="round" />
-    </g>
-    <g className="qg-detector-hand">
-      <line x1="100" y1="115" x2="140" y2="45" stroke={INK} strokeWidth="3" strokeLinecap="round" />
-      <rect x="132" y="30" width="14" height="18" rx="2" fill={GOLD} />
+    <g className="qg-victory" style={{ transformOrigin: '100px 140px' }}>
+      <g transform="translate(100, 100)">
+        <circle cx="0" cy="0" r="10" fill={SURFACE} stroke={INK} strokeWidth="3" />
+        <line x1="0" y1="10" x2="0" y2="45" stroke={INK} strokeWidth="3" strokeLinecap="round" />
+        <line x1="0" y1="45" x2="-13" y2="78" stroke={INK} strokeWidth="3" strokeLinecap="round" />
+        <line x1="0" y1="45" x2="11" y2="80" stroke={INK} strokeWidth="3" strokeLinecap="round" />
+        <line x1="0" y1="18" x2="-15" y2="32" stroke={INK} strokeWidth="3" strokeLinecap="round" />
+      </g>
+      <g className="qg-detector-hand">
+        <line x1="100" y1="115" x2="140" y2="45" stroke={INK} strokeWidth="3" strokeLinecap="round" />
+        <rect x="132" y="30" width="14" height="18" rx="2" fill={GOLD} />
+      </g>
     </g>
   </svg>
 );
 
 const ShutoffValveAnimation = () => (
-  <svg viewBox="0 0 220 150" width="100%" height="150" role="img" aria-label="A stick figure turning a toilet's shutoff valve a quarter turn">
-    <StickFigure x={55} y={58} />
-    <line x1="55" y1="80" x2="118" y2="108" stroke={INK} strokeWidth="3" strokeLinecap="round" />
-    <circle cx="118" cy="108" r="5" fill={GOLD} />
+  <svg viewBox="0 0 220 150" width="100%" height="150" role="img" aria-label="A stick figure turning a toilet's shutoff valve a quarter turn, pleased with itself">
+    <g className="qg-victory" style={{ transformOrigin: '55px 100px' }}>
+      <StickFigure x={55} y={58} />
+      <line x1="55" y1="80" x2="118" y2="108" stroke={INK} strokeWidth="3" strokeLinecap="round" />
+      <circle cx="118" cy="108" r="5" fill={GOLD} />
+    </g>
 
     {/* toilet, simplified */}
     <rect x="150" y="65" width="40" height="42" rx="6" fill={SURFACE} stroke={BORDER} strokeWidth="2" />
@@ -232,21 +277,24 @@ const ShutoffValveAnimation = () => (
     {/* supply line + shutoff handle */}
     <line x1="118" y1="120" x2="140" y2="120" stroke={INK_MUTE} strokeWidth="4" />
     <ellipse cx="118" cy="120" rx="11" ry="6" fill={NAVY} className="qg-shutoff-valve" />
+    <Sparkle x={100} y={98} />
   </svg>
 );
 
 const PlungerAnimation = () => (
-  <svg viewBox="0 0 220 150" width="100%" height="150" role="img" aria-label="A stick figure plunging a clogged sink drain">
+  <svg viewBox="0 0 220 150" width="100%" height="150" role="img" aria-label="A stick figure plunging a clogged sink drain with visible determination">
     {/* sink */}
     <rect x="95" y="82" width="110" height="48" rx="6" fill={NAVY_TINT} stroke={BORDER} strokeWidth="2" />
     <ellipse cx="150" cy="82" rx="55" ry="14" fill={SURFACE} stroke={BORDER} strokeWidth="2" />
     <ellipse cx="150" cy="82" rx="8" ry="3" fill={INK_MUTE} />
 
-    <g className="qg-plunger-hand">
-      <line x1="55" y1="62" x2="140" y2="40" stroke={INK} strokeWidth="3" strokeLinecap="round" />
-      <circle cx="140" cy="40" r="5" fill={GOLD} />
+    <g className="qg-victory" style={{ transformOrigin: '55px 82px' }}>
+      <g className="qg-plunger-hand">
+        <line x1="55" y1="62" x2="140" y2="40" stroke={INK} strokeWidth="3" strokeLinecap="round" />
+        <circle cx="140" cy="40" r="5" fill={GOLD} />
+      </g>
+      <StickFigure x={55} y={40} />
     </g>
-    <StickFigure x={55} y={40} />
 
     <g className="qg-plunger-cup">
       <line x1="150" y1="6" x2="150" y2="40" stroke={INK_SOFT} strokeWidth="5" strokeLinecap="round" />
@@ -256,24 +304,29 @@ const PlungerAnimation = () => (
 );
 
 const DisposalAnimation = () => (
-  <svg viewBox="0 0 220 150" width="100%" height="150" role="img" aria-label="A stick figure pressing the reset button on a garbage disposal under the sink">
+  <svg viewBox="0 0 220 150" width="100%" height="150" role="img" aria-label="A stick figure pressing the reset button under a jammed garbage disposal, relieved when it works">
     {/* underside of the sink, with the disposal canister hanging down */}
     <rect x="95" y="20" width="110" height="30" rx="4" fill={NAVY_TINT} stroke={BORDER} strokeWidth="2" />
     <rect x="120" y="48" width="60" height="16" fill={INK_MUTE} />
     <rect x="132" y="62" width="36" height="55" rx="10" fill={SURFACE} stroke={BORDER} strokeWidth="2" />
 
-    <StickFigure x={70} y={75} />
-    <g className="qg-disposal-hand">
-      <line x1="70" y1="97" x2="127" y2="110" stroke={INK} strokeWidth="3" strokeLinecap="round" />
-      <circle cx="127" cy="110" r="5" fill={GOLD} />
+    <g className="qg-victory" style={{ transformOrigin: '70px 115px' }}>
+      <StickFigure x={70} y={75} />
+      <g className="qg-disposal-hand">
+        <line x1="70" y1="97" x2="127" y2="110" stroke={INK} strokeWidth="3" strokeLinecap="round" />
+        <circle cx="127" cy="110" r="5" fill={GOLD} />
+      </g>
     </g>
 
     <circle cx="150" cy="112" r="6" fill={GOLD} className="qg-disposal-button" />
+    <Sparkle x={175} y={100} />
   </svg>
 );
 
+// The gas guide stays deliberately plain: no victory bounce, no sparkle,
+// no jokes in the animation. Real stakes, calm illustration.
 const GasAnimation = () => (
-  <svg viewBox="0 0 220 150" width="100%" height="150" role="img" aria-label="A stick figure turning off the main gas shutoff valve with a wrench">
+  <svg viewBox="0 0 220 150" width="100%" height="150" role="img" aria-label="A stick figure calmly turning off the main gas shutoff valve">
     <StickFigure x={60} y={55} />
     <line x1="60" y1="77" x2="120" y2="95" stroke={INK} strokeWidth="3" strokeLinecap="round" />
 
@@ -296,12 +349,12 @@ const GUIDES = [
     id: 'breaker',
     icon: Zap,
     title: 'Resetting a tripped breaker',
-    teaser: 'Lights out in one room? Probably this — two minutes, no tools.',
+    teaser: "Half the kitchen went dark and someone's asking if you paid the bill? Probably not. Probably this.",
     Animation: BreakerAnimation,
     steps: [
       'Find your panel — usually a metal box in a basement, garage, or utility closet.',
       "Look for the one switch that's out of line with the rest — it'll sit in the middle instead of matched up with its neighbors.",
-      'Push it firmly all the way to OFF, then firmly back to ON. You should feel it click into place.',
+      "Push it firmly all the way to OFF, then firmly back to ON. You should feel it click into place — deeply satisfying, no notes.",
     ],
     note: "If it trips again right away, stop resetting it — that usually means something's actually wrong on that circuit. Call an electrician instead.",
   },
@@ -309,24 +362,24 @@ const GUIDES = [
     id: 'valve',
     icon: Droplets,
     title: 'Turning off the main water shutoff',
-    teaser: "Worth finding today, not during a leak — takes 30 seconds either way.",
+    teaser: "The one valve standing between 'burst hose' and 'oddly calm Tuesday.'",
     Animation: ValveAnimation,
     steps: [
       'Find the shutoff — usually where the main line enters the house: a basement, crawlspace, or a box near the street.',
       'Turn the valve clockwise ("righty-tighty") until it stops. No need to force it past that.',
       "Open a nearby faucet for a moment — it confirms the water's off and relieves pressure in the pipes.",
     ],
-    note: "The real trick is knowing where it is before you need it. If you've never looked, that's the five minutes worth spending this week.",
+    note: "The real trick is knowing where it is before you need it. If you've never looked, that's the five minutes worth spending this week — not at 2am with a towel in your hand.",
   },
   {
     id: 'outlet',
     icon: Plug,
     title: 'Resetting a GFCI outlet',
-    teaser: "One outlet dead but the lights are fine? Look for the little buttons.",
+    teaser: "Your hair dryer isn't broken. The outlet is just having a moment.",
     Animation: OutletAnimation,
     steps: [
       "Find the outlet with TEST and RESET buttons — usually in a bathroom, kitchen, garage, or outdoors. One dead GFCI can knock out several outlets on the same circuit.",
-      'Press RESET firmly. A soft click and the outlet is usually live again.',
+      'Press RESET firmly. A soft click and the outlet is usually live again — congratulate yourself accordingly.',
       "If it won't stay reset, unplug whatever was plugged in first and try again — a faulty appliance is a common cause.",
     ],
     note: "A GFCI that keeps tripping with nothing plugged in may be nearing the end of its life, or there's a wiring issue. That one's worth a call.",
@@ -335,12 +388,12 @@ const GUIDES = [
     id: 'detector',
     icon: BellRing,
     title: 'Silencing a chirping smoke or CO detector',
-    teaser: "That single chirp every 30-60 seconds almost always means a battery.",
+    teaser: "That single 2am beep every 45 seconds isn't a ghost. It's a $4 battery, being dramatic.",
     Animation: DetectorAnimation,
     steps: [
-      'Figure out which unit is chirping — walk the house and listen; with multiple units, it can take a minute to isolate.',
+      'Figure out which unit is chirping — walk the house and listen; with multiple units, it can take a minute (and some muttering).',
       'Pop it off its mounting bracket (usually a quarter-twist) and swap in a fresh battery of the type it calls for.',
-      "Press and hold the test button until it beeps once, confirming it's back online, then remount it.",
+      "Press and hold the test button until it beeps once, confirming it's back online, then remount it and enjoy the silence.",
     ],
     note: "If a fresh battery doesn't stop the chirping, or the unit is more than 8-10 years old, it's time to replace the whole detector rather than keep swapping batteries.",
   },
@@ -348,12 +401,12 @@ const GUIDES = [
     id: 'shutoff',
     icon: Droplet,
     title: 'Shutting off water to a toilet or sink',
-    teaser: "A running or overflowing toilet doesn't need the whole house shut off.",
+    teaser: "A toilet auditioning for a water feature doesn't need the whole house shut down — just this.",
     Animation: ShutoffValveAnimation,
     steps: [
       "Look for the small oval handle on the supply line — behind or beside the toilet, or in the cabinet under a sink.",
       'Turn it clockwise a quarter turn, until the handle sits crosswise to the pipe instead of in line with it.',
-      "That stops water to just that fixture — everything else in the house keeps running normally.",
+      "That stops water to just that fixture — everything else in the house keeps running normally, blissfully unaware.",
     ],
     note: "If the handle won't turn, or turns but doesn't stop the water, don't force it — that's a sign it needs replacing, and the main shutoff is your backup in the meantime.",
   },
@@ -361,11 +414,11 @@ const GUIDES = [
     id: 'plunger',
     icon: Waves,
     title: 'Clearing a slow or clogged drain',
-    teaser: "Before reaching for chemical drain cleaner, try this first.",
+    teaser: "The single most satisfying 30 seconds in home maintenance. Try this before the chemicals.",
     Animation: PlungerAnimation,
     steps: [
       "Fill the sink with a couple inches of water — it helps the plunger seal and pushes the pressure through.",
-      "Press the plunger down over the drain to force out the air, then pump firmly up and down 10-15 times without breaking the seal.",
+      "Press the plunger down over the drain to force out the air, then pump firmly up and down 10-15 times without breaking the seal. This is the fun part.",
       "Pull it away on an upstroke to release the clog, then run hot water to confirm it's draining freely.",
     ],
     note: "Skip the plunger on a drain you've already dosed with chemical cleaner — it can splash back. And if plunging doesn't clear it after a couple of tries, it's a plumber's job, not a stronger-chemical job.",
@@ -374,7 +427,7 @@ const GUIDES = [
     id: 'disposal',
     icon: RotateCcw,
     title: 'Freeing a jammed garbage disposal',
-    teaser: "Humming but not spinning? It's jammed, not broken.",
+    teaser: "It's humming a little tune but refusing to actually spin. Rude. Here's the fix.",
     Animation: DisposalAnimation,
     steps: [
       "Turn it off at the switch first — always, before you put anything near it.",
