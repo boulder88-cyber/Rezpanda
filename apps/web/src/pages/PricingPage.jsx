@@ -88,7 +88,7 @@ const PLANS = [
 const INCLUDED = [
   { icon: CreditCard, label: 'Bill Pay', desc: 'Forward a bill and it files itself — sorted by provider and due date.' },
   { icon: Wrench, label: 'Maintenance', desc: 'Gentle recurring reminders for the upkeep that keeps a home healthy.' },
-  { icon: FileText, label: 'Documents', desc: 'Every important paper kept findable. (Coming soon.)' },
+  { icon: FileText, label: 'Documents', desc: 'Every important paper kept findable.' },
   { icon: Bell, label: 'Gentle reminders', desc: 'Before a due date, never after.' },
   { icon: ShieldCheck, label: 'Private by default', desc: 'No bank access, no stored card. Your records are yours alone.' },
   { icon: Home, label: 'Add homes anytime', desc: 'Each property is its own tidy set of records — pay only for what you add.' },
