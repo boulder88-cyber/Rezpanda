@@ -101,7 +101,7 @@ const SignupPage = () => {
           <Card className="border-slate-200 shadow-lg">
             <CardHeader className="space-y-1 text-center">
               <CardTitle className="text-2xl font-bold">Create an account</CardTitle>
-              <CardDescription>Free to start — no card needed</CardDescription>
+              <CardDescription>From $4.99/mo per home — set up in a few minutes</CardDescription>
             </CardHeader>
             <CardContent>
               <form onSubmit={handleSubmit} className="space-y-4">
