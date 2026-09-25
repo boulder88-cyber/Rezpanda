@@ -1,23 +1,23 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import SiteLayout from './SiteLayout.jsx';
-import { ShieldCheck, ChevronDown, ChevronUp, Mail } from 'lucide-react';
+import { FileText, ChevronDown, ChevronUp, Mail } from 'lucide-react';
 
 /*
-  CasaCEO — Privacy Policy (/privacy)
+  CasaCEO — Terms of Service (/terms)
   --------------------------------------------------------------------------
-  Reframed from the HomeOS version. Fixed: palette (coral/slate -> warm),
-  naming (HomeOS -> CasaCEO), wrong email domain (@homeos.com -> @casaceo.com),
-  and — importantly — product-description DRIFT. The old policy described data
-  the product doesn't handle (uploaded documents, connected utility accounts,
-  insurance/valuation inputs) and made unverifiable security claims (AES-256
-  at rest, security audits). This version describes what CasaCEO actually
-  does: stores the parsed FIELDS of a bill, no bank access, no stored card,
-  encrypted in transit.
+  Was an exact duplicate of PrivacyPolicyPage.jsx (same component, same
+  content, same "Your privacy, plainly" headline) — /terms and /privacy
+  rendered the identical page. This is a real, distinct first draft that
+  describes what CasaCEO actually is and does: organizes bills, maintenance,
+  and documents; never touches a bank account; never moves money; the user
+  always pays on the real site, on their own. Pricing terms reference the
+  live Pricing page rather than hardcoding numbers here, so this doesn't
+  drift out of sync when pricing changes.
 
-  NOTE: this is a product-accuracy + branding pass, NOT legal counsel. The
-  legal substance (rights, retention, jurisdiction) should be reviewed by a
-  lawyer before launch.
+  NOTE: this is a product-accuracy + drafting pass, NOT legal counsel. The
+  legal substance (liability, dispute resolution, governing law, and
+  everything else here) needs review by a lawyer before this is relied on.
 */
 
 const INK = '#1C3553';
@@ -59,115 +59,126 @@ const ulStyle = { paddingLeft: '20px', display: 'flex', flexDirection: 'column',
 
 const SECTIONS = [
   {
-    id: 'introduction',
-    title: 'Introduction',
+    id: 'acceptance',
+    title: 'Acceptance of Terms',
     content: (
       <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
-        <p>CasaCEO ("we," "us," or "our") is committed to protecting your privacy. This Privacy Policy explains how we collect, use, and safeguard your information when you use CasaCEO.</p>
+        <p>These Terms of Service ("Terms") govern your access to and use of CasaCEO, operated by CasaCEO, LLC ("CasaCEO," "we," "us," or "our"). By creating an account or using the service, you agree to these Terms. If you don’t agree, please don’t use CasaCEO.</p>
+      </div>
+    ),
+  },
+  {
+    id: 'the-service',
+    title: 'What CasaCEO Is',
+    content: (
+      <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+        <p>CasaCEO helps you organize the bills, maintenance, and documents for the homes you own. Specifically:</p>
         <ul style={ulStyle}>
-          <li>We collect only what is necessary to provide the service.</li>
-          <li>We never sell your personal data, and we don\u2019t show ads.</li>
-          <li>We never connect to your bank or store your card.</li>
-          <li>You can export or delete your data at any time.</li>
+          <li>CasaCEO reads and organizes the bills you forward to it — it does not connect to your bank or any financial account.</li>
+          <li>CasaCEO never stores a payment card and never moves money on your behalf. You always pay your bills yourself, directly with the biller.</li>
+          <li>Maintenance reminders and document storage are organizational tools — CasaCEO does not perform, schedule, or guarantee any repair, service, or filing on your behalf.</li>
+        </ul>
+        <p>CasaCEO is a record-keeping and reminder tool. It is not a bank, a bill-pay service, a licensed contractor, an insurance agency, or a law, tax, or financial advisory service.</p>
+      </div>
+    ),
+  },
+  {
+    id: 'accounts',
+    title: 'Accounts',
+    content: (
+      <ul style={ulStyle}>
+        <li>You must be at least 18 years old to create an account.</li>
+        <li>You’re responsible for the accuracy of the information you provide and for keeping your login credentials confidential.</li>
+        <li>You’re responsible for activity that happens under your account. Tell us right away at <span style={{ color: INK, fontWeight: 600 }}>hello@casaceo.com</span> if you suspect unauthorized access.</li>
+      </ul>
+    ),
+  },
+  {
+    id: 'billing',
+    title: 'Subscription & Billing',
+    content: (
+      <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+        <ul style={ulStyle}>
+          <li>CasaCEO is billed per property, monthly or annually. Current plans and pricing are posted on our <Link to="/pricing" style={{ color: INK, fontWeight: 600 }}>Pricing page</Link>.</li>
+          <li>Subscriptions renew automatically at the end of each billing period until you cancel.</li>
+          <li>You can cancel anytime from your account settings. Cancellation stops future billing; it does not refund the current billing period unless we say otherwise or the law requires it.</li>
+          <li>We’ll give you reasonable notice before any price change takes effect for your account.</li>
         </ul>
       </div>
     ),
   },
   {
-    id: 'information-collected',
-    title: 'Information We Collect',
-    content: (
-      <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
-        <div>
-          <p style={{ fontFamily: sans, fontWeight: 700, color: INK, fontSize: '15px', marginBottom: '8px' }}>a. Account information</p>
-          <ul style={ulStyle}>
-            {['Name', 'Email address', 'Password (stored as a one-way hash \u2014 never in plain text)'].map((i, j) => <li key={j}>{i}</li>)}
-          </ul>
-        </div>
-        <div>
-          <p style={{ fontFamily: sans, fontWeight: 700, color: INK, fontSize: '15px', marginBottom: '8px' }}>b. Home and bill information</p>
-          <ul style={ulStyle}>
-            {['Property name and address', 'The parsed details of bills you add \u2014 provider, amount, due date, category', 'Maintenance tasks and the dates you log them'].map((i, j) => <li key={j}>{i}</li>)}
-          </ul>
-          <p style={{ fontSize: '13px', color: STONE, marginTop: '8px', lineHeight: 1.6 }}>
-            When you forward a bill, we read and keep the structured fields above \u2014 not a long-term copy of the original email or PDF.
-          </p>
-        </div>
-        <div>
-          <p style={{ fontFamily: sans, fontWeight: 700, color: INK, fontSize: '15px', marginBottom: '8px' }}>c. Usage data</p>
-          <ul style={ulStyle}>
-            {['Basic device and browser information', 'Session activity (for security purposes)'].map((i, j) => <li key={j}>{i}</li>)}
-          </ul>
-        </div>
-      </div>
-    ),
-  },
-  {
-    id: 'how-we-use',
-    title: 'How We Use Your Information',
-    content: (
-      <ul style={ulStyle}>
-        {['Operate CasaCEO and keep your bills and tasks organized', 'Send maintenance reminders and due-date alerts', 'Respond to support requests', 'Keep the service secure and prevent abuse'].map((i, j) => <li key={j}>{i}</li>)}
-      </ul>
-    ),
-  },
-  {
-    id: 'protection',
-    title: 'How We Protect Your Information',
-    content: (
-      <ul style={ulStyle}>
-        {['Connections are encrypted in transit over HTTPS/TLS', 'We never connect to your bank account', 'We never store your card or payment credentials', 'We keep the amount of data we hold deliberately small', 'Passwords are stored only as a one-way hash'].map((i, j) => <li key={j}>{i}</li>)}
-      </ul>
-    ),
-  },
-  {
-    id: 'sharing',
-    title: 'Data Sharing',
-    content: (
-      <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
-        <div>
-          <p style={{ fontFamily: sans, fontWeight: 700, color: INK, fontSize: '15px', marginBottom: '8px' }}>We do NOT:</p>
-          <ul style={ulStyle}>
-            {['Sell your personal data', 'Share data with advertisers', 'Share data without your consent, except as required by law'].map((i, j) => <li key={j}>{i}</li>)}
-          </ul>
-        </div>
-        <div>
-          <p style={{ fontFamily: sans, fontWeight: 700, color: INK, fontSize: '15px', marginBottom: '8px' }}>We may share data with:</p>
-          <ul style={ulStyle}>
-            {['Infrastructure providers that host the service (under data processing agreements)', 'Legal authorities, only when required by law'].map((i, j) => <li key={j}>{i}</li>)}
-          </ul>
-        </div>
-      </div>
-    ),
-  },
-  {
-    id: 'retention',
-    title: 'Data Retention',
-    content: (
-      <ul style={ulStyle}>
-        {['Your data is retained while your account is active.', 'You may request deletion of your account and data at any time.', 'On deletion, your data is removed from active systems.'].map((i, j) => <li key={j}>{i}</li>)}
-      </ul>
-    ),
-  },
-  {
-    id: 'rights',
-    title: 'Your Rights',
+    id: 'acceptable-use',
+    title: 'Acceptable Use',
     content: (
       <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
-        <p>Depending on where you live, you may have the following rights regarding your data:</p>
-        {[
-          ['Access', 'Request a copy of the data we hold about you.'],
-          ['Correction', 'Request correction of inaccurate or incomplete data.'],
-          ['Deletion', 'Request deletion of your account and data.'],
-          ['Export', 'Download a portable copy of your records.'],
-        ].map(([right, desc], j) => (
-          <div key={j} style={{ padding: '12px 16px', borderRadius: '10px', background: PAPER, border: `1px solid ${LINE}` }}>
-            <p style={{ fontFamily: sans, fontWeight: 700, color: INK, fontSize: '14px' }}>{right}</p>
-            <p style={{ fontSize: '13px', color: STONE, marginTop: '2px' }}>{desc}</p>
-          </div>
-        ))}
-        <p>To exercise any of these rights, contact us at <span style={{ color: INK, fontWeight: 600 }}>hello@casaceo.com</span>.</p>
+        <p>When using CasaCEO, you agree not to:</p>
+        <ul style={ulStyle}>
+          <li>Use the service for anything unlawful, or to forward or upload content you don’t have the right to share.</li>
+          <li>Attempt to break, reverse-engineer, or interfere with the service, or access it through unauthorized means.</li>
+          <li>Impersonate another person or misrepresent your affiliation with anyone.</li>
+          <li>Use CasaCEO to manage properties or bills on behalf of others without their knowledge, in a way that would violate their privacy.</li>
+        </ul>
       </div>
+    ),
+  },
+  {
+    id: 'your-content',
+    title: 'Your Content & Data',
+    content: (
+      <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+        <p>You own the information and documents you add to CasaCEO. You give us a limited license to store, process, and display that content solely to provide the service to you.</p>
+        <p>How we collect, use, and protect that data is described in our <Link to="/privacy" style={{ color: INK, fontWeight: 600 }}>Privacy Policy</Link>, which is part of these Terms.</p>
+      </div>
+    ),
+  },
+  {
+    id: 'ip',
+    title: 'Intellectual Property',
+    content: (
+      <p>CasaCEO, its design, software, and branding are owned by CasaCEO, LLC. These Terms don’t grant you any rights to our intellectual property beyond using the service as intended.</p>
+    ),
+  },
+  {
+    id: 'disclaimers',
+    title: 'Disclaimers',
+    content: (
+      <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+        <p>CasaCEO is provided "as is." We work to read and categorize your bills accurately, but we don’t guarantee that every amount, due date, or category will be error-free — always confirm the details with the actual bill before you pay it.</p>
+        <p>CasaCEO doesn’t provide legal, tax, financial, or contracting advice, and nothing in the service should be treated as such.</p>
+      </div>
+    ),
+  },
+  {
+    id: 'liability',
+    title: 'Limitation of Liability',
+    content: (
+      <p>To the fullest extent permitted by law, CasaCEO, LLC is not liable for indirect, incidental, or consequential damages arising from your use of the service, including a missed or incorrect bill, late fee, or maintenance reminder. Our total liability for any claim relating to the service is limited to the amount you paid us in the twelve months before the claim arose.</p>
+    ),
+  },
+  {
+    id: 'termination',
+    title: 'Termination',
+    content: (
+      <ul style={ulStyle}>
+        <li>You may stop using CasaCEO and delete your account at any time.</li>
+        <li>We may suspend or terminate an account that violates these Terms or that we reasonably believe puts other users or the service at risk.</li>
+        <li>What happens to your data after account deletion is described in our <Link to="/privacy" style={{ color: INK, fontWeight: 600 }}>Privacy Policy</Link>.</li>
+      </ul>
+    ),
+  },
+  {
+    id: 'changes',
+    title: 'Changes to These Terms',
+    content: (
+      <p>We may update these Terms as CasaCEO changes. If we make a material change, we’ll let you know before it takes effect. Continuing to use CasaCEO after a change means you accept the updated Terms.</p>
+    ),
+  },
+  {
+    id: 'governing-law',
+    title: 'Governing Law',
+    content: (
+      <p>These Terms are governed by the laws of the State of Georgia, without regard to its conflict-of-law principles.</p>
     ),
   },
   {
@@ -175,7 +186,7 @@ const SECTIONS = [
     title: 'Contact Us',
     content: (
       <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-        <p>For privacy questions or requests, please contact us:</p>
+        <p>Questions about these Terms? Reach us at:</p>
         <div style={{ display: 'inline-flex', alignItems: 'center', gap: '8px', padding: '10px 16px', borderRadius: '10px', background: SAND, width: 'fit-content' }}>
           <Mail style={{ width: '16px', height: '16px', color: INK }} />
           <span style={{ fontWeight: 600, color: INK, fontSize: '14px' }}>hello@casaceo.com</span>
@@ -207,21 +218,21 @@ const AccordionSection = ({ section, index }) => {
   );
 };
 
-const PrivacyPolicyPage = () => (
-  <SiteLayout seo={{ title: 'Privacy Policy — CasaCEO' }} fullWidth>
+const TermsOfServicePage = () => (
+  <SiteLayout seo={{ title: 'Terms of Service — CasaCEO' }} fullWidth>
     <section style={{ background: INK, padding: '80px 24px 62px', textAlign: 'center', position: 'relative', overflow: 'hidden' }}>
       <div aria-hidden style={{ position: 'absolute', inset: 0, pointerEvents: 'none' }}>
         <div style={{ position: 'absolute', width: '500px', height: '500px', borderRadius: '50%', background: 'rgba(62,107,168,0.22)', filter: 'blur(20px)', top: '-180px', right: '-100px' }} />
       </div>
       <div style={{ maxWidth: '640px', margin: '0 auto', position: 'relative', zIndex: 1 }}>
         <div style={{ width: '54px', height: '54px', borderRadius: '14px', background: 'rgba(255,255,255,0.1)', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 18px' }}>
-          <ShieldCheck style={{ width: '26px', height: '26px', color: GOLD }} />
+          <FileText style={{ width: '26px', height: '26px', color: GOLD }} />
         </div>
-        <h1 style={{ fontFamily: serif, fontSize: 'clamp(1.9rem, 4vw, 2.6rem)', fontWeight: 600, color: '#fff', marginBottom: '14px', letterSpacing: '-0.015em' }}>Your privacy, plainly.</h1>
+        <h1 style={{ fontFamily: serif, fontSize: 'clamp(1.9rem, 4vw, 2.6rem)', fontWeight: 600, color: '#fff', marginBottom: '14px', letterSpacing: '-0.015em' }}>The plain-language terms.</h1>
         <p style={{ fontFamily: sans, fontSize: '16px', color: 'rgba(255,255,255,0.72)', lineHeight: 1.65, maxWidth: '480px', margin: '0 auto 18px' }}>
-          We hold a small amount of data, we never sell it, and you can take it or delete it whenever you like.
+          What using <Wordmark /> means for you, written the way we’d actually explain it.
         </p>
-        <p style={{ fontFamily: sans, fontSize: '13px', color: 'rgba(255,255,255,0.4)' }}>Last updated: June 2026</p>
+        <p style={{ fontFamily: sans, fontSize: '13px', color: 'rgba(255,255,255,0.4)' }}>Last updated: September 2026</p>
       </div>
     </section>
 
@@ -236,15 +247,15 @@ const PrivacyPolicyPage = () => (
         </FadeIn>
         <FadeIn delay={100}>
           <div style={{ marginTop: '32px', padding: '20px 24px', borderRadius: '12px', background: SAND, border: `1px solid ${LINE}`, display: 'flex', alignItems: 'center', gap: '12px' }}>
-            <ShieldCheck style={{ width: '18px', height: '18px', color: INK, flexShrink: 0 }} />
+            <FileText style={{ width: '18px', height: '18px', color: INK, flexShrink: 0 }} />
             <p style={{ fontFamily: sans, fontSize: '13px', color: INK, lineHeight: 1.6 }}>
-              This policy applies to <Wordmark />. By using the service, you agree to the collection and use of information as described here. Questions? <span style={{ fontWeight: 700 }}>hello@casaceo.com</span>.
+              By using <Wordmark />, you agree to these Terms. Questions? <span style={{ fontWeight: 700 }}>hello@casaceo.com</span>.
             </p>
           </div>
         </FadeIn>
         <FadeIn delay={150}>
           <div style={{ display: 'flex', flexWrap: 'wrap', gap: '14px', justifyContent: 'center', marginTop: '32px' }}>
-            {[['Terms of Service', '/terms'], ['Cookie Policy', '/cookies'], ['Security', '/security']].map(([label, href], i) => (
+            {[['Privacy Policy', '/privacy'], ['Cookie Policy', '/cookies'], ['Security', '/security']].map(([label, href], i) => (
               <Link key={i} to={href} style={{ fontFamily: sans, fontSize: '13px', color: INK, textDecoration: 'underline', fontWeight: 500 }}>{label}</Link>
             ))}
           </div>
@@ -254,4 +265,4 @@ const PrivacyPolicyPage = () => (
   </SiteLayout>
 );
 
-export default PrivacyPolicyPage;
+export default TermsOfServicePage;
