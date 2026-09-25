@@ -306,7 +306,10 @@ const ReassureSection = () => (
 );
 
 // ═══════════════════════════════════════════════════════════════════
-// TESTIMONIAL — one, given room (replace with a real quote before launch)
+// TESTIMONIAL — NOT rendered on the page below. "Jennifer M." was a
+// placeholder quote, not a real customer — pulled from the live page until
+// there's a real one to put here. Left the component in place so it's a
+// one-line change to bring back once there's a real quote to use.
 // ═══════════════════════════════════════════════════════════════════
 
 const TestimonialSection = () => (
@@ -369,7 +372,7 @@ const MarketingHomePage = () => (
     <PersonasSection />
     <HowItWorksSection />
     <ReassureSection />
-    <TestimonialSection />
+    {/* TestimonialSection removed — see comment above; bring back with a real quote */}
     <CTASection />
   </SiteLayout>
 );
