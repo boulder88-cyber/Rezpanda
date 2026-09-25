@@ -6,6 +6,7 @@ import { useAuth } from '@/contexts/AuthContext.jsx';
 import pb from '@/lib/horizonsBackend.js';
 import PropertiesAtAGlance from '@/components/PropertiesAtAGlance.jsx';
 import GettingStartedCard from '@/components/GettingStartedCard.jsx';
+import HomeInsightsCard from '@/components/HomeInsightsCard.jsx';
 import { Button } from '@/components/ui/button.jsx';
 import {
   Wrench, CreditCard, FolderOpen,
@@ -534,11 +535,13 @@ const DashboardPage = () => {
               </Link>
           */}
 
-          {/* ── Supporting context: quick actions ──
-              (QuickAlerts removed from this row 9.20 — it was mock data. The grid
-              is now a single column so Quick actions doesn't sit alone in half a row.) */}
-          <div className="grid grid-cols-1 gap-6">
-            {/* <QuickAlerts selectedHome={selectedHome} />  — MOCK DATA, not rendered. See component note above. */}
+          {/* ── Supporting context: home insights + quick actions ──
+              (QuickAlerts removed from this row 9.20 — it was mock data. HomeInsightsCard
+              takes that slot now: it reads the home's real bill history through
+              /api/home-insights instead of showing anything invented. Back to two
+              columns since there are two real cards again.) */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <HomeInsightsCard selectedHome={selectedHome} />
 
             <div className="bg-white rounded-2xl border border-slate-100 p-5 shadow-sm">
               <h2 className="font-bold text-slate-900 text-base mb-4 flex items-center gap-2">
