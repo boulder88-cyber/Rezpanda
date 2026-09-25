@@ -11,6 +11,7 @@ import {
   Leaf, Sun, Wind, Snowflake, ChevronRight, CloudRain,
   Thermometer, Droplets, Star, ArrowRight, Home as HomeIcon,
 } from 'lucide-react';
+import QuickGuidesSection from '@/components/QuickGuidesSection.jsx';
 
 // ═══════════════════════════════════════════════════════════════════════
 // DESIGN TOKENS (locked design system — inline, no Tailwind palette)
@@ -1250,10 +1251,13 @@ const MaintenanceManagementPage = () => {
 
         {/* ── Home care schedule tab ── */}
         {activeTab === 'seasonal' && (
-          <HomeCareSchedule
-            onPick={handlePickSeasonal}
-            existingNames={tasks.map((t) => (t.systemName || '').toLowerCase())}
-          />
+          <>
+            <QuickGuidesSection />
+            <HomeCareSchedule
+              onPick={handlePickSeasonal}
+              existingNames={tasks.map((t) => (t.systemName || '').toLowerCase())}
+            />
+          </>
         )}
 
         {/* ── Vendors tab ── */}
