@@ -92,7 +92,7 @@ const PILLARS = [
     icon: FileText,
     label: 'Documents',
     desc: 'Every important paper in one findable place — deeds, closing papers, insurance policies, warranties, receipts. Not a filing cabinet — just the things that matter, all there when you need them.',
-    status: 'Coming soon',
+    status: 'Available now',
   },
 ];
 
