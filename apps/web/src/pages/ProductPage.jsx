@@ -118,7 +118,7 @@ const PILLARS = [
     id: 'documents',
     icon: FileText,
     label: 'Documents',
-    status: 'Coming soon',
+    status: 'Available now',
     lede: 'The papers a household actually relies on, kept findable — there the moment you need them, not the day after.',
     now: {
       head: 'The way it goes now',
