@@ -98,10 +98,10 @@ const HeroSection = () => (
         No bank logins · no autopay surprises
       </span>
       <h1 style={{ fontFamily: serif, fontSize: 'clamp(2.5rem, 5.6vw, 4rem)', fontWeight: 600, color: '#fff', lineHeight: 1.08, letterSpacing: '-0.015em', marginBottom: '22px' }}>
-        Your whole home, finally cohesive.
+        A quiet mind about your home.
       </h1>
       <p style={{ fontFamily: sans, fontSize: '19px', lineHeight: 1.65, color: 'rgba(255,255,255,0.74)', maxWidth: '560px', margin: '0 auto 14px' }}>
-        Bills, upkeep, and documents settle into one calm place — the filters, the gutters, the renewal dates — so nothing sits in your head, and nothing feels like it&rsquo;s been let go.
+        Bills, upkeep, and documents in one calm place — the filters, the gutters, the renewal dates — so none of it has to live in your head.
       </p>
       <p style={{ fontFamily: sans, fontSize: '15px', lineHeight: 1.5, color: 'rgba(255,255,255,0.55)', maxWidth: '480px', margin: '0 auto 34px' }}>
         One home, a rental, or a few properties — same calm system, either way.
