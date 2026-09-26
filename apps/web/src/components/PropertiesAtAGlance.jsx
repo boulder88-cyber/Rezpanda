@@ -6,30 +6,54 @@ import pb from '@/lib/horizonsBackend.js';
 import { Home, MapPin, ArrowRight, AlertCircle, CheckCircle2, Plus, CreditCard, Wrench, FolderOpen, Inbox, Building, Heart } from 'lucide-react';
 
 // ═══════════════════════════════════════════════════════════════════════
-// PROPERTIES AT A GLANCE  (warm off-white field · navy tiles)
+// PROPERTIES AT A GLANCE  (warm off-white field · white tiles · navy ink)
 //
 // Stacked doors:
 //   • Portfolio strip (top): one calm all-properties readout — total due,
-//     due this week, overdue, to review — so the "across all" answer is
-//     visible, not just implied by the function row.
-//   • Property tiles: one navy tile per home with a real readout — what's
-//     due, the next bill date, and the home's maintenance standing — then
-//     enter that home's board. White house icon to match the brand logo.
-//   • "Needs your eye" row: surfaces anything overdue or pending review
-//     across all homes as tap-through items; collapses to a calm line when
-//     there's nothing to do.
+//     past due, upcoming, undated. Empty forward buckets collapse to a single
+//     "Nothing due" cell instead of a row of $0s.
+//   • Property tiles: one WHITE tile per home with a real readout — what's
+//     due, attention chips, maintenance standing — then enter that home.
+//   • "Needs your eye" row: review / placement / undated items across homes;
+//     collapses to a calm line when there's nothing to do.
 //   • Function row: Bills / Maintenance / Records as an ALL-PROPERTIES
 //     "go straight to."
 //
-// Navy tiles on the warm #faf8f4 page, gold as the sparing accent. Money rule
-// (locked): per-property "due" aggregates round to whole dollars; individual
-// bill amounts keep cents. Maintenance date math mirrors
+// COLOR ROLES (locked — one job per color):
+//   navy  #1e3a5f  structure + ink: titles, icon badges, primary buttons, links
+//   gold  #c9a96e  brand only: focus rings, caretaker heart (deep gold for text)
+//   red            ONLY a past-due bill. Never decoration, never a tile border.
+//   amber          needs attention but not late: to review, no due date, soon
+//   green          all good
+//
+// A healthy tile should look quiet. Alarm is earned by a real past-due bill.
+//
+// Money rule (locked): per-property "due" aggregates round to whole dollars;
+// individual bill amounts keep cents. Maintenance date math mirrors
 // MaintenanceManagementPage (maintenance_systems collection, nextServiceDate;
 // overdue = past today, soon = within 30 days). Maintenance fetch fails open.
 // ═══════════════════════════════════════════════════════════════════════
 
 const NAVY = '#1e3a5f';
 const GOLD = '#c9a96e';
+const GOLD_INK = '#8a6d3b';   // gold dark enough for text on white (AA)
+const INK = '#1f2733';
+const MUTED = '#5b6472';
+const FAINT = '#95a0ae';
+const LINE = '#e9e4db';
+const LINE_SOFT = '#f0ece4';
+const FIELD = '#faf8f4';
+
+// Status palette — light-surface versions, all text/bg pairs pass AA.
+const TONE = {
+  red:    { text: '#b91c1c', bg: '#fef2f2', border: '#fecaca' },
+  amber:  { text: '#b45309', bg: '#fffbeb', border: '#fde68a' },
+  green:  { text: '#047857', bg: '#ecfdf5', border: '#a7f3d0' },
+  quiet:  { text: MUTED,     bg: FIELD,     border: LINE },
+};
+
+const FOCUS = 'focus:outline-none focus-visible:ring-2 focus-visible:ring-[#c9a96e] focus-visible:ring-offset-2';
+const LIFT = 'transition-all hover:-translate-y-0.5 motion-reduce:transition-none motion-reduce:hover:translate-y-0';
 
 // A bill leaves the open totals ONLY when cleared — the paid flag does not
 // remove it (an autopay/card bill can be paid but still an open obligation).
@@ -40,14 +64,10 @@ const money2 = (n) => `$${(parseFloat(n) || 0).toLocaleString('en-US', { minimum
 const isPending = (c) => c.status === 'pending_review';
 const isOpen = (c) => !isPaid(c) && !isPending(c); // confirmed, not yet closed
 // Money rule: a bill's dollars count from the moment it exists, regardless of
-// confirm status — only CLOSED (paid or cleared) bills stop counting. So every
-// due total and aging bucket sums all open bills (confirmed AND in review).
-// This is what lets every tile reconcile to the portfolio strip.
+// confirm status — only CLOSED (paid or cleared) bills stop counting.
 const counts = (c) => !isPaid(c);
 // Past due is a HARD FACT of the calendar, not a workflow state: any unpaid
-// bill whose due date has passed is overdue — whether or not it's been
-// confirmed. This deliberately includes pending_review bills, so an obviously
-// late bill sitting in the review queue still counts and flags as past due.
+// bill whose due date has passed is overdue — including pending_review.
 const isPastDue = (c) => {
   if (isPaid(c) || !c.dueDate) return false;
   const now = new Date(); now.setHours(0, 0, 0, 0);
@@ -59,21 +79,8 @@ const isPastDue = (c) => {
 const placementOf = (c) => (c && c.placement) ? c.placement : (c && c.homeId ? 'property' : 'unassigned');
 const needsPlacement = (c) => isOpen(c) && placementOf(c) === 'unassigned';
 
-// Aging buckets for a set of OPEN bills, keyed off dueDate against today:
-//   pastDue  — due date already gone
-//   next7    — due within the next 7 days (today through +7)
-//   next30   — due in 8–30 days
-//   later    — dated, but more than 30 days out
-//   undated  — open bill with NO due date: the system holds it but can't place
-//              it on the timeline. This MUST stay visible — a bill that exists
-//              but appears in no bucket is a silent gap the user can't reconcile.
-// Buckets bills by timing. IMPORTANT status rule:
-//   • pastDue is status-AGNOSTIC — any unpaid bill past its due date counts,
-//     including pending_review (a late bill is late even before you confirm it).
-//   • forward buckets (next7/next30/later/undated) are CONFIRMED-only — they
-//     describe acknowledged upcoming obligations, so unreviewed bills don't
-//     inflate them. (An unreviewed FUTURE bill simply isn't bucketed yet.)
-// Pass the full bill list; this sorts out status internally.
+// Aging buckets keyed off dueDate against today. Every unpaid bill lands in
+// exactly one bucket, so the cells sum to the true total owed.
 const ageBills = (allBills) => {
   const now = new Date(); now.setHours(0, 0, 0, 0);
   const day = 24 * 60 * 60 * 1000;
@@ -87,9 +94,6 @@ const ageBills = (allBills) => {
   for (const c of allBills) {
     if (isPaid(c)) continue;
     const amt = parseFloat(c.amount) || 0;
-    // Every unpaid bill counts its dollars — confirmed or in review. The bucket
-    // is decided purely by the due date, so the five cells sum to the true
-    // total owed and the strip reconciles to the tiles.
     if (c.dueDate) {
       const due = new Date(c.dueDate); due.setHours(0, 0, 0, 0);
       const diffDays = Math.round((due - now) / day);
@@ -98,7 +102,6 @@ const ageBills = (allBills) => {
       else if (diffDays <= 30) { b.next30.count++; b.next30.amount += amt; }
       else { b.later.count++; b.later.amount += amt; }
     } else {
-      // Undated: held but not yet on the timeline — counts regardless of status.
       b.undated.count++; b.undated.amount += amt;
     }
   }
@@ -116,24 +119,16 @@ const daysUntil = (dateStr) => {
 const summarize = (bills, systems, homeId) => {
   const now = new Date();
   const mine = bills.filter((c) => c.homeId === homeId);
-  // Countable = every unpaid bill (confirmed + in review). Dollars and the
-  // "bills" count derive from this, so the tile reconciles to the strip.
   const live = mine.filter(counts);
   const dueTotal = live.reduce((s, c) => s + (parseFloat(c.amount) || 0), 0);
-  // Overdue is status-agnostic — a past-due bill counts even if still in review.
   const overdueCount = mine.filter(isPastDue).length;
   const pendingCount = mine.filter(isPending).length;
-  // Unpaid bills with no due date — held but not yet placeable on the timeline.
   const undatedCount = live.filter((c) => !c.dueDate).length;
 
-  // Next bill by due date (soonest first). nextOverdue tells the tile whether
-  // that soonest bill is actually past due — so it isn't mislabeled "next"
-  // when its date is already gone.
   const dated = live.filter((c) => c.dueDate).sort((a, b) => new Date(a.dueDate) - new Date(b.dueDate));
   const nextBill = dated[0] || null;
   const nextOverdue = !!(nextBill && new Date(nextBill.dueDate) < now);
 
-  // Maintenance standing for this home.
   const homeSystems = systems.filter((s) => s.homeId === homeId);
   const mOverdue = homeSystems.filter((s) => s.nextServiceDate && new Date(s.nextServiceDate) < now).length;
   const mSoon = homeSystems.filter((s) => {
@@ -144,22 +139,16 @@ const summarize = (bills, systems, homeId) => {
   return { dueTotal, openCount: live.length, overdueCount, pendingCount, undatedCount, nextBill, nextOverdue, mOverdue, mSoon, mTotal: homeSystems.length };
 };
 
-// Summarize the bills that DON'T belong to a property — the two empty-homeId
-// states: "other" (a deliberate Other-bills bucket) and "unassigned" (not yet
-// placed). Same bill math as summarize(), no maintenance (these aren't a home).
-// This is what lets a late unassigned bill surface in a tile instead of hiding.
+// Bills that DON'T belong to a property — "other" (parked on purpose) and
+// "unassigned" (not yet placed). Same bill math as summarize(), no maintenance.
 const summarizeUnplaced = (bills) => {
   const now = new Date();
   const mine = bills.filter((c) => placementOf(c) !== 'property');
-  // Countable = every unpaid unplaced bill (confirmed + in review), same basis
-  // as the home tiles, so this tile reconciles into the strip alongside them.
   const live = mine.filter(counts);
   const dueTotal = live.reduce((s, c) => s + (parseFloat(c.amount) || 0), 0);
   const overdueCount = mine.filter(isPastDue).length;
   const pendingCount = mine.filter(isPending).length;
   const undatedCount = live.filter((c) => !c.dueDate).length;
-  // How many still need a real home (unassigned) vs. parked in Other on purpose
-  // — status-agnostic, since a pending unassigned bill still needs placing.
   const needsPlaceCount = live.filter((c) => placementOf(c) === 'unassigned').length;
   const dated = live.filter((c) => c.dueDate).sort((a, b) => new Date(a.dueDate) - new Date(b.dueDate));
   const nextBill = dated[0] || null;
@@ -167,328 +156,190 @@ const summarizeUnplaced = (bills) => {
   return { dueTotal, openCount: live.length, overdueCount, pendingCount, undatedCount, needsPlaceCount, nextBill, nextOverdue, total: mine.length };
 };
 
-// Short "Aug 14" style date.
-const shortDate = (dateStr) => {
-  try {
-    return new Date(dateStr).toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
-  } catch {
-    return '';
-  }
+// ── Shared tile pieces ─────────────────────────────────────────────────────
+const tileStyle = {
+  background: '#ffffff',
+  border: `1px solid ${LINE}`,
+  borderRadius: '16px',
+  padding: '20px',
+  boxShadow: '0 1px 2px rgba(30,58,95,0.05), 0 6px 16px rgba(30,58,95,0.06)',
 };
 
-// ── Property tile: navy surface, gold accent, white icon ──────────────────
-const PropertyGlanceTile = ({ home, summary, onEnter }) => {
-  const { dueTotal, openCount, overdueCount, pendingCount, undatedCount, nextBill, nextOverdue, mOverdue, mSoon, mTotal } = summary;
-  const allClear = openCount === 0 && overdueCount === 0;
-  // Top accent reflects urgency; gold leads the calm state.
-  const accent = overdueCount > 0 ? '#dc2626' : openCount > 0 ? '#f59e0b' : GOLD;
+const Chip = ({ tone, icon: Icon, children }) => (
+  <span
+    className="flex items-center gap-1 font-medium rounded-full"
+    style={{ fontSize: '11.5px', color: TONE[tone].text, background: TONE[tone].bg, border: `1px solid ${TONE[tone].border}`, padding: '2px 9px' }}
+  >
+    {Icon && <Icon style={{ width: '11px', height: '11px' }} />} {children}
+  </span>
+);
 
-  // Maintenance status — ALWAYS present so every tile carries it and the rows
-  // line up. All states render as the same boxed pill (so heights match); only
-  // the color/tone differs. "No maintenance tracked" is NOT a home status — a
-  // home always has maintenance needs, the app just doesn't know them yet — so
-  // it reads as an invitation to set it up, not a verdict.
+const StatusPill = ({ tone, icon: Icon, children }) => (
+  <div
+    className="flex items-center gap-2 rounded-lg"
+    style={{ background: TONE[tone].bg, border: `1px solid ${TONE[tone].border}`, padding: '8px 12px', marginTop: '12px', marginBottom: '16px', color: TONE[tone].text }}
+  >
+    <Icon style={{ width: '15px', height: '15px', flexShrink: 0 }} />
+    <span className="font-semibold" style={{ fontSize: '13px' }}>{children}</span>
+  </div>
+);
+
+// Dollar readout, or a calm all-clear when nothing is owed.
+const DueBox = ({ allClear, clearText, dueTotal, openCount }) => (
+  allClear ? (
+    <div className="rounded-xl flex items-center gap-2" style={{ background: TONE.green.bg, border: `1px solid ${TONE.green.border}`, padding: '14px', marginBottom: '12px', color: TONE.green.text }}>
+      <CheckCircle2 style={{ width: '16px', height: '16px', flexShrink: 0 }} />
+      <span className="font-medium" style={{ fontSize: '14px' }}>{clearText}</span>
+    </div>
+  ) : (
+    <div className="rounded-xl" style={{ background: FIELD, border: `1px solid ${LINE_SOFT}`, padding: '12px 14px', marginBottom: '12px' }}>
+      <p className="font-extrabold" style={{ fontSize: '26px', lineHeight: 1, color: NAVY }}>
+        ${Math.round(dueTotal).toLocaleString()}
+      </p>
+      <p style={{ fontSize: '12px', color: MUTED, marginTop: '4px' }}>
+        {openCount} {openCount === 1 ? 'bill' : 'bills'} owed
+      </p>
+    </div>
+  )
+);
+
+// Bill attention chips. Red is reserved for past due; the rest are amber.
+const BillChips = ({ overdueCount, pendingCount, undatedCount }) => (
+  <div className="flex flex-wrap items-center gap-2" style={{ minHeight: '22px', marginBottom: 'auto' }}>
+    {overdueCount > 0 && <Chip tone="red" icon={AlertCircle}>{overdueCount} past due</Chip>}
+    {pendingCount > 0 && <Chip tone="amber">{pendingCount} to review</Chip>}
+    {undatedCount > 0 && <Chip tone="amber">{undatedCount} no due date</Chip>}
+  </div>
+);
+
+const OpenLink = () => (
+  <div className="flex items-center gap-1.5 font-semibold" style={{ fontSize: '13px', color: NAVY }}>
+    Open
+    <ArrowRight style={{ width: '15px', height: '15px' }} className="group-hover:translate-x-1 transition-transform motion-reduce:transition-none" />
+  </div>
+);
+
+// Two-line clamp so addresses wrap instead of cutting mid-word.
+const clamp2 = { display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden' };
+
+// ── Property tile ──────────────────────────────────────────────────────────
+const PropertyGlanceTile = ({ home, summary, onEnter }) => {
+  const { dueTotal, openCount, overdueCount, pendingCount, undatedCount, mOverdue, mSoon, mTotal } = summary;
+  const allClear = openCount === 0 && overdueCount === 0;
+  const hasName = !!(home.name && home.address);
+
+  // Maintenance standing — always present so rows line up tile-to-tile.
   let maint;
-  if (mTotal === 0) {
-    maint = {
-      text: 'Set up maintenance', icon: 'wrench',
-      color: 'rgba(255,255,255,0.6)', bg: 'rgba(255,255,255,0.06)', border: 'rgba(255,255,255,0.14)',
-    };
-  } else if (mOverdue > 0) {
-    maint = {
-      text: `${mOverdue} maintenance ${mOverdue === 1 ? 'task' : 'tasks'} overdue`, icon: 'alert',
-      color: '#fca5a5', bg: 'rgba(220,38,38,0.14)', border: 'rgba(220,38,38,0.28)',
-    };
-  } else if (mSoon > 0) {
-    maint = {
-      text: `${mSoon} maintenance ${mSoon === 1 ? 'task' : 'tasks'} due this month`, icon: 'wrench',
-      color: '#fcd34d', bg: 'rgba(245,158,11,0.14)', border: 'rgba(245,158,11,0.26)',
-    };
-  } else {
-    maint = {
-      text: 'Maintenance on track', icon: 'check',
-      color: '#6ee7b7', bg: 'rgba(110,231,183,0.10)', border: 'rgba(110,231,183,0.22)',
-    };
-  }
+  if (mTotal === 0) maint = { tone: 'quiet', icon: Wrench, text: 'Set up maintenance' };
+  else if (mOverdue > 0) maint = { tone: 'amber', icon: AlertCircle, text: `${mOverdue} maintenance ${mOverdue === 1 ? 'task' : 'tasks'} overdue` };
+  else if (mSoon > 0) maint = { tone: 'amber', icon: Wrench, text: `${mSoon} maintenance ${mSoon === 1 ? 'task' : 'tasks'} due this month` };
+  else maint = { tone: 'green', icon: CheckCircle2, text: 'Maintenance on track' };
+
+  // Caretaker reassurance — only when the home is genuinely fine. When it
+  // isn't, the chips already say so; repeating it in a banner was noise.
+  const caretakerCalm = home.managedOnBehalf && overdueCount === 0 && pendingCount === 0 && undatedCount === 0;
 
   return (
-    <button
-      onClick={onEnter}
-      className="text-left hover:-translate-y-0.5 transition-all group flex flex-col w-full h-full"
-      style={{
-        background: NAVY,
-        borderRadius: '16px',
-        borderTop: `3px solid ${accent}`,
-        padding: '20px',
-        boxShadow: '0 6px 18px rgba(30,58,95,0.18)',
-      }}
-    >
+    <button onClick={onEnter} className={`text-left group flex flex-col w-full h-full ${LIFT} ${FOCUS}`} style={tileStyle}>
       {/* Header */}
       <div className="flex items-start gap-3" style={{ marginBottom: '16px' }}>
-        <div className="flex items-center justify-center flex-shrink-0" style={{ width: '44px', height: '44px', borderRadius: '12px', background: 'rgba(255,255,255,0.10)', border: '1px solid rgba(255,255,255,0.22)' }}>
+        <div className="flex items-center justify-center flex-shrink-0" style={{ width: '44px', height: '44px', borderRadius: '12px', background: NAVY }}>
           <Home style={{ width: '22px', height: '22px', color: '#ffffff' }} />
         </div>
         <div className="flex-1 min-w-0">
-          {/* Fixed three-row header so every tile is the same height and the
-              dollar boxes align: (1) name, (2) address, (3) on-behalf. Each row
-              is ALWAYS rendered — real text when present, an invisible
-              same-height placeholder when not — so a tile with a separate name
-              (which pushes address to its own line) matches a tile where the
-              address stands in as the name. */}
-
-          {/* Row 1 — name (falls back to address when no name is set). */}
-          <p className="font-semibold text-white truncate" style={{ fontSize: '17px' }}>
+          {/* Row 1 — name, falling back to address. */}
+          <p className="font-semibold truncate" style={{ fontSize: '17px', color: INK }}>
             {home.name || home.address || 'Unnamed home'}
           </p>
-
-          {/* Row 2 — address. Shown for real only when there's a distinct name
-              above it (otherwise the address already occupies row 1); an
-              invisible placeholder keeps the row height on those tiles. */}
-          {(home.name && home.address) ? (
-            <p className="flex items-center gap-1 truncate" style={{ fontSize: '12px', color: 'rgba(255,255,255,0.55)', marginTop: '2px' }}>
-              <MapPin style={{ width: '11px', height: '11px', flexShrink: 0 }} /> {home.address}
-            </p>
-          ) : (
-            <p className="flex items-center gap-1 truncate" style={{ fontSize: '12px', color: 'transparent', marginTop: '2px', userSelect: 'none' }} aria-hidden="true">
-              <MapPin style={{ width: '11px', height: '11px', flexShrink: 0, opacity: 0 }} /> {'\u00A0'}
-            </p>
-          )}
-
-          {/* Row 3 — on-behalf. Gold for a caretaker home, invisible placeholder
-              otherwise. */}
+          {/* Row 2 — address, wraps to two lines. Fixed height keeps tiles aligned. */}
+          <p className="flex items-start gap-1" style={{ fontSize: '12px', lineHeight: 1.35, color: hasName ? MUTED : 'transparent', marginTop: '2px', minHeight: '32px' }} aria-hidden={hasName ? undefined : true}>
+            {hasName && <MapPin style={{ width: '11px', height: '11px', flexShrink: 0, marginTop: '2px' }} />}
+            <span style={clamp2}>{hasName ? home.address : '\u00A0'}</span>
+          </p>
+          {/* Row 3 — on-behalf, the managing-for-someone lens. */}
           <p
             className="flex items-center gap-1 truncate font-medium"
-            style={{
-              fontSize: '11px', marginTop: '3px',
-              color: home.managedOnBehalf ? GOLD : 'transparent',
-              userSelect: 'none',
-            }}
+            style={{ fontSize: '11.5px', marginTop: '2px', color: home.managedOnBehalf ? GOLD_INK : 'transparent', userSelect: 'none' }}
             aria-hidden={home.managedOnBehalf ? undefined : true}
           >
-            <Heart style={{ width: '10px', height: '10px', flexShrink: 0, opacity: home.managedOnBehalf ? 1 : 0 }} />
+            <Heart style={{ width: '10px', height: '10px', flexShrink: 0, opacity: home.managedOnBehalf ? 1 : 0, color: GOLD }} />
             {home.managedOnBehalf
-              ? (home.onBehalfOfName ? `On behalf of ${home.onBehalfOfName}` : 'Managed on your behalf')
+              ? (home.onBehalfOfName ? `On behalf of ${home.onBehalfOfName}` : 'Managed on their behalf')
               : '\u00A0'}
           </p>
         </div>
       </div>
 
-      {/* The glance — bills */}
-      {allClear ? (
-        <div className="rounded-xl flex items-center gap-2" style={{ background: 'rgba(110,231,183,0.10)', border: '1px solid rgba(110,231,183,0.22)', padding: '12px 14px', marginBottom: '12px', color: '#6ee7b7' }}>
-          <CheckCircle2 style={{ width: '16px', height: '16px', flexShrink: 0 }} />
-          <span className="font-medium" style={{ fontSize: '14px' }}>No bills to pay</span>
-        </div>
-      ) : (
-        <div className="rounded-xl" style={{ background: 'rgba(255,255,255,0.07)', padding: '12px 14px', marginBottom: '12px', border: '1px solid rgba(255,255,255,0.10)' }}>
-          <p className="font-extrabold text-white" style={{ fontSize: '26px', lineHeight: 1 }}>
-            ${Math.round(dueTotal).toLocaleString()}
-          </p>
-          <p style={{ fontSize: '12px', color: 'rgba(255,255,255,0.6)', marginTop: '4px' }}>
-            {openCount} {openCount === 1 ? 'bill' : 'bills'} owed
-          </p>
+      <DueBox allClear={allClear} clearText="No bills to pay" dueTotal={dueTotal} openCount={openCount} />
+
+      <BillChips overdueCount={overdueCount} pendingCount={pendingCount} undatedCount={undatedCount} />
+
+      {caretakerCalm && (
+        <div className="flex items-center gap-2" style={{ marginTop: '12px', color: TONE.green.text, fontSize: '12.5px' }}>
+          <Heart style={{ width: '13px', height: '13px', flexShrink: 0 }} />
+          <span className="font-medium">All quiet. Bills are current.</span>
         </div>
       )}
 
-      {/* Attention chips — bill-related, grouped with the bills box above.
-          This region flexes (mb-auto pushes maintenance + Open to the bottom),
-          so however many chips a tile has, the maintenance pill below still
-          lines up tile-to-tile. */}
-      <div className="flex flex-wrap items-center gap-2" style={{ minHeight: '20px', marginBottom: 'auto' }}>
-        {overdueCount > 0 && (
-          <span className="flex items-center gap-1 font-medium rounded-full" style={{ fontSize: '11px', color: '#fca5a5', background: 'rgba(220,38,38,0.18)', padding: '3px 9px' }}>
-            <AlertCircle style={{ width: '11px', height: '11px' }} /> {overdueCount} overdue
-          </span>
-        )}
-        {pendingCount > 0 && (
-          <span className="flex items-center gap-1 font-medium rounded-full" style={{ fontSize: '11px', color: '#fcd34d', background: 'rgba(245,158,11,0.16)', padding: '3px 9px' }}>
-            {pendingCount} to review
-          </span>
-        )}
-        {undatedCount > 0 && (
-          <span className="flex items-center gap-1 font-medium rounded-full" style={{ fontSize: '11px', color: '#fcd34d', background: 'rgba(245,158,11,0.16)', padding: '3px 9px' }}>
-            {undatedCount} no due date
-          </span>
-        )}
-      </div>
+      <StatusPill tone={maint.tone} icon={maint.icon}>{maint.text}</StatusPill>
 
-      {/* Caretaker read — the "is this home okay" sentence, only for a
-          managed-on-behalf home. Placed in the BOTTOM-ANCHORED group (after the
-          mb-auto flex spacer, just above maintenance) so the chips above stay
-          aligned tile-to-tile and this read never floats mid-tile. Reuses the
-          tile's own summary numbers (no new math). The caretaker LENS —
-          surfaces the home's state, never acts on it. */}
-      {home.managedOnBehalf && (() => {
-        const okay = overdueCount === 0 && pendingCount === 0;
-        const whose = home.onBehalfOfName ? `${home.onBehalfOfName}’s home` : 'This home';
-        let msg;
-        if (overdueCount > 0) {
-          msg = `${overdueCount} ${overdueCount === 1 ? 'bill is' : 'bills are'} past due`;
-        } else if (pendingCount > 0) {
-          msg = `${pendingCount} ${pendingCount === 1 ? 'bill' : 'bills'} to review`;
-        } else {
-          msg = 'Bills are current — nothing needs your eye';
-        }
-        return (
-          <div
-            className="rounded-lg flex items-start gap-2"
-            style={{
-              background: okay ? 'rgba(110,231,183,0.10)' : 'rgba(245,158,11,0.14)',
-              border: `1px solid ${okay ? 'rgba(110,231,183,0.22)' : 'rgba(245,158,11,0.26)'}`,
-              padding: '8px 12px', marginBottom: '12px',
-              color: okay ? '#6ee7b7' : '#fcd34d',
-            }}
-          >
-            {okay
-              ? <CheckCircle2 style={{ width: '15px', height: '15px', flexShrink: 0, marginTop: '1px' }} />
-              : <AlertCircle style={{ width: '15px', height: '15px', flexShrink: 0, marginTop: '1px' }} />}
-            <span className="font-medium" style={{ fontSize: '12.5px', lineHeight: 1.35 }}>
-              <span className="font-semibold">{whose}:</span> {msg}
-            </span>
-          </div>
-        );
-      })()}
-
-      {/* Maintenance status — always present, same pill shape across states so
-          the rows line up tile-to-tile; only the tone differs. Bottom-anchored
-          (the chips region above absorbs height variance), so the pill sits at
-          the same vertical position on every tile. */}
-      <div className="flex items-center gap-2 rounded-lg" style={{ background: maint.bg, border: `1px solid ${maint.border}`, padding: '8px 12px', marginTop: '12px', marginBottom: '16px', color: maint.color }}>
-        {maint.icon === 'check'
-          ? <CheckCircle2 style={{ width: '15px', height: '15px', flexShrink: 0 }} />
-          : maint.icon === 'alert'
-            ? <AlertCircle style={{ width: '15px', height: '15px', flexShrink: 0 }} />
-            : <Wrench style={{ width: '14px', height: '14px', flexShrink: 0 }} />}
-        <span className="font-semibold" style={{ fontSize: '13px' }}>{maint.text}</span>
-      </div>
-
-      {/* Enter — sits directly below the bottom-anchored maintenance pill.
-          (The chips region's mb-auto is the single flex spacer, so no auto
-          margin here or the two would fight and float the pill to the middle.) */}
-      <div className="flex items-center gap-1.5 font-semibold" style={{ fontSize: '13px', color: GOLD }}>
-        Open
-        <ArrowRight style={{ width: '15px', height: '15px' }} className="group-hover:translate-x-1 transition-transform" />
-      </div>
+      <OpenLink />
     </button>
   );
 };
 
-// ── Other & unassigned tile: same navy surface as a property, but for bills
-// that have no home. Without this, a late unassigned bill is invisible on the
-// dashboard — the portfolio strip counts it but no tile owns it. This gives
-// those bills a door. Maintenance has no meaning here, so the pill is replaced
-// with a one-line "needs a home" nudge when anything is still unassigned.
+// ── Other & unassigned tile ────────────────────────────────────────────────
+// Bills with no home get a door so a late unassigned bill can't hide.
 const UnplacedGlanceTile = ({ summary, onEnter }) => {
   const { dueTotal, openCount, overdueCount, pendingCount, undatedCount, needsPlaceCount } = summary;
   const allClear = openCount === 0 && overdueCount === 0;
-  const accent = overdueCount > 0 ? '#dc2626' : openCount > 0 ? '#f59e0b' : GOLD;
 
   return (
-    <button
-      onClick={onEnter}
-      className="text-left hover:-translate-y-0.5 transition-all group flex flex-col w-full h-full"
-      style={{
-        background: NAVY,
-        borderRadius: '16px',
-        borderTop: `3px solid ${accent}`,
-        padding: '20px',
-        boxShadow: '0 6px 18px rgba(30,58,95,0.18)',
-      }}
-    >
-      {/* Header — Inbox icon distinguishes it from the house-icon home tiles. */}
+    <button onClick={onEnter} className={`text-left group flex flex-col w-full h-full ${LIFT} ${FOCUS}`} style={tileStyle}>
       <div className="flex items-start gap-3" style={{ marginBottom: '16px' }}>
-        <div className="flex items-center justify-center flex-shrink-0" style={{ width: '44px', height: '44px', borderRadius: '12px', background: 'rgba(255,255,255,0.10)', border: '1px solid rgba(255,255,255,0.22)' }}>
-          <Inbox style={{ width: '22px', height: '22px', color: '#ffffff' }} />
+        {/* Outlined badge distinguishes this from a real home. */}
+        <div className="flex items-center justify-center flex-shrink-0" style={{ width: '44px', height: '44px', borderRadius: '12px', background: FIELD, border: `1px solid ${LINE}` }}>
+          <Inbox style={{ width: '22px', height: '22px', color: NAVY }} />
         </div>
         <div className="flex-1 min-w-0">
-          <p className="font-semibold text-white truncate" style={{ fontSize: '17px' }}>
+          <p className="font-semibold truncate" style={{ fontSize: '17px', color: INK }}>
             Other &amp; unassigned
           </p>
-          <p className="truncate" style={{ fontSize: '12px', color: 'rgba(255,255,255,0.55)', marginTop: '2px' }}>
+          <p style={{ fontSize: '12px', lineHeight: 1.35, color: MUTED, marginTop: '2px', minHeight: '32px' }}>
             Bills not tied to a property
           </p>
-          {/* Invisible third row — matches the property tiles' on-behalf row so
-              this tile's header is the same height and its dollar box aligns. */}
-          <p className="flex items-center gap-1 truncate font-medium" style={{ fontSize: '11px', marginTop: '3px', color: 'transparent', userSelect: 'none' }} aria-hidden="true">
-            <Heart style={{ width: '10px', height: '10px', flexShrink: 0, opacity: 0 }} /> {'\u00A0'}
+          <p className="truncate" style={{ fontSize: '11.5px', marginTop: '2px', color: 'transparent', userSelect: 'none' }} aria-hidden="true">
+            {'\u00A0'}
           </p>
         </div>
       </div>
 
-      {/* The glance — bills */}
-      {allClear ? (
-        <div className="rounded-xl flex items-center gap-2" style={{ background: 'rgba(110,231,183,0.10)', border: '1px solid rgba(110,231,183,0.22)', padding: '12px 14px', marginBottom: '12px', color: '#6ee7b7' }}>
-          <CheckCircle2 style={{ width: '16px', height: '16px', flexShrink: 0 }} />
-          <span className="font-medium" style={{ fontSize: '14px' }}>Nothing here right now</span>
-        </div>
-      ) : (
-        <div className="rounded-xl" style={{ background: 'rgba(255,255,255,0.07)', padding: '12px 14px', marginBottom: '12px', border: '1px solid rgba(255,255,255,0.10)' }}>
-          <p className="font-extrabold text-white" style={{ fontSize: '26px', lineHeight: 1 }}>
-            ${Math.round(dueTotal).toLocaleString()}
-          </p>
-          <p style={{ fontSize: '12px', color: 'rgba(255,255,255,0.6)', marginTop: '4px' }}>
-            {openCount} {openCount === 1 ? 'bill' : 'bills'} owed
-          </p>
-        </div>
-      )}
+      <DueBox allClear={allClear} clearText="Nothing here right now" dueTotal={dueTotal} openCount={openCount} />
 
-      {/* Attention chips — same set as a property tile (overdue / to review /
-          no due date), so a late unassigned bill flags exactly as it would
-          inside a home. */}
-      <div className="flex flex-wrap items-center gap-2" style={{ minHeight: '20px', marginBottom: 'auto' }}>
-        {overdueCount > 0 && (
-          <span className="flex items-center gap-1 font-medium rounded-full" style={{ fontSize: '11px', color: '#fca5a5', background: 'rgba(220,38,38,0.18)', padding: '3px 9px' }}>
-            <AlertCircle style={{ width: '11px', height: '11px' }} /> {overdueCount} overdue
-          </span>
-        )}
-        {pendingCount > 0 && (
-          <span className="flex items-center gap-1 font-medium rounded-full" style={{ fontSize: '11px', color: '#fcd34d', background: 'rgba(245,158,11,0.16)', padding: '3px 9px' }}>
-            {pendingCount} to review
-          </span>
-        )}
-        {undatedCount > 0 && (
-          <span className="flex items-center gap-1 font-medium rounded-full" style={{ fontSize: '11px', color: '#fcd34d', background: 'rgba(245,158,11,0.16)', padding: '3px 9px' }}>
-            {undatedCount} no due date
-          </span>
-        )}
-      </div>
+      <BillChips overdueCount={overdueCount} pendingCount={pendingCount} undatedCount={undatedCount} />
 
-      {/* In place of the maintenance pill: a placement nudge when bills still
-          need a home, or a calm "parked here on purpose" line when they don't.
-          Same pill shape/position so this tile lines up with the home tiles. */}
       {needsPlaceCount > 0 ? (
-        <div className="flex items-center gap-2 rounded-lg" style={{ background: 'rgba(245,158,11,0.14)', border: '1px solid rgba(245,158,11,0.26)', padding: '8px 12px', marginTop: '12px', marginBottom: '16px', color: '#fcd34d' }}>
-          <Building style={{ width: '14px', height: '14px', flexShrink: 0 }} />
-          <span className="font-semibold" style={{ fontSize: '13px' }}>
-            {needsPlaceCount} {needsPlaceCount === 1 ? 'bill needs' : 'bills need'} a property
-          </span>
-        </div>
+        <StatusPill tone="amber" icon={Building}>
+          {needsPlaceCount} {needsPlaceCount === 1 ? 'bill needs' : 'bills need'} a property
+        </StatusPill>
       ) : (
-        <div className="flex items-center gap-2 rounded-lg" style={{ background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.14)', padding: '8px 12px', marginTop: '12px', marginBottom: '16px', color: 'rgba(255,255,255,0.6)' }}>
-          <Inbox style={{ width: '14px', height: '14px', flexShrink: 0 }} />
-          <span className="font-semibold" style={{ fontSize: '13px' }}>Kept here on purpose</span>
-        </div>
+        <StatusPill tone="quiet" icon={Inbox}>Kept here on purpose</StatusPill>
       )}
 
-      <div className="flex items-center gap-1.5 font-semibold" style={{ fontSize: '13px', color: GOLD }}>
-        Open
-        <ArrowRight style={{ width: '15px', height: '15px' }} className="group-hover:translate-x-1 transition-transform" />
-      </div>
+      <OpenLink />
     </button>
   );
 };
 
-// ── Portfolio summary strip: a calm all-properties aging readout ──────────
-// The Past-due cell is clickable: it expands an inline list of exactly which
-// bills are past due (company, amount, how late), each a link into Bill Pay
-// for that home — so "how much is overdue" is one tap from "which ones."
+// ── Portfolio summary strip ────────────────────────────────────────────────
+// Past-due cell expands an inline list of exactly which bills are late.
+// Forward buckets with nothing in them collapse to one "Nothing due" cell.
 const PortfolioStrip = ({ stats, pastDueBills, homesById, onGoBill }) => {
   const [showPastDue, setShowPastDue] = React.useState(false);
-  const toneColor = { plain: '#1f2733', amber: '#b45309', red: '#dc2626', green: '#059669' };
+  const toneColor = { plain: INK, amber: TONE.amber.text, red: TONE.red.text, green: TONE.green.text };
   const money = (n) => `$${Math.round(n).toLocaleString()}`;
   const billWord = (n) => `${n} ${n === 1 ? 'bill' : 'bills'}`;
   const a = stats.aging;
-  // How late, in whole days, against today (midnight-normalized).
   const daysLate = (dateStr) => {
     const now = new Date(); now.setHours(0, 0, 0, 0);
     const due = new Date(dateStr); due.setHours(0, 0, 0, 0);
@@ -498,34 +349,40 @@ const PortfolioStrip = ({ stats, pastDueBills, homesById, onGoBill }) => {
   const hasPastDue = a.pastDue.count > 0;
   const cells = [
     { key: 'total', label: 'Due across all homes', value: money(stats.dueTotal), sub: billWord(stats.openCount), tone: 'plain' },
-    { key: 'pastdue', label: 'Past due', value: money(a.pastDue.amount), sub: billWord(a.pastDue.count), tone: hasPastDue ? 'red' : 'green', clickable: hasPastDue },
-    { key: 'next7', label: 'Next 7 days', value: money(a.next7.amount), sub: billWord(a.next7.count), tone: a.next7.count > 0 ? 'amber' : 'plain' },
-    { key: 'next30', label: 'Next 30 days', value: money(a.next30.amount), sub: billWord(a.next30.count), tone: 'plain' },
+    { key: 'pastdue', label: 'Past due', value: hasPastDue ? money(a.pastDue.amount) : 'None', sub: hasPastDue ? `${billWord(a.pastDue.count)} · see which` : 'All on time', tone: hasPastDue ? 'red' : 'green', clickable: hasPastDue },
   ];
+  if (a.next7.count > 0) {
+    cells.push({ key: 'next7', label: 'Next 7 days', value: money(a.next7.amount), sub: billWord(a.next7.count), tone: 'amber' });
+  }
+  if (a.next30.count > 0) {
+    cells.push({ key: 'next30', label: a.next7.count > 0 ? 'Days 8–30' : 'Next 30 days', value: money(a.next30.amount), sub: billWord(a.next30.count), tone: 'plain' });
+  }
+  if (a.next7.count === 0 && a.next30.count === 0) {
+    cells.push({ key: 'upcoming', label: 'Next 30 days', value: 'Nothing due', sub: 'You’re clear for the month', tone: 'plain' });
+  }
   if (a.undated.count > 0) {
     cells.push({ key: 'undated', label: 'No due date', value: money(a.undated.amount), sub: `${billWord(a.undated.count)} · add a date`, tone: 'amber' });
   }
 
-  // Past-due bills, soonest-overdue last (most overdue first).
   const sortedPastDue = [...(pastDueBills || [])].sort((x, y) => new Date(x.dueDate) - new Date(y.dueDate));
 
   return (
-    <div className="bg-white" style={{ border: '1px solid #e9e4db', borderRadius: '14px', overflow: 'hidden', marginBottom: '28px' }}>
-      <div className="grid" style={{ gridTemplateColumns: 'repeat(auto-fit, minmax(130px, 1fr))' }}>
+    <div className="bg-white" style={{ border: `1px solid ${LINE}`, borderRadius: '14px', overflow: 'hidden', marginBottom: '28px' }}>
+      <div className="grid" style={{ gridTemplateColumns: 'repeat(auto-fit, minmax(140px, 1fr))' }}>
         {cells.map((c, i) => {
           const inner = (
             <>
-              <p style={{ fontSize: '11px', color: '#95a0ae', fontWeight: 600, letterSpacing: '0.02em', marginBottom: '6px' }}>
+              <p style={{ fontSize: '12px', color: MUTED, fontWeight: 600, marginBottom: '6px' }}>
                 {c.label}
-                {c.clickable && <span style={{ color: '#dc2626', marginLeft: '6px', fontWeight: 700 }}>{showPastDue ? '▲' : '▼'}</span>}
+                {c.clickable && <span style={{ color: TONE.red.text, marginLeft: '6px', fontSize: '10px' }}>{showPastDue ? '▲' : '▼'}</span>}
               </p>
               <p className="font-bold" style={{ fontSize: '21px', color: toneColor[c.tone], lineHeight: 1 }}>{c.value}</p>
-              {c.sub && <p style={{ fontSize: '11px', color: '#95a0ae', marginTop: '4px' }}>{c.sub}</p>}
+              {c.sub && <p style={{ fontSize: '11.5px', color: FAINT, marginTop: '5px' }}>{c.sub}</p>}
             </>
           );
-          const cellStyle = { padding: '16px 18px', borderLeft: i === 0 ? 'none' : '1px solid #f0ece4' };
+          const cellStyle = { padding: '16px 18px', borderLeft: i === 0 ? 'none' : `1px solid ${LINE_SOFT}` };
           return c.clickable ? (
-            <button key={c.key} onClick={() => setShowPastDue((v) => !v)} className="text-left transition-colors hover:bg-[#fef2f2]" style={cellStyle} title="See which bills are past due">
+            <button key={c.key} onClick={() => setShowPastDue((v) => !v)} className={`text-left transition-colors hover:bg-[#fef2f2] ${FOCUS}`} style={cellStyle} aria-expanded={showPastDue} title="See which bills are past due">
               {inner}
             </button>
           ) : (
@@ -534,9 +391,8 @@ const PortfolioStrip = ({ stats, pastDueBills, homesById, onGoBill }) => {
         })}
       </div>
 
-      {/* Inline past-due detail — exactly what's overdue, one tap to the bill */}
       {showPastDue && hasPastDue && (
-        <div style={{ borderTop: '1px solid #f0ece4', background: '#fffafa' }}>
+        <div style={{ borderTop: `1px solid ${LINE_SOFT}`, background: '#fffafa' }}>
           {sortedPastDue.map((c) => {
             const late = daysLate(c.dueDate);
             const homeName = homesById[c.homeId]?.name || homesById[c.homeId]?.address
@@ -545,16 +401,16 @@ const PortfolioStrip = ({ stats, pastDueBills, homesById, onGoBill }) => {
               <button
                 key={c.id}
                 onClick={() => onGoBill(c.homeId)}
-                className="w-full flex items-center gap-3 text-left transition-colors hover:bg-[#fef2f2]"
+                className={`w-full flex items-center gap-3 text-left transition-colors hover:bg-[#fef2f2] ${FOCUS}`}
                 style={{ padding: '10px 18px', borderTop: '1px solid #faf0f0' }}
               >
-                <AlertCircle style={{ width: '14px', height: '14px', color: '#dc2626', flexShrink: 0 }} />
+                <AlertCircle style={{ width: '14px', height: '14px', color: TONE.red.text, flexShrink: 0 }} />
                 <div className="flex-1 min-w-0">
-                  <p className="font-medium truncate" style={{ fontSize: '13px', color: '#1f2733' }}>
+                  <p className="font-medium truncate" style={{ fontSize: '13px', color: INK }}>
                     {c.companyName || 'Bill'}
-                    {c.amount ? <span style={{ color: '#5b6472', fontWeight: 400 }}>{'  ·  '}{money2(c.amount)}</span> : null}
+                    {c.amount ? <span style={{ color: MUTED, fontWeight: 400 }}>{'  ·  '}{money2(c.amount)}</span> : null}
                   </p>
-                  <p className="truncate" style={{ fontSize: '11px', color: '#dc2626' }}>
+                  <p className="truncate" style={{ fontSize: '11.5px', color: TONE.red.text }}>
                     {late === 1 ? '1 day' : `${late} days`} past due · {homeName}
                   </p>
                 </div>
@@ -568,19 +424,19 @@ const PortfolioStrip = ({ stats, pastDueBills, homesById, onGoBill }) => {
   );
 };
 
-// ── "Needs your eye" row: cross-home actionable items ─────────────────────
+// ── "Needs your eye" row ───────────────────────────────────────────────────
 const NeedsYourEye = ({ items, homesById, onGoBill }) => {
   if (items.length === 0) {
     return (
-      <div className="flex items-center gap-2 bg-white" style={{ border: '1px solid #e9e4db', borderRadius: '14px', padding: '16px 18px', marginBottom: '28px' }}>
-        <CheckCircle2 style={{ width: '16px', height: '16px', color: '#059669', flexShrink: 0 }} />
-        <span style={{ fontSize: '14px', color: '#5b6472' }}>Nothing needs you right now — everything&rsquo;s handled.</span>
+      <div className="flex items-center gap-2 bg-white" style={{ border: `1px solid ${LINE}`, borderRadius: '14px', padding: '16px 18px', marginBottom: '28px' }}>
+        <CheckCircle2 style={{ width: '16px', height: '16px', color: TONE.green.text, flexShrink: 0 }} />
+        <span style={{ fontSize: '14px', color: MUTED }}>Nothing needs you right now. Everything&rsquo;s handled.</span>
       </div>
     );
   }
 
   return (
-    <div className="bg-white" style={{ border: '1px solid #e9e4db', borderRadius: '14px', padding: '8px 6px', marginBottom: '28px' }}>
+    <div className="bg-white" style={{ border: `1px solid ${LINE}`, borderRadius: '14px', padding: '8px 6px', marginBottom: '28px' }}>
       {items.map((it, i) => {
         const placement = it.placement || (it.homeId ? 'property' : 'unassigned');
         const bucketLabel = placement === 'other' ? 'Other bills' : placement === 'unassigned' ? 'Needs placement' : null;
@@ -592,20 +448,20 @@ const NeedsYourEye = ({ items, homesById, onGoBill }) => {
           <button
             key={it.id}
             onClick={() => onGoBill(it.homeId)}
-            className="w-full flex items-center gap-3 text-left transition-colors hover:bg-[#faf8f4]"
+            className={`w-full flex items-center gap-3 text-left transition-colors hover:bg-[#faf8f4] ${FOCUS}`}
             style={{ padding: '11px 12px', borderTop: i === 0 ? 'none' : '1px solid #f3efe8', borderRadius: '10px' }}
           >
-            <div className="flex items-center justify-center flex-shrink-0" style={{ width: '32px', height: '32px', borderRadius: '9px', background: '#fffbeb' }}>
+            <div className="flex items-center justify-center flex-shrink-0" style={{ width: '32px', height: '32px', borderRadius: '9px', background: TONE.amber.bg }}>
               {isPlacement
-                ? <Building style={{ width: '16px', height: '16px', color: '#d97706' }} />
-                : <Inbox style={{ width: '16px', height: '16px', color: '#d97706' }} />}
+                ? <Building style={{ width: '16px', height: '16px', color: TONE.amber.text }} />
+                : <Inbox style={{ width: '16px', height: '16px', color: TONE.amber.text }} />}
             </div>
             <div className="flex-1 min-w-0">
-              <p className="font-medium truncate" style={{ fontSize: '13.5px', color: '#1f2733' }}>
+              <p className="font-medium truncate" style={{ fontSize: '13.5px', color: INK }}>
                 {it.companyName || 'Bill'}
-                {it.amount ? <span style={{ color: '#5b6472', fontWeight: 400 }}>{'  ·  '}{money2(it.amount)}</span> : null}
+                {it.amount ? <span style={{ color: MUTED, fontWeight: 400 }}>{'  ·  '}{money2(it.amount)}</span> : null}
               </p>
-              <p className="truncate" style={{ fontSize: '11.5px', color: '#95a0ae' }}>
+              <p className="truncate" style={{ fontSize: '11.5px', color: FAINT }}>
                 {reason} · {homeName}
               </p>
             </div>
@@ -621,23 +477,22 @@ const NeedsYourEye = ({ items, homesById, onGoBill }) => {
 const FunctionBox = ({ icon: Icon, label, onClick }) => (
   <button
     onClick={onClick}
-    className="flex items-center gap-3 transition-all hover:-translate-y-1 hover:shadow-lg group bg-white"
-    style={{
-      border: '1px solid #d4ccbd',
-      borderRadius: '14px',
-      padding: '16px 16px',
-      boxShadow: '0 3px 10px rgba(30,58,95,0.12)',
-    }}
+    className={`flex items-center gap-3 group bg-white ${LIFT} ${FOCUS}`}
+    style={{ border: `1px solid ${LINE}`, borderRadius: '14px', padding: '16px', boxShadow: '0 1px 2px rgba(30,58,95,0.05)' }}
   >
     <div className="flex items-center justify-center flex-shrink-0" style={{ width: '42px', height: '42px', borderRadius: '11px', background: NAVY }}>
       <Icon style={{ width: '21px', height: '21px', color: '#fff' }} />
     </div>
     <div className="text-left flex-1 min-w-0">
-      <p className="font-semibold" style={{ fontSize: '14.5px', color: '#1f2733' }}>{label}</p>
-      <p style={{ fontSize: '11px', color: '#95a0ae' }}>All properties</p>
+      <p className="font-semibold" style={{ fontSize: '14.5px', color: INK }}>{label}</p>
+      <p style={{ fontSize: '11.5px', color: FAINT }}>All properties</p>
     </div>
-    <ArrowRight style={{ width: '16px', height: '16px', color: NAVY }} className="group-hover:translate-x-1 transition-transform" />
+    <ArrowRight style={{ width: '16px', height: '16px', color: NAVY }} className="group-hover:translate-x-1 transition-transform motion-reduce:transition-none" />
   </button>
+);
+
+const SectionTitle = ({ children }) => (
+  <h2 className="font-semibold" style={{ fontSize: '15px', color: INK, marginBottom: '12px' }}>{children}</h2>
 );
 
 const PropertiesAtAGlance = ({ onEnter }) => {
@@ -653,9 +508,7 @@ const PropertiesAtAGlance = ({ onEnter }) => {
     const load = async () => {
       if (!currentUser?.id) { setLoadingBills(false); return; }
       try {
-        // Bills (invoices) — owner-scoped. Maintenance (maintenance_systems) is
-        // fetched in parallel with its own catch so a failure there never
-        // blanks the bills view (fail open) — falls back to empty.
+        // Bills owner-scoped; maintenance fetched in parallel and fails open.
         const billsReq = pb.collection('invoices').getFullList({
           batch: 500,
           filter: `ownerId="${currentUser.id}"`,
@@ -688,14 +541,11 @@ const PropertiesAtAGlance = ({ onEnter }) => {
     if (onEnter) onEnter(home);
   };
 
-  // Go straight to a function in all-properties scope. We set the flag for all
-  // three; Bills honors it now, Maintenance/Records will once wired.
   const goAllProperties = (path) => {
     if (viewAllProperties) viewAllProperties();
     navigate(path);
   };
 
-  // Enter a specific home, then land on its bill list (used by the eye row).
   const goHomeBills = (homeId) => {
     const home = homes.find((h) => h.id === homeId);
     if (home) switchHome(home);
@@ -703,11 +553,7 @@ const PropertiesAtAGlance = ({ onEnter }) => {
     navigate('/bill-pay');
   };
 
-  // Open Bill Pay filtered to ONLY the unplaced bills — the dashboard tile's
-  // equivalent of entering a home. We pass ?scope=other (Bill Pay already has
-  // an "Other & unassigned" scope that filters to exactly placement !==
-  // 'property'), and deliberately do NOT switch on all-properties mode, since
-  // that mode hides the Other-scope filter and shows everything instead.
+  // Bill Pay filtered to only unplaced bills (Other & unassigned scope).
   const goUnplaced = () => {
     navigate('/bill-pay?scope=other');
   };
@@ -722,9 +568,6 @@ const PropertiesAtAGlance = ({ onEnter }) => {
     return m;
   }, [homes]);
 
-  // Portfolio-wide stats. dueTotal and the aging buckets both count EVERY
-  // unpaid bill (confirmed + in review) on the same basis, so the strip's
-  // headline equals the sum of all tiles and equals the sum of its own cells.
   const portfolio = React.useMemo(() => {
     const live = bills.filter(counts);
     const dueTotal = live.reduce((s, c) => s + (parseFloat(c.amount) || 0), 0);
@@ -733,19 +576,12 @@ const PropertiesAtAGlance = ({ onEnter }) => {
     return { dueTotal, openCount: live.length, pendingCount, aging };
   }, [bills]);
 
-  // Past-due bills for the strip's expandable detail list — status-agnostic,
-  // so an overdue bill still in the review queue shows here too.
   const pastDueBills = React.useMemo(() => bills.filter(isPastDue), [bills]);
 
-  // Bills with no property (other / unassigned). Drives the dashboard's
-  // "Other & unassigned" tile so a late bill there can't hide.
   const unplaced = React.useMemo(() => summarizeUnplaced(bills), [bills]);
 
-  // "Needs your eye": the actionable items that DON'T already have a dedicated
-  // surface. Overdue bills are intentionally excluded — the strip's "Past due"
-  // cell owns them (summary number + full drill-down with days-late), so
-  // listing them here too would be redundant. This row covers what's left:
-  // bills to review, bills needing a property, and undated bills. Capped to 4.
+  // Review / placement / undated items. Overdue bills live in the strip's
+  // Past due drill-down, so they're not repeated here. Capped to 4.
   const eyeItems = React.useMemo(() => {
     const pending = bills
       .filter(isPending)
@@ -753,8 +589,6 @@ const PropertiesAtAGlance = ({ onEnter }) => {
     const placement = bills
       .filter((c) => needsPlacement(c))
       .map((c) => ({ ...c, kind: 'placement' }));
-    // Undated open bills — held but not yet on the timeline. Deduped against
-    // placement so a bill never lists twice.
     const seen = new Set(placement.map((c) => c.id));
     const undated = bills
       .filter((c) => isOpen(c) && !c.dueDate && !seen.has(c.id))
@@ -764,49 +598,37 @@ const PropertiesAtAGlance = ({ onEnter }) => {
 
   const emptySummary = { dueTotal: 0, openCount: 0, overdueCount: 0, pendingCount: 0, undatedCount: 0, nextBill: null, nextOverdue: false, mOverdue: 0, mSoon: 0, mTotal: 0 };
 
+  const tileCount = homes.length + (!loadingBills && unplaced.total > 0 ? 1 : 0);
+  const capWidth = tileCount === 1 ? '360px' : tileCount === 2 ? '760px' : '100%';
+
   return (
     <div className="max-w-5xl mx-auto" style={{ padding: '8px 0 80px' }}>
-      {/* Header row: greeting/title left, compact Add property box right */}
+      {/* Header row */}
       <div className="flex items-start justify-between gap-4" style={{ marginBottom: '24px' }}>
         <div>
-          <p style={{ fontSize: '14px', color: '#5b6472' }}>{greeting}, {firstName}</p>
-          <h1 className="font-semibold" style={{ fontSize: '26px', color: '#1f2733', marginTop: '2px' }}>
+          <p style={{ fontSize: '14px', color: MUTED }}>{greeting}, {firstName}</p>
+          <h1 className="font-semibold" style={{ fontSize: '26px', color: INK, marginTop: '2px' }}>
             Your properties
           </h1>
-          <p style={{ fontSize: '13px', color: '#95a0ae', marginTop: '4px' }}>
-            Pick one, or jump to a function across all
+          <p style={{ fontSize: '13.5px', color: MUTED, marginTop: '4px' }}>
+            Open a home, or go straight to bills, maintenance, or records across all of them.
           </p>
         </div>
         <Link
           to="/manage-homes"
-          className="flex items-center gap-2 font-semibold transition-all hover:-translate-y-0.5 flex-shrink-0 text-white"
+          className={`flex items-center gap-2 font-semibold flex-shrink-0 text-white ${LIFT} ${FOCUS}`}
           style={{ background: NAVY, borderRadius: '12px', padding: '10px 16px', fontSize: '13px' }}
         >
           <Plus style={{ width: '16px', height: '16px' }} /> Add property
         </Link>
       </div>
 
-      {/* Portfolio summary strip — the all-properties answer, made visible */}
       {!loadingBills && <PortfolioStrip stats={portfolio} pastDueBills={pastDueBills} homesById={homesById} onGoBill={goHomeBills} />}
 
-      {/* Property tiles — equal-width grid columns so tiles render the same
-          size, items stretched to equal height. Grid is width-capped and
-          centered so a single tile doesn't stretch full-bleed. */}
-      {(() => {
-        // Tile count includes the Other & unassigned tile when it renders, so
-        // the width cap matches the real column count (a 2-home user with
-        // unplaced bills shows 3 tiles, not 2).
-        const tileCount = homes.length + (!loadingBills && unplaced.total > 0 ? 1 : 0);
-        const capWidth = tileCount === 1 ? '360px' : tileCount === 2 ? '760px' : '100%';
-        return (
+      {/* Property tiles */}
       <div
         className="grid mx-auto items-stretch"
-        style={{
-          gap: '16px',
-          marginBottom: '28px',
-          gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))',
-          maxWidth: capWidth,
-        }}
+        style={{ gap: '16px', marginBottom: '32px', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', maxWidth: capWidth }}
       >
         {homes.map((home) => (
           <PropertyGlanceTile
@@ -816,28 +638,17 @@ const PropertiesAtAGlance = ({ onEnter }) => {
             onEnter={() => handleEnter(home)}
           />
         ))}
-        {/* Other & unassigned — only when bills actually live there, so an
-            empty bucket never adds clutter, but a late unassigned bill always
-            gets a visible door. */}
         {!loadingBills && unplaced.total > 0 && (
           <UnplacedGlanceTile summary={unplaced} onEnter={goUnplaced} />
         )}
       </div>
-        );
-      })()}
 
-      {/* Needs your eye — cross-home actionable items, or a calm all-clear */}
-      <p className="font-semibold uppercase tracking-wide" style={{ fontSize: '11px', color: GOLD, marginBottom: '12px' }}>
-        Needs your eye
-      </p>
+      <SectionTitle>Needs your eye</SectionTitle>
       {!loadingBills && (
         <NeedsYourEye items={eyeItems} homesById={homesById} onGoBill={goHomeBills} />
       )}
 
-      {/* Function row — below, all-properties go-straight-to */}
-      <p className="font-semibold uppercase tracking-wide" style={{ fontSize: '11px', color: GOLD, marginBottom: '12px' }}>
-        Or jump to a function
-      </p>
+      <SectionTitle>Go straight to</SectionTitle>
       <div className="grid grid-cols-1 sm:grid-cols-3" style={{ gap: '12px' }}>
         <FunctionBox icon={CreditCard} label="Bills" onClick={() => goAllProperties('/bill-pay')} />
         <FunctionBox icon={Wrench} label="Maintenance" onClick={() => goAllProperties('/maintenance-management')} />
