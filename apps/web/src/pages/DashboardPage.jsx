@@ -12,7 +12,7 @@ import { Button } from '@/components/ui/button.jsx';
 import {
   Wrench, CreditCard, FolderOpen,
   Home, ChevronDown, Plus, MapPin, Check, Bell, AlertCircle,
-  TrendingUp, ArrowRight, ArrowLeft, Sparkles, LogOut, User, Settings, CheckCircle2
+  TrendingUp, ArrowRight, ArrowLeft, Sparkles, LogOut, User, Settings, CheckCircle2, ShieldAlert
 } from 'lucide-react';
 import {
   DropdownMenu,
@@ -557,6 +557,7 @@ const DashboardPage = () => {
                   { label: 'Log a bill payment', link: '/bill-pay', icon: <CreditCard className="w-4 h-4" /> },
                   { label: 'Add a maintenance task', link: '/maintenance-management', icon: <Wrench className="w-4 h-4" /> },
                   { label: 'Upload a document', link: '/documents', icon: <FolderOpen className="w-4 h-4" /> },
+                  { label: 'Critical home info', link: '/maintenance-management?tab=critical', icon: <ShieldAlert className="w-4 h-4" /> },
                 ].map((action, i) => (
                   <Link key={i} to={action.link}>
                     <div className="flex items-center gap-3 p-3 rounded-xl hover:bg-slate-50 transition-colors group">
