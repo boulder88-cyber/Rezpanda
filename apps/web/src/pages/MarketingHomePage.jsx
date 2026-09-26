@@ -4,6 +4,7 @@ import SiteLayout from './SiteLayout.jsx';
 import {
   ArrowRight, CheckCircle2, CreditCard, Wrench, FileText, Star
 } from 'lucide-react';
+import { NAVY, GOLD, GOLD_INK, MUTED, PAPER, SAND, LINE, TONE, TONE_ON_NAVY, FONT_SANS, FONT_SERIF } from '@/lib/brandTokens.js';
 
 /*
   CasaCEO — Marketing Home (warmed home-OS, 3 pillars)
@@ -21,25 +22,14 @@ import {
   Kept the bones of the prior navy home-OS page, but warmed the palette,
   cut the asset/ROI/dashboard coldness, and wrote plainer, human copy.
 
-  Tokens:
-    Ink   #1C3553  warmed navy — brand anchor + headlines
-    Sky   #3E6BA8  softer mid-blue accent (was the harsh #1A73E8)
-    Paper #F6F3EC  warm off-white background (replaces cold slate-50)
-    Sand  #EFE9DD  warm card tint / dividers
-    Sage  #6B8F71  "done / reassurance" accent, used lightly
-    Stone #6E6A62  warm gray secondary text
+  Colors and fonts come from lib/brandTokens.js, shared with the app:
+  one navy, one gold, one cream, one border, one status palette. The
+  serif is used for headlines only — the marketing page's one flourish.
+  All body text is Outfit, matching the app and the logo wordmark.
 */
 
-const INK = '#1C3553';
-const SKY = '#3E6BA8';
-const PAPER = '#F6F3EC';
-const SAND = '#EFE9DD';
-const SAGE = '#6B8F71';
-const STONE = '#6E6A62';
-const LINE = '#E3DCCE';
-
-const serif = "'Iowan Old Style', 'Palatino Linotype', Palatino, Georgia, 'Times New Roman', serif";
-const sans = "'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif";
+const serif = FONT_SERIF;
+const sans = FONT_SANS;
 
 // ── Fade-in on scroll ──────────────────────────────────────────────
 const useFadeIn = () => {
@@ -66,7 +56,6 @@ const FadeIn = ({ children, delay = 0 }) => {
 // ── Brand wordmark ─────────────────────────────────────────────────
 // CasaCEO with the gold "CEO". `textTransform: none` keeps CamelCase even
 // inside uppercase eyebrow labels. Inherits surrounding size/weight.
-const GOLD = '#c9a96e';
 const Wordmark = () => (
   <span style={{ textTransform: 'none', whiteSpace: 'nowrap' }}>Casa<span style={{ color: GOLD }}>CEO</span></span>
 );
@@ -97,9 +86,9 @@ const PILLARS = [
 ];
 
 const STATUS_STYLE = {
-  'Available now':   { color: SAGE, bg: '#EEF2EC' },
-  'Coming soon':     { color: SKY,  bg: '#E9F0F8' },
-  'On the roadmap':  { color: STONE, bg: SAND },
+  'Available now':   { color: TONE.green.text, bg: TONE.green.bg },
+  'Coming soon':     { color: GOLD_INK, bg: SAND },
+  'On the roadmap':  { color: MUTED, bg: SAND },
 };
 
 const STEPS = [
@@ -113,14 +102,14 @@ const STEPS = [
 // ═══════════════════════════════════════════════════════════════════
 
 const HeroSection = () => (
-  <section style={{ background: INK, padding: '92px 24px 88px', position: 'relative', overflow: 'hidden' }}>
+  <section style={{ background: NAVY, padding: '92px 24px 88px', position: 'relative', overflow: 'hidden' }}>
     {/* soft warm glow instead of the old hard blue orbs */}
     <div aria-hidden style={{ position: 'absolute', inset: 0, pointerEvents: 'none' }}>
-      <div style={{ position: 'absolute', width: '620px', height: '620px', borderRadius: '50%', background: 'rgba(62,107,168,0.22)', filter: 'blur(20px)', top: '-220px', right: '-140px' }} />
-      <div style={{ position: 'absolute', width: '420px', height: '420px', borderRadius: '50%', background: 'rgba(107,143,113,0.14)', filter: 'blur(20px)', bottom: '-180px', left: '-120px' }} />
+      <div style={{ position: 'absolute', width: '620px', height: '620px', borderRadius: '50%', background: 'rgba(201,169,110,0.12)', filter: 'blur(20px)', top: '-220px', right: '-140px' }} />
+      <div style={{ position: 'absolute', width: '420px', height: '420px', borderRadius: '50%', background: 'rgba(255,255,255,0.05)', filter: 'blur(20px)', bottom: '-180px', left: '-120px' }} />
     </div>
     <div style={{ maxWidth: '860px', margin: '0 auto', textAlign: 'center', position: 'relative', zIndex: 1 }}>
-      <span style={{ display: 'inline-flex', alignItems: 'center', gap: '7px', fontFamily: sans, fontSize: '13px', fontWeight: 600, color: '#BBD0EC', background: 'rgba(62,107,168,0.22)', border: '1px solid rgba(62,107,168,0.4)', borderRadius: '999px', padding: '6px 16px', marginBottom: '24px' }}>
+      <span style={{ display: 'inline-flex', alignItems: 'center', gap: '7px', fontFamily: sans, fontSize: '13px', fontWeight: 600, color: TONE_ON_NAVY.gold, background: 'rgba(201,169,110,0.12)', border: '1px solid rgba(201,169,110,0.32)', borderRadius: '999px', padding: '6px 16px', marginBottom: '24px' }}>
         No bank logins · no autopay surprises
       </span>
       <h1 style={{ fontFamily: serif, fontSize: 'clamp(2.5rem, 5.6vw, 4rem)', fontWeight: 600, color: '#fff', lineHeight: 1.08, letterSpacing: '-0.015em', marginBottom: '22px' }}>
@@ -133,7 +122,7 @@ const HeroSection = () => (
         One home, a rental, or a few properties — same calm system, either way.
       </p>
       <div style={{ display: 'flex', gap: '12px', justifyContent: 'center', flexWrap: 'wrap', marginBottom: '30px' }}>
-        <Link to="/signup" style={{ display: 'inline-flex', alignItems: 'center', gap: '8px', fontFamily: sans, padding: '15px 30px', borderRadius: '11px', background: '#fff', color: INK, fontSize: '15px', fontWeight: 700, textDecoration: 'none', transition: 'transform 0.15s' }}
+        <Link to="/signup" style={{ display: 'inline-flex', alignItems: 'center', gap: '8px', fontFamily: sans, padding: '15px 30px', borderRadius: '11px', background: '#fff', color: NAVY, fontSize: '15px', fontWeight: 700, textDecoration: 'none', transition: 'transform 0.15s' }}
           onMouseEnter={e => e.currentTarget.style.transform = 'translateY(-1px)'} onMouseLeave={e => e.currentTarget.style.transform = 'none'}>
           Get started <ArrowRight style={{ width: '16px', height: '16px' }} />
         </Link>
@@ -145,7 +134,7 @@ const HeroSection = () => (
       <div style={{ display: 'flex', gap: '22px', justifyContent: 'center', flexWrap: 'wrap' }}>
         {['From $4.99/mo per home', 'Cancel anytime', 'Ready in 5 minutes'].map(item => (
           <span key={item} style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', fontFamily: sans, fontSize: '13px', color: 'rgba(255,255,255,0.55)' }}>
-            <CheckCircle2 style={{ width: '14px', height: '14px', color: '#9CC5A2' }} /> {item}
+            <CheckCircle2 style={{ width: '14px', height: '14px', color: TONE_ON_NAVY.green }} /> {item}
           </span>
         ))}
       </div>
@@ -162,11 +151,11 @@ const PillarsSection = () => (
     <div style={{ maxWidth: '1100px', margin: '0 auto' }}>
       <FadeIn>
         <div style={{ textAlign: 'center', marginBottom: '56px' }}>
-          <p style={{ fontFamily: sans, fontSize: '12px', fontWeight: 700, color: SKY, letterSpacing: '0.16em', textTransform: 'uppercase', marginBottom: '14px' }}>What <Wordmark /> does</p>
-          <h2 style={{ fontFamily: serif, fontSize: 'clamp(1.85rem, 4vw, 2.6rem)', fontWeight: 600, color: INK, letterSpacing: '-0.015em', marginBottom: '16px' }}>
+          <p style={{ fontFamily: sans, fontSize: '12px', fontWeight: 700, color: GOLD_INK, letterSpacing: '0.16em', textTransform: 'uppercase', marginBottom: '14px' }}>What <Wordmark /> does</p>
+          <h2 style={{ fontFamily: serif, fontSize: 'clamp(1.85rem, 4vw, 2.6rem)', fontWeight: 600, color: NAVY, letterSpacing: '-0.015em', marginBottom: '16px' }}>
             Three ways to keep your home in order.
           </h2>
-          <p style={{ fontFamily: sans, fontSize: '17px', color: STONE, maxWidth: '540px', margin: '0 auto', lineHeight: 1.6 }}>
+          <p style={{ fontFamily: sans, fontSize: '17px', color: MUTED, maxWidth: '540px', margin: '0 auto', lineHeight: 1.6 }}>
             Use one, use all three. <Wordmark /> stays simple and grows with you — nothing you don&rsquo;t need gets in the way.
           </p>
         </div>
@@ -178,18 +167,18 @@ const PillarsSection = () => (
           return (
             <FadeIn key={i} delay={i * 90}>
               <div style={{ background: '#fff', border: `1px solid ${LINE}`, borderRadius: '16px', padding: '30px', height: '100%', transition: 'box-shadow 0.2s, transform 0.2s' }}
-                onMouseEnter={e => { e.currentTarget.style.boxShadow = '0 14px 34px -18px rgba(28,53,83,0.4)'; e.currentTarget.style.transform = 'translateY(-2px)'; }}
+                onMouseEnter={e => { e.currentTarget.style.boxShadow = '0 14px 34px -18px rgba(30,58,95,0.35)'; e.currentTarget.style.transform = 'translateY(-2px)'; }}
                 onMouseLeave={e => { e.currentTarget.style.boxShadow = 'none'; e.currentTarget.style.transform = 'none'; }}>
                 <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '18px' }}>
                   <div style={{ width: '50px', height: '50px', borderRadius: '13px', background: SAND, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                    <Icon style={{ width: '24px', height: '24px', color: INK }} />
+                    <Icon style={{ width: '24px', height: '24px', color: NAVY }} />
                   </div>
                   <span style={{ fontFamily: sans, fontSize: '11px', fontWeight: 700, color: s.color, background: s.bg, borderRadius: '999px', padding: '4px 11px', letterSpacing: '0.02em' }}>
                     {m.status}
                   </span>
                 </div>
-                <h3 style={{ fontFamily: serif, fontSize: '22px', fontWeight: 600, color: INK, marginBottom: '10px', letterSpacing: '-0.01em' }}>{m.label}</h3>
-                <p style={{ fontFamily: sans, fontSize: '14.5px', lineHeight: 1.65, color: STONE }}>{m.desc}</p>
+                <h3 style={{ fontFamily: serif, fontSize: '22px', fontWeight: 600, color: NAVY, marginBottom: '10px', letterSpacing: '-0.01em' }}>{m.label}</h3>
+                <p style={{ fontFamily: sans, fontSize: '14.5px', lineHeight: 1.65, color: MUTED }}>{m.desc}</p>
               </div>
             </FadeIn>
           );
@@ -208,8 +197,8 @@ const HowItWorksSection = () => (
     <div style={{ maxWidth: '1000px', margin: '0 auto' }}>
       <FadeIn>
         <div style={{ textAlign: 'center', marginBottom: '54px' }}>
-          <p style={{ fontFamily: sans, fontSize: '12px', fontWeight: 700, color: SKY, letterSpacing: '0.16em', textTransform: 'uppercase', marginBottom: '14px' }}>How it works</p>
-          <h2 style={{ fontFamily: serif, fontSize: 'clamp(1.85rem, 4vw, 2.6rem)', fontWeight: 600, color: INK, letterSpacing: '-0.015em' }}>
+          <p style={{ fontFamily: sans, fontSize: '12px', fontWeight: 700, color: GOLD_INK, letterSpacing: '0.16em', textTransform: 'uppercase', marginBottom: '14px' }}>How it works</p>
+          <h2 style={{ fontFamily: serif, fontSize: 'clamp(1.85rem, 4vw, 2.6rem)', fontWeight: 600, color: NAVY, letterSpacing: '-0.015em' }}>
             Set up in minutes. Calm from day one.
           </h2>
         </div>
@@ -218,9 +207,9 @@ const HowItWorksSection = () => (
         {STEPS.map((s, i) => (
           <FadeIn key={i} delay={i * 110}>
             <div style={{ background: '#fff', border: `1px solid ${LINE}`, borderRadius: '16px', padding: '30px 26px', height: '100%' }}>
-              <div style={{ fontFamily: serif, fontSize: '30px', fontWeight: 600, color: SKY, lineHeight: 1, marginBottom: '16px' }}>{s.n}</div>
-              <h3 style={{ fontFamily: sans, fontSize: '17px', fontWeight: 700, color: INK, marginBottom: '8px' }}>{s.title}</h3>
-              <p style={{ fontFamily: sans, fontSize: '14px', lineHeight: 1.65, color: STONE }}>{s.desc}</p>
+              <div style={{ fontFamily: serif, fontSize: '30px', fontWeight: 600, color: GOLD_INK, lineHeight: 1, marginBottom: '16px' }}>{s.n}</div>
+              <h3 style={{ fontFamily: sans, fontSize: '17px', fontWeight: 700, color: NAVY, marginBottom: '8px' }}>{s.title}</h3>
+              <p style={{ fontFamily: sans, fontSize: '14px', lineHeight: 1.65, color: MUTED }}>{s.desc}</p>
             </div>
           </FadeIn>
         ))}
@@ -234,9 +223,9 @@ const HowItWorksSection = () => (
 // ═══════════════════════════════════════════════════════════════════
 
 const PERSONAS = [
-  { tag: 'Caretakers', desc: "Managing a parent’s home from afar? Keep their bills, repairs, and records in one place you can check anytime.", accent: SAGE },
-  { tag: 'Homeowners', desc: 'Everything about your home, organized — so you spend less time hunting for paperwork and more time living in it.', accent: SKY },
-  { tag: 'Multiple homes', desc: 'A vacation place or a rental? Switch between homes in a tap; each one keeps its own tidy set of records.', accent: INK },
+  { tag: 'Caretakers', desc: "Managing a parent’s home from afar? Keep their bills, repairs, and records in one place you can check anytime.", accent: TONE.green.text },
+  { tag: 'Homeowners', desc: 'Everything about your home, organized — so you spend less time hunting for paperwork and more time living in it.', accent: GOLD_INK },
+  { tag: 'Multiple homes', desc: 'A vacation place or a rental? Switch between homes in a tap; each one keeps its own tidy set of records.', accent: NAVY },
 ];
 
 const PersonasSection = () => (
@@ -244,8 +233,8 @@ const PersonasSection = () => (
     <div style={{ maxWidth: '1100px', margin: '0 auto' }}>
       <FadeIn>
         <div style={{ textAlign: 'center', marginBottom: '50px' }}>
-          <p style={{ fontFamily: sans, fontSize: '12px', fontWeight: 700, color: SKY, letterSpacing: '0.16em', textTransform: 'uppercase', marginBottom: '14px' }}>Who it’s for</p>
-          <h2 style={{ fontFamily: serif, fontSize: 'clamp(1.85rem, 4vw, 2.6rem)', fontWeight: 600, color: INK, letterSpacing: '-0.015em' }}>
+          <p style={{ fontFamily: sans, fontSize: '12px', fontWeight: 700, color: GOLD_INK, letterSpacing: '0.16em', textTransform: 'uppercase', marginBottom: '14px' }}>Who it’s for</p>
+          <h2 style={{ fontFamily: serif, fontSize: 'clamp(1.85rem, 4vw, 2.6rem)', fontWeight: 600, color: NAVY, letterSpacing: '-0.015em' }}>
             One calm place. However you live.
           </h2>
         </div>
@@ -255,8 +244,8 @@ const PersonasSection = () => (
           <FadeIn key={i} delay={i * 90}>
             <div style={{ background: PAPER, border: `1px solid ${LINE}`, borderRadius: '16px', padding: '28px', height: '100%', position: 'relative', overflow: 'hidden' }}>
               <div style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '3px', background: p.accent }} />
-              <h3 style={{ fontFamily: serif, fontSize: '20px', fontWeight: 600, color: INK, marginBottom: '12px', letterSpacing: '-0.01em' }}>{p.tag}</h3>
-              <p style={{ fontFamily: sans, fontSize: '14.5px', lineHeight: 1.65, color: STONE }}>{p.desc}</p>
+              <h3 style={{ fontFamily: serif, fontSize: '20px', fontWeight: 600, color: NAVY, marginBottom: '12px', letterSpacing: '-0.01em' }}>{p.tag}</h3>
+              <p style={{ fontFamily: sans, fontSize: '14.5px', lineHeight: 1.65, color: MUTED }}>{p.desc}</p>
             </div>
           </FadeIn>
         ))}
@@ -283,11 +272,11 @@ const ReassureSection = () => (
     <div style={{ maxWidth: '900px', margin: '0 auto' }}>
       <FadeIn>
         <div style={{ textAlign: 'center', marginBottom: '44px' }}>
-          <p style={{ fontFamily: sans, fontSize: '12px', fontWeight: 700, color: SKY, letterSpacing: '0.16em', textTransform: 'uppercase', marginBottom: '14px' }}>Safe by design</p>
-          <h2 style={{ fontFamily: serif, fontSize: 'clamp(1.85rem, 4vw, 2.6rem)', fontWeight: 600, color: INK, letterSpacing: '-0.015em', marginBottom: '14px' }}>
+          <p style={{ fontFamily: sans, fontSize: '12px', fontWeight: 700, color: GOLD_INK, letterSpacing: '0.16em', textTransform: 'uppercase', marginBottom: '14px' }}>Safe by design</p>
+          <h2 style={{ fontFamily: serif, fontSize: 'clamp(1.85rem, 4vw, 2.6rem)', fontWeight: 600, color: NAVY, letterSpacing: '-0.015em', marginBottom: '14px' }}>
             Your home&rsquo;s records are yours alone.
           </h2>
-          <p style={{ fontFamily: sans, fontSize: '17px', color: STONE, maxWidth: '540px', margin: '0 auto', lineHeight: 1.6 }}>
+          <p style={{ fontFamily: sans, fontSize: '17px', color: MUTED, maxWidth: '540px', margin: '0 auto', lineHeight: 1.6 }}>
             <Wordmark /> organizes your home without ever reaching into your accounts. The control stays with you — we just keep it calm.
           </p>
         </div>
@@ -296,10 +285,10 @@ const ReassureSection = () => (
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(260px, 1fr))', gap: '14px 28px', maxWidth: '760px', margin: '0 auto' }}>
           {SAFE_POINTS.map((point, i) => (
             <div key={i} style={{ display: 'flex', alignItems: 'center', gap: '11px' }}>
-              <div style={{ width: '26px', height: '26px', borderRadius: '8px', background: '#EEF2EC', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-                <CheckCircle2 style={{ width: '15px', height: '15px', color: SAGE }} />
+              <div style={{ width: '26px', height: '26px', borderRadius: '8px', background: TONE.green.bg, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                <CheckCircle2 style={{ width: '15px', height: '15px', color: TONE.green.text }} />
               </div>
-              <p style={{ fontFamily: sans, fontSize: '15px', color: INK, lineHeight: 1.4 }}>{point}</p>
+              <p style={{ fontFamily: sans, fontSize: '15px', color: NAVY, lineHeight: 1.4 }}>{point}</p>
             </div>
           ))}
         </div>
@@ -320,13 +309,13 @@ const TestimonialSection = () => (
     <div style={{ maxWidth: '760px', margin: '0 auto', textAlign: 'center' }}>
       <FadeIn>
         <div style={{ display: 'flex', gap: '3px', justifyContent: 'center', marginBottom: '22px' }}>
-          {Array(5).fill(0).map((_, j) => <Star key={j} style={{ width: '16px', height: '16px', color: '#D9A45B', fill: '#D9A45B' }} />)}
+          {Array(5).fill(0).map((_, j) => <Star key={j} style={{ width: '16px', height: '16px', color: GOLD, fill: GOLD }} />)}
         </div>
-        <p style={{ fontFamily: serif, fontSize: 'clamp(1.3rem, 3vw, 1.8rem)', fontWeight: 500, color: INK, lineHeight: 1.45, letterSpacing: '-0.01em', marginBottom: '24px' }}>
+        <p style={{ fontFamily: serif, fontSize: 'clamp(1.3rem, 3vw, 1.8rem)', fontWeight: 500, color: NAVY, lineHeight: 1.45, letterSpacing: '-0.01em', marginBottom: '24px' }}>
           &ldquo;I finally feel like I understand what I own. <Wordmark /> gave me a system for my house I never knew I needed.&rdquo;
         </p>
-        <p style={{ fontFamily: sans, fontSize: '14px', fontWeight: 700, color: INK }}>Jennifer M.</p>
-        <p style={{ fontFamily: sans, fontSize: '13px', color: STONE }}>Homeowner · Atlanta, GA</p>
+        <p style={{ fontFamily: sans, fontSize: '14px', fontWeight: 700, color: NAVY }}>Jennifer M.</p>
+        <p style={{ fontFamily: sans, fontSize: '13px', color: MUTED }}>Homeowner · Atlanta, GA</p>
       </FadeIn>
     </div>
   </section>
@@ -337,7 +326,7 @@ const TestimonialSection = () => (
 // ═══════════════════════════════════════════════════════════════════
 
 const CTASection = () => (
-  <section style={{ background: INK, padding: '94px 24px' }}>
+  <section style={{ background: NAVY, padding: '94px 24px' }}>
     <div style={{ maxWidth: '640px', margin: '0 auto', textAlign: 'center' }}>
       <FadeIn>
         <h2 style={{ fontFamily: serif, fontSize: 'clamp(1.9rem, 4vw, 2.7rem)', fontWeight: 600, color: '#fff', letterSpacing: '-0.015em', marginBottom: '16px', lineHeight: 1.15 }}>
@@ -347,7 +336,7 @@ const CTASection = () => (
           Bring your bills, documents, maintenance, and records into one friendly place — without the clutter of traditional home apps.
         </p>
         <div style={{ display: 'flex', gap: '12px', justifyContent: 'center', flexWrap: 'wrap' }}>
-          <Link to="/signup" style={{ display: 'inline-flex', alignItems: 'center', gap: '8px', fontFamily: sans, padding: '15px 32px', borderRadius: '11px', background: '#fff', color: INK, fontSize: '15px', fontWeight: 700, textDecoration: 'none', transition: 'transform 0.15s' }}
+          <Link to="/signup" style={{ display: 'inline-flex', alignItems: 'center', gap: '8px', fontFamily: sans, padding: '15px 32px', borderRadius: '11px', background: '#fff', color: NAVY, fontSize: '15px', fontWeight: 700, textDecoration: 'none', transition: 'transform 0.15s' }}
             onMouseEnter={e => e.currentTarget.style.transform = 'translateY(-1px)'} onMouseLeave={e => e.currentTarget.style.transform = 'none'}>
             Get started <ArrowRight style={{ width: '16px', height: '16px' }} />
           </Link>
