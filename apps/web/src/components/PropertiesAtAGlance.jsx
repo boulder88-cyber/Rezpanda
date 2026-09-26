@@ -248,7 +248,7 @@ const PropertyGlanceTile = ({ home, summary, onEnter }) => {
         </div>
         <div className="flex-1 min-w-0">
           {/* Row 1 — name, falling back to address. */}
-          <p className="font-semibold truncate" style={{ fontSize: '17px', color: INK }}>
+          <p className="font-semibold truncate" style={{ fontSize: '17px', color: INK }} title={home.name || home.address || undefined}>
             {home.name || home.address || 'Unnamed home'}
           </p>
           {/* Row 2 — address, wraps to two lines. Fixed height keeps tiles aligned. */}
@@ -305,11 +305,8 @@ const UnplacedGlanceTile = ({ summary, onEnter }) => {
           <p className="font-semibold truncate" style={{ fontSize: '17px', color: INK }}>
             Other &amp; unassigned
           </p>
-          <p style={{ fontSize: '12px', lineHeight: 1.35, color: MUTED, marginTop: '2px', minHeight: '32px' }}>
+          <p style={{ fontSize: '12px', lineHeight: 1.35, color: MUTED, marginTop: '2px' }}>
             Bills not tied to a property
-          </p>
-          <p className="truncate" style={{ fontSize: '11.5px', marginTop: '2px', color: 'transparent', userSelect: 'none' }} aria-hidden="true">
-            {'\u00A0'}
           </p>
         </div>
       </div>
@@ -358,7 +355,14 @@ const PortfolioStrip = ({ stats, pastDueBills, homesById, onGoBill }) => {
     cells.push({ key: 'next30', label: a.next7.count > 0 ? 'Days 8–30' : 'Next 30 days', value: money(a.next30.amount), sub: billWord(a.next30.count), tone: 'plain' });
   }
   if (a.next7.count === 0 && a.next30.count === 0) {
-    cells.push({ key: 'upcoming', label: 'Next 30 days', value: 'Nothing due', sub: 'You’re clear for the month', tone: 'plain' });
+    // Only reassure when it's actually true — never beside a past-due or
+    // undated balance.
+    const trulyClear = !hasPastDue && a.undated.count === 0;
+    cells.push({
+      key: 'upcoming', label: 'Next 30 days', value: 'None',
+      sub: trulyClear ? 'You’re clear for the month' : 'No bills dated in this window',
+      tone: 'plain',
+    });
   }
   if (a.undated.count > 0) {
     cells.push({ key: 'undated', label: 'No due date', value: money(a.undated.amount), sub: `${billWord(a.undated.count)} · add a date`, tone: 'amber' });
@@ -491,6 +495,27 @@ const FunctionBox = ({ icon: Icon, label, onClick }) => (
   </button>
 );
 
+// ── Header rooftops ─────────────────────────────────────────────────────────
+// A single faint line of house silhouettes along the bottom of the greeting,
+// echoing the logo's house. Decoration lives HERE only — never behind data.
+// Set to false to remove it entirely.
+const SHOW_ROOFTOPS = true;
+const ROOFTOP_SVG = `<svg xmlns="http://www.w3.org/2000/svg" width="240" height="60" viewBox="0 0 240 60"><path d="M0 59.5H10V38L24 26L38 38V59.5H52V30L70 16L88 30V59.5H100V42L112 33L124 42V59.5H140V34L156 22L172 34V59.5H186V44L198 35L210 44V59.5H240" fill="none" stroke="${NAVY}" stroke-opacity="0.16" stroke-width="1.2" stroke-linejoin="round"/><rect x="65" y="44" width="10" height="15.5" fill="none" stroke="${GOLD}" stroke-opacity="0.55" stroke-width="1.2"/></svg>`;
+const ROOFTOP_BG = `url("data:image/svg+xml,${encodeURIComponent(ROOFTOP_SVG)}")`;
+
+const Rooftops = () => (
+  <div
+    aria-hidden="true"
+    className="pointer-events-none absolute"
+    style={{
+      right: 0, bottom: 0, width: '62%', height: '60px',
+      backgroundImage: ROOFTOP_BG, backgroundRepeat: 'repeat-x', backgroundPosition: 'right bottom',
+      WebkitMaskImage: 'linear-gradient(to right, transparent, #000 45%)',
+      maskImage: 'linear-gradient(to right, transparent, #000 45%)',
+    }}
+  />
+);
+
 const SectionTitle = ({ children }) => (
   <h2 className="font-semibold" style={{ fontSize: '15px', color: INK, marginBottom: '12px' }}>{children}</h2>
 );
@@ -604,8 +629,9 @@ const PropertiesAtAGlance = ({ onEnter }) => {
   return (
     <div className="max-w-5xl mx-auto" style={{ padding: '8px 0 80px' }}>
       {/* Header row */}
-      <div className="flex items-start justify-between gap-4" style={{ marginBottom: '24px' }}>
-        <div>
+      <div className="relative flex items-start justify-between gap-4" style={{ marginBottom: '24px', paddingBottom: SHOW_ROOFTOPS ? '44px' : 0 }}>
+        {SHOW_ROOFTOPS && <Rooftops />}
+        <div className="relative">
           <p style={{ fontSize: '14px', color: MUTED }}>{greeting}, {firstName}</p>
           <h1 className="font-semibold" style={{ fontSize: '26px', color: INK, marginTop: '2px' }}>
             Your properties
@@ -616,7 +642,7 @@ const PropertiesAtAGlance = ({ onEnter }) => {
         </div>
         <Link
           to="/manage-homes"
-          className={`flex items-center gap-2 font-semibold flex-shrink-0 text-white ${LIFT} ${FOCUS}`}
+          className={`relative flex items-center gap-2 font-semibold flex-shrink-0 text-white ${LIFT} ${FOCUS}`}
           style={{ background: NAVY, borderRadius: '12px', padding: '10px 16px', fontSize: '13px' }}
         >
           <Plus style={{ width: '16px', height: '16px' }} /> Add property
