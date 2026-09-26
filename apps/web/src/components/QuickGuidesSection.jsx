@@ -49,11 +49,6 @@ const GuideStyles = () => (
       45%, 60%  { transform: translateY(20px); }
       85%, 100% { transform: translateY(0); }
     }
-    @keyframes qgBreakerHand {
-      0%, 20%   { transform: translate(0, 0); }
-      45%, 60%  { transform: translate(4px, 18px); }
-      85%, 100% { transform: translate(0, 0); }
-    }
     /* a smaller button press (outlet, disposal) */
     @keyframes qgSmallPress {
       0%, 20%   { transform: translateY(0); }
@@ -112,8 +107,39 @@ const GuideStyles = () => (
       88%, 100% { opacity: 0; transform: scale(0.7) rotate(15deg); }
     }
 
+    /* v4 PROTOTYPE (Breaker guide only, for now) — a genuine two-joint arm:
+       a shoulder hinge and an elbow hinge, each its own rotating group,
+       instead of one rigid arm shape sliding sideways in a straight line.
+       Real animation phasing, not just an ease on a single move: the arm
+       coils in at rest, uncoils out to full reach, holds at contact, then
+       retracts with a small overshoot before settling — with a touch of
+       whole-body lean/counter-lean layered on top so the reach doesn't look
+       like an isolated arm moving on a still torso. */
+    @keyframes qgB4Body {
+      0%, 100% { transform: rotate(2deg); }
+      15%      { transform: rotate(6deg); }
+      40%, 62% { transform: rotate(-3deg); }
+      80%      { transform: rotate(3deg); }
+    }
+    @keyframes qgB4Shoulder {
+      0%, 100% { transform: rotate(72deg); }
+      15%      { transform: rotate(84deg); }
+      40%      { transform: rotate(10deg); }
+      55%, 62% { transform: rotate(0deg); }
+      78%      { transform: rotate(20deg); }
+    }
+    @keyframes qgB4Elbow {
+      0%, 100% { transform: rotate(-40deg); }
+      15%      { transform: rotate(-48deg); }
+      40%      { transform: rotate(-10deg); }
+      55%, 62% { transform: rotate(0deg); }
+      78%      { transform: rotate(-15deg); }
+    }
+    .qg-b4-body     { animation: qgB4Body 4.5s cubic-bezier(.5,0,.25,1) infinite; }
+    .qg-b4-shoulder { animation: qgB4Shoulder 4.5s cubic-bezier(.5,0,.25,1) infinite; }
+    .qg-b4-elbow    { animation: qgB4Elbow 4.5s cubic-bezier(.5,0,.25,1) infinite; }
+
     .qg-breaker-lever { animation: qgBreakerLever 4.5s ease-in-out infinite; }
-    .qg-breaker-hand  { animation: qgBreakerHand 4.5s ease-in-out infinite; }
     .qg-valve-wheel   { animation: qgQuarterTurn 5s ease-in-out infinite; transform-origin: 150px 92px; }
     .qg-shutoff-valve { animation: qgQuarterTurn 5s ease-in-out infinite; transform-origin: 120px 140px; }
     .qg-gas-valve     { animation: qgQuarterTurn 5s ease-in-out infinite; transform-origin: 150px 95px; }
@@ -132,11 +158,12 @@ const GuideStyles = () => (
     .qg-sparkle       { animation: qgSparkle 4.5s ease-in-out infinite; }
 
     @media (prefers-reduced-motion: reduce) {
-      .qg-breaker-lever, .qg-breaker-hand, .qg-valve-wheel, .qg-shutoff-valve,
+      .qg-breaker-lever, .qg-valve-wheel, .qg-shutoff-valve,
       .qg-gas-valve, .qg-outlet-button, .qg-outlet-hand, .qg-outlet-led,
       .qg-disposal-button, .qg-disposal-hand, .qg-plunger-cup, .qg-plunger-hand,
       .qg-detector-hand, .qg-detector-led, .qg-detector-wave, .qg-detector-wave2,
-      .qg-victory, .qg-sparkle {
+      .qg-victory, .qg-sparkle,
+      .qg-b4-body, .qg-b4-shoulder, .qg-b4-elbow {
         animation: none;
       }
     }
@@ -194,10 +221,30 @@ const Sparkle = ({ x, y }) => (
 const BreakerAnimation = () => (
   <svg viewBox="0 0 220 150" width="100%" height="150" role="img" aria-label="A stick figure triumphantly resetting a tripped breaker switch">
     <g className="qg-victory" style={{ transformOrigin: '55px 95px' }}>
-      <StickFigure x={55} y={48} />
-      <g className="qg-breaker-hand">
-        <path d="M 55 66 Q 86.5 80 118 66" fill="none" stroke={INK} strokeWidth="4" strokeLinecap="round" />
-        <circle cx="118" cy="66" r="5.5" fill={GOLD} />
+      {/* body — a small lean/counter-lean, timed with the reach below, so
+          the whole figure reads as one connected motion rather than an arm
+          animating on a frozen torso */}
+      <g className="qg-b4-body" style={{ transformOrigin: '55px 66px' }}>
+        <StickFigure x={55} y={48} />
+      </g>
+
+      {/* the reaching arm — a real two-joint rig: a shoulder hinge rotates
+          the upper arm, and a nested elbow hinge (its local origin shifted
+          with a static SVG transform, so its own CSS rotation doesn't fight
+          the shoulder's — this file's usual way of splitting a static
+          position from an animated transform on the same node) rotates the
+          forearm on top of that. Both pieces are drawn already in their
+          "arm extended, hand on the switch" pose — that's each hinge's 0deg —
+          and the keyframes rotate AWAY from it to coil the arm in at rest,
+          then uncoil back out through the reach. */}
+      <g className="qg-b4-shoulder" style={{ transformOrigin: '55px 66px' }}>
+        <path d="M 55 66 Q 68 58 86 58" fill="none" stroke={INK} strokeWidth="4.5" strokeLinecap="round" />
+        <g transform="translate(86, 58)">
+          <g className="qg-b4-elbow" style={{ transformOrigin: '0px 0px' }}>
+            <path d="M 0 0 Q 18 2 32 8" fill="none" stroke={INK} strokeWidth="4" strokeLinecap="round" />
+            <circle cx="32" cy="8" r="5.5" fill={GOLD} />
+          </g>
+        </g>
       </g>
     </g>
 
