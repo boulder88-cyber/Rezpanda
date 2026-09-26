@@ -144,24 +144,33 @@ const GuideStyles = () => (
 );
 
 // A calm little stick figure — reused across scenes, just repositioned.
-// Reaching arms are drawn separately per scene, starting at (x, y+22), so
+// Reaching arms are drawn separately per scene, starting at (x, y+18), so
 // each guide can aim the arm at its own target while every figure still
 // reads as the same character.
 const StickFigure = ({ x = 0, y = 0 }) => (
   <g transform={`translate(${x}, ${y})`}>
-    <circle cx="0" cy="0" r="10" fill={SURFACE} stroke={INK} strokeWidth="3" />
-    {/* face — small, calm, a little pleased with itself */}
-    <line x1="-5" y1="-5.5" x2="-1.5" y2="-4.5" stroke={INK} strokeWidth="1.3" strokeLinecap="round" />
-    <line x1="5" y1="-5.5" x2="1.5" y2="-4.5" stroke={INK} strokeWidth="1.3" strokeLinecap="round" />
-    <circle cx="-3.2" cy="-1" r="1.6" fill={INK} />
-    <circle cx="3.2" cy="-1" r="1.6" fill={INK} />
-    <path d="M -3.5 3 Q 0 5.5 3.5 3" fill="none" stroke={INK} strokeWidth="1.3" strokeLinecap="round" />
-    {/* body + limbs — loose hand-drawn curves rather than ruler-straight
-        lines, same anchor points as before so nothing else needs to move */}
-    <path d="M 0 10 Q 3 30 0 52" fill="none" stroke={INK} strokeWidth="3" strokeLinecap="round" />
-    <path d="M 0 52 Q -11 68 -14 86" fill="none" stroke={INK} strokeWidth="3" strokeLinecap="round" />
-    <path d="M 0 52 Q 9 69 12 88" fill="none" stroke={INK} strokeWidth="3" strokeLinecap="round" />
-    <path d="M 0 22 Q -11 31 -16 42" fill="none" stroke={INK} strokeWidth="3" strokeLinecap="round" />
+    {/* head — bigger, more character-forward proportions than a diagram */}
+    <circle cx="0" cy="0" r="13" fill={SURFACE} stroke={INK} strokeWidth="3.5" />
+    {/* face — bigger and genuinely expressive: raised brows, round eyes, a real smile */}
+    <path d="M -9 -8.5 Q -5.5 -11 -2 -9" fill="none" stroke={INK} strokeWidth="1.6" strokeLinecap="round" />
+    <path d="M 9 -8.5 Q 5.5 -11 2 -9" fill="none" stroke={INK} strokeWidth="1.6" strokeLinecap="round" />
+    <ellipse cx="-4.3" cy="-1" rx="3" ry="3.8" fill={SURFACE} stroke={INK} strokeWidth="1.2" />
+    <ellipse cx="4.3" cy="-1" rx="3" ry="3.8" fill={SURFACE} stroke={INK} strokeWidth="1.2" />
+    <circle cx="-3.6" cy="0.2" r="1.7" fill={INK} />
+    <circle cx="5" cy="0.2" r="1.7" fill={INK} />
+    <path d="M -4.5 5.5 Q 0 9.5 4.5 5.5" fill="none" stroke={INK} strokeWidth="1.6" strokeLinecap="round" />
+    {/* a simple filled "shirt" — gives the figure real visual mass instead
+        of a bare stick torso, in our own navy rather than the reference's
+        colors */}
+    <path d="M -9 16 Q 0 12 9 16 L 9 41 Q 0 46 -9 41 Z" fill={NAVY} stroke={INK} strokeWidth="2.5" strokeLinejoin="round" />
+    {/* legs, with little feet */}
+    <path d="M -4 41 Q -13 60 -16 79" fill="none" stroke={INK} strokeWidth="4.5" strokeLinecap="round" />
+    <circle cx="-16" cy="79" r="3.2" fill={INK} />
+    <path d="M 4 41 Q 12 61 15 80" fill="none" stroke={INK} strokeWidth="4.5" strokeLinecap="round" />
+    <circle cx="15" cy="80" r="3.2" fill={INK} />
+    {/* resting arm, with a little hand */}
+    <path d="M -8 19 Q -19 28 -23 41" fill="none" stroke={INK} strokeWidth="4.5" strokeLinecap="round" />
+    <circle cx="-23" cy="41" r="3.2" fill={INK} />
   </g>
 );
 
@@ -184,11 +193,11 @@ const Sparkle = ({ x, y }) => (
 
 const BreakerAnimation = () => (
   <svg viewBox="0 0 220 150" width="100%" height="150" role="img" aria-label="A stick figure triumphantly resetting a tripped breaker switch">
-    <g className="qg-victory" style={{ transformOrigin: '55px 90px' }}>
+    <g className="qg-victory" style={{ transformOrigin: '55px 95px' }}>
       <StickFigure x={55} y={48} />
       <g className="qg-breaker-hand">
-        <path d="M 55 70 Q 86.5 82 118 66" fill="none" stroke={INK} strokeWidth="3" strokeLinecap="round" />
-        <circle cx="118" cy="66" r="5" fill={GOLD} />
+        <path d="M 55 66 Q 86.5 80 118 66" fill="none" stroke={INK} strokeWidth="4" strokeLinecap="round" />
+        <circle cx="118" cy="66" r="5.5" fill={GOLD} />
       </g>
     </g>
 
@@ -210,9 +219,9 @@ const BreakerAnimation = () => (
 
 const ValveAnimation = () => (
   <svg viewBox="0 0 220 150" width="100%" height="150" role="img" aria-label="A stick figure proudly turning the main water shutoff valve clockwise">
-    <g className="qg-victory" style={{ transformOrigin: '65px 95px' }}>
+    <g className="qg-victory" style={{ transformOrigin: '65px 100px' }}>
       <StickFigure x={65} y={52} />
-      <path d="M 65 72 Q 93.5 95 122 88" fill="none" stroke={INK} strokeWidth="3" strokeLinecap="round" />
+      <path d="M 65 70 Q 93.5 94 122 88" fill="none" stroke={INK} strokeWidth="4" strokeLinecap="round" />
     </g>
 
     <rect x="140" y="106" width="20" height="34" fill={INK_MUTE} rx="2" />
@@ -229,11 +238,11 @@ const ValveAnimation = () => (
 
 const OutletAnimation = () => (
   <svg viewBox="0 0 220 150" width="100%" height="150" role="img" aria-label="A stick figure pressing the reset button on a GFCI outlet, delighted when it works">
-    <g className="qg-victory" style={{ transformOrigin: '55px 92px' }}>
+    <g className="qg-victory" style={{ transformOrigin: '55px 98px' }}>
       <StickFigure x={55} y={50} />
       <g className="qg-outlet-hand">
-        <path d="M 55 72 Q 85 97 115 92" fill="none" stroke={INK} strokeWidth="3" strokeLinecap="round" />
-        <circle cx="115" cy="92" r="5" fill={GOLD} />
+        <path d="M 55 68 Q 85 96 115 92" fill="none" stroke={INK} strokeWidth="4" strokeLinecap="round" />
+        <circle cx="115" cy="92" r="5.5" fill={GOLD} />
       </g>
     </g>
 
@@ -259,23 +268,11 @@ const DetectorAnimation = () => (
     <path d="M 118 12 Q 150 -20 182 12" stroke={GOLD} strokeWidth="2" fill="none" className="qg-detector-wave2" />
     <circle cx="150" cy="20" r="4" fill={GOLD} className="qg-detector-led" />
 
-    <g className="qg-victory" style={{ transformOrigin: '100px 140px' }}>
-      <g transform="translate(100, 100)">
-        <circle cx="0" cy="0" r="10" fill={SURFACE} stroke={INK} strokeWidth="3" />
-        {/* a little furrowed and unimpressed — it's the one being chirped at */}
-        <line x1="-5" y1="-5" x2="-1.5" y2="-6" stroke={INK} strokeWidth="1.3" strokeLinecap="round" />
-        <line x1="5" y1="-5" x2="1.5" y2="-6" stroke={INK} strokeWidth="1.3" strokeLinecap="round" />
-        <circle cx="-3.2" cy="-1" r="1.6" fill={INK} />
-        <circle cx="3.2" cy="-1" r="1.6" fill={INK} />
-        <path d="M -3.5 2.5 Q 0 0.5 3.5 2.5" fill="none" stroke={INK} strokeWidth="1.3" strokeLinecap="round" />
-        <path d="M 0 10 Q 3 27 0 45" fill="none" stroke={INK} strokeWidth="3" strokeLinecap="round" />
-        <path d="M 0 45 Q -10 62 -13 78" fill="none" stroke={INK} strokeWidth="3" strokeLinecap="round" />
-        <path d="M 0 45 Q 8 63 11 80" fill="none" stroke={INK} strokeWidth="3" strokeLinecap="round" />
-        <path d="M 0 18 Q -10 25 -15 32" fill="none" stroke={INK} strokeWidth="3" strokeLinecap="round" />
-      </g>
+    <g className="qg-victory" style={{ transformOrigin: '100px 118px' }}>
+      <StickFigure x={100} y={58} />
       <g className="qg-detector-hand">
-        <path d="M 100 115 Q 135 80 140 45" fill="none" stroke={INK} strokeWidth="3" strokeLinecap="round" />
-        <rect x="132" y="30" width="14" height="18" rx="2" fill={GOLD} />
+        <path d="M 100 76 Q 122 55 138 46" fill="none" stroke={INK} strokeWidth="4" strokeLinecap="round" />
+        <rect x="130" y="30" width="14" height="18" rx="2" fill={GOLD} />
       </g>
     </g>
   </svg>
@@ -283,10 +280,10 @@ const DetectorAnimation = () => (
 
 const ShutoffValveAnimation = () => (
   <svg viewBox="0 0 220 150" width="100%" height="150" role="img" aria-label="A stick figure turning a toilet's shutoff valve a quarter turn, pleased with itself">
-    <g className="qg-victory" style={{ transformOrigin: '55px 100px' }}>
+    <g className="qg-victory" style={{ transformOrigin: '55px 108px' }}>
       <StickFigure x={55} y={58} />
-      <path d="M 55 80 Q 88 103 118 108" fill="none" stroke={INK} strokeWidth="3" strokeLinecap="round" />
-      <circle cx="118" cy="108" r="5" fill={GOLD} />
+      <path d="M 55 76 Q 88 102 118 108" fill="none" stroke={INK} strokeWidth="4" strokeLinecap="round" />
+      <circle cx="118" cy="108" r="5.5" fill={GOLD} />
     </g>
 
     {/* toilet, simplified */}
@@ -308,10 +305,10 @@ const PlungerAnimation = () => (
     <ellipse cx="150" cy="82" rx="55" ry="14" fill={SURFACE} stroke={BORDER} strokeWidth="2" />
     <ellipse cx="150" cy="82" rx="8" ry="3" fill={INK_MUTE} />
 
-    <g className="qg-victory" style={{ transformOrigin: '55px 82px' }}>
+    <g className="qg-victory" style={{ transformOrigin: '55px 90px' }}>
       <g className="qg-plunger-hand">
-        <path d="M 55 62 Q 97.5 68 140 40" fill="none" stroke={INK} strokeWidth="3" strokeLinecap="round" />
-        <circle cx="140" cy="40" r="5" fill={GOLD} />
+        <path d="M 55 58 Q 97.5 64 140 40" fill="none" stroke={INK} strokeWidth="4" strokeLinecap="round" />
+        <circle cx="140" cy="40" r="5.5" fill={GOLD} />
       </g>
       <StickFigure x={55} y={40} />
     </g>
@@ -330,11 +327,11 @@ const DisposalAnimation = () => (
     <rect x="120" y="48" width="60" height="16" fill={INK_MUTE} />
     <rect x="132" y="62" width="36" height="55" rx="10" fill={SURFACE} stroke={BORDER} strokeWidth="2" />
 
-    <g className="qg-victory" style={{ transformOrigin: '70px 115px' }}>
-      <StickFigure x={70} y={75} />
+    <g className="qg-victory" style={{ transformOrigin: '70px 110px' }}>
+      <StickFigure x={70} y={55} />
       <g className="qg-disposal-hand">
-        <path d="M 70 97 Q 98.5 118 127 110" fill="none" stroke={INK} strokeWidth="3" strokeLinecap="round" />
-        <circle cx="127" cy="110" r="5" fill={GOLD} />
+        <path d="M 70 73 Q 107 112 144 111" fill="none" stroke={INK} strokeWidth="4" strokeLinecap="round" />
+        <circle cx="144" cy="111" r="5.5" fill={GOLD} />
       </g>
     </g>
 
@@ -348,7 +345,7 @@ const DisposalAnimation = () => (
 const GasAnimation = () => (
   <svg viewBox="0 0 220 150" width="100%" height="150" role="img" aria-label="A stick figure calmly turning off the main gas shutoff valve">
     <StickFigure x={60} y={55} />
-    <path d="M 60 77 Q 90 92 120 95" fill="none" stroke={INK} strokeWidth="3" strokeLinecap="round" />
+    <path d="M 60 73 Q 90 90 120 95" fill="none" stroke={INK} strokeWidth="4" strokeLinecap="round" />
 
     {/* gas meter + pipe */}
     <rect x="130" y="55" width="55" height="45" rx="6" fill={SURFACE} stroke={BORDER} strokeWidth="2" />
