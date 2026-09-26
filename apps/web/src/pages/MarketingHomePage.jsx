@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React from 'react';
 import { Link } from 'react-router-dom';
 import SiteLayout from './SiteLayout.jsx';
 import {
@@ -31,27 +31,12 @@ import { NAVY, GOLD, GOLD_INK, MUTED, PAPER, SAND, LINE, TONE, TONE_ON_NAVY, FON
 const serif = FONT_SERIF;
 const sans = FONT_SANS;
 
-// ── Fade-in on scroll ──────────────────────────────────────────────
-const useFadeIn = () => {
-  const ref = useRef(null);
-  const [visible, setVisible] = useState(false);
-  useEffect(() => {
-    const reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-    if (reduce) { setVisible(true); return; }
-    const obs = new IntersectionObserver(([e]) => { if (e.isIntersecting) { setVisible(true); obs.disconnect(); } }, { threshold: 0.1 });
-    if (ref.current) obs.observe(ref.current);
-    return () => obs.disconnect();
-  }, []);
-  return [ref, visible];
-};
-const FadeIn = ({ children, delay = 0 }) => {
-  const [ref, visible] = useFadeIn();
-  return (
-    <div ref={ref} style={{ opacity: visible ? 1 : 0, transform: visible ? 'none' : 'translateY(16px)', transition: `opacity 0.65s ease ${delay}ms, transform 0.65s ease ${delay}ms` }}>
-      {children}
-    </div>
-  );
-};
+// ── FadeIn (retired) ───────────────────────────────────────────────
+// Sections used to fade in on scroll. Removed: if the scroll detection
+// never fires (in-app browsers, link previews, full-page captures), whole
+// sections stayed invisible. Kept as a pass-through so the markup below is
+// unchanged; content now renders immediately and always.
+const FadeIn = ({ children }) => <div>{children}</div>;
 
 // ── Brand wordmark ─────────────────────────────────────────────────
 // CasaCEO with the gold "CEO". `textTransform: none` keeps CamelCase even
@@ -116,7 +101,7 @@ const HeroSection = () => (
         Your whole home, finally cohesive.
       </h1>
       <p style={{ fontFamily: sans, fontSize: '19px', lineHeight: 1.65, color: 'rgba(255,255,255,0.74)', maxWidth: '560px', margin: '0 auto 14px' }}>
-        Bills, upkeep, and documents settle into one calm place — the filters, the flush dates, the gutters — so nothing sits in your head, and nothing feels like it&rsquo;s been let go.
+        Bills, upkeep, and documents settle into one calm place — the filters, the gutters, the renewal dates — so nothing sits in your head, and nothing feels like it&rsquo;s been let go.
       </p>
       <p style={{ fontFamily: sans, fontSize: '15px', lineHeight: 1.5, color: 'rgba(255,255,255,0.55)', maxWidth: '480px', margin: '0 auto 34px' }}>
         One home, a rental, or a few properties — same calm system, either way.
