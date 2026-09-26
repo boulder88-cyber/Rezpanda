@@ -3,6 +3,7 @@ import { useHome } from '@/contexts/HomeContext.jsx';
 import { useAuth } from '@/contexts/AuthContext.jsx';
 import { useNavigate, Link } from 'react-router-dom';
 import pb from '@/lib/horizonsBackend.js';
+import { NAVY, GOLD, GOLD_INK, INK, MUTED, FAINT, PAPER, LINE, LINE_SOFT, TONE } from '@/lib/brandTokens.js';
 import { Home, MapPin, ArrowRight, AlertCircle, CheckCircle2, Plus, CreditCard, Wrench, FolderOpen, Inbox, Building, Heart } from 'lucide-react';
 
 // ═══════════════════════════════════════════════════════════════════════
@@ -19,7 +20,7 @@ import { Home, MapPin, ArrowRight, AlertCircle, CheckCircle2, Plus, CreditCard, 
 //   • Function row: Bills / Maintenance / Records as an ALL-PROPERTIES
 //     "go straight to."
 //
-// COLOR ROLES (locked — one job per color):
+// COLOR ROLES (locked — one job per color; values live in lib/brandTokens.js):
 //   navy  #1e3a5f  structure + ink: titles, icon badges, primary buttons, links
 //   gold  #c9a96e  brand only: focus rings, caretaker heart (deep gold for text)
 //   red            ONLY a past-due bill. Never decoration, never a tile border.
@@ -33,24 +34,6 @@ import { Home, MapPin, ArrowRight, AlertCircle, CheckCircle2, Plus, CreditCard, 
 // MaintenanceManagementPage (maintenance_systems collection, nextServiceDate;
 // overdue = past today, soon = within 30 days). Maintenance fetch fails open.
 // ═══════════════════════════════════════════════════════════════════════
-
-const NAVY = '#1e3a5f';
-const GOLD = '#c9a96e';
-const GOLD_INK = '#8a6d3b';   // gold dark enough for text on white (AA)
-const INK = '#1f2733';
-const MUTED = '#5b6472';
-const FAINT = '#95a0ae';
-const LINE = '#e9e4db';
-const LINE_SOFT = '#f0ece4';
-const FIELD = '#faf8f4';
-
-// Status palette — light-surface versions, all text/bg pairs pass AA.
-const TONE = {
-  red:    { text: '#b91c1c', bg: '#fef2f2', border: '#fecaca' },
-  amber:  { text: '#b45309', bg: '#fffbeb', border: '#fde68a' },
-  green:  { text: '#047857', bg: '#ecfdf5', border: '#a7f3d0' },
-  quiet:  { text: MUTED,     bg: FIELD,     border: LINE },
-};
 
 const FOCUS = 'focus:outline-none focus-visible:ring-2 focus-visible:ring-[#c9a96e] focus-visible:ring-offset-2';
 const LIFT = 'transition-all hover:-translate-y-0.5 motion-reduce:transition-none motion-reduce:hover:translate-y-0';
@@ -192,7 +175,7 @@ const DueBox = ({ allClear, clearText, dueTotal, openCount }) => (
       <span className="font-medium" style={{ fontSize: '14px' }}>{clearText}</span>
     </div>
   ) : (
-    <div className="rounded-xl" style={{ background: FIELD, border: `1px solid ${LINE_SOFT}`, padding: '12px 14px', marginBottom: '12px' }}>
+    <div className="rounded-xl" style={{ background: PAPER, border: `1px solid ${LINE_SOFT}`, padding: '12px 14px', marginBottom: '12px' }}>
       <p className="font-extrabold" style={{ fontSize: '26px', lineHeight: 1, color: NAVY }}>
         ${Math.round(dueTotal).toLocaleString()}
       </p>
@@ -298,7 +281,7 @@ const UnplacedGlanceTile = ({ summary, onEnter }) => {
     <button onClick={onEnter} className={`text-left group flex flex-col w-full h-full ${LIFT} ${FOCUS}`} style={tileStyle}>
       <div className="flex items-start gap-3" style={{ marginBottom: '16px' }}>
         {/* Outlined badge distinguishes this from a real home. */}
-        <div className="flex items-center justify-center flex-shrink-0" style={{ width: '44px', height: '44px', borderRadius: '12px', background: FIELD, border: `1px solid ${LINE}` }}>
+        <div className="flex items-center justify-center flex-shrink-0" style={{ width: '44px', height: '44px', borderRadius: '12px', background: PAPER, border: `1px solid ${LINE}` }}>
           <Inbox style={{ width: '22px', height: '22px', color: NAVY }} />
         </div>
         <div className="flex-1 min-w-0">
