@@ -145,7 +145,7 @@ const PillarsSection = () => (
           </p>
         </div>
       </FadeIn>
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '20px' }}>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 220px), 1fr))', gap: '20px' }}>
         {PILLARS.map((m, i) => {
           const Icon = m.icon;
           const s = STATUS_STYLE[m.status];
@@ -224,7 +224,7 @@ const PersonasSection = () => (
           </h2>
         </div>
       </FadeIn>
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '20px' }}>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 220px), 1fr))', gap: '20px' }}>
         {PERSONAS.map((p, i) => (
           <FadeIn key={i} delay={i * 90}>
             <div style={{ background: PAPER, border: `1px solid ${LINE}`, borderRadius: '16px', padding: '28px', height: '100%', position: 'relative', overflow: 'hidden' }}>
