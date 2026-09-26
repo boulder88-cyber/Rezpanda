@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Helmet } from 'react-helmet';
-import { Link } from 'react-router-dom';
+import { Link, useSearchParams } from 'react-router-dom';
 import pb from '@/lib/horizonsBackend.js';
 import { useHome } from '@/contexts/HomeContext.jsx';
 import { useAuth } from '@/contexts/AuthContext.jsx';
@@ -10,8 +10,10 @@ import {
   AlertTriangle, CheckCircle2, User, Search, ClipboardList,
   Leaf, Sun, Wind, Snowflake, ChevronRight, CloudRain,
   Thermometer, Droplets, Star, ArrowRight, Home as HomeIcon,
+  ShieldAlert,
 } from 'lucide-react';
 import QuickGuidesSection from '@/components/QuickGuidesSection.jsx';
+import CriticalHomeInfoSection from '@/components/CriticalHomeInfoSection.jsx';
 
 // ═══════════════════════════════════════════════════════════════════════
 // DESIGN TOKENS (locked design system — inline, no Tailwind palette)
@@ -825,7 +827,15 @@ const MaintenanceManagementPage = () => {
   const [searchQuery, setSearchQuery] = useState('');
   const [filterCategory, setFilterCategory] = useState('All');
   const [filterStatus, setFilterStatus] = useState('All');
-  const [activeTab, setActiveTab] = useState('schedule');
+  // Supports a deep link like /maintenance-management?tab=critical — used by
+  // the "Critical home info" quick-access link on the Dashboard, so someone
+  // in a hurry lands straight on the tab instead of the default one.
+  const [searchParams] = useSearchParams();
+  const [activeTab, setActiveTab] = useState(() => {
+    const requested = searchParams.get('tab');
+    const validTabs = ['schedule', 'calendar', 'log', 'seasonal', 'critical', 'vendors'];
+    return validTabs.includes(requested) ? requested : 'schedule';
+  });
 
   // Weather triggers (fail-soft: empty by default, never blocks the page).
   const [weather, setWeather] = useState({ triggers: [], place: null });
@@ -1000,6 +1010,7 @@ const MaintenanceManagementPage = () => {
     { key: 'calendar', label: 'Calendar', icon: Calendar },
     { key: 'log', label: 'Service log', icon: ClipboardList },
     { key: 'seasonal', label: 'Home care', icon: Leaf },
+    { key: 'critical', label: 'Critical info', icon: ShieldAlert },
     { key: 'vendors', label: 'Vendors', icon: User },
   ];
 
@@ -1258,6 +1269,11 @@ const MaintenanceManagementPage = () => {
               existingNames={tasks.map((t) => (t.systemName || '').toLowerCase())}
             />
           </>
+        )}
+
+        {/* ── Critical info tab ── */}
+        {activeTab === 'critical' && (
+          <CriticalHomeInfoSection home={home} currentUser={currentUser} />
         )}
 
         {/* ── Vendors tab ── */}
